@@ -1,0 +1,36 @@
+U F P C(127.0.0.1) I 2 24 80 0 0 0x0 0.006
+ok
+U F U C(127.0.0.1) I 2 24 80 22 11 0x0 0.041
+ok
+U F U C(127.0.0.1) I 2 24 80 22 11 0x0 0.000
+ok
+data: Terminal   CUU0C0                                                 Date  15.11.26
+data:                                                                   Time  16:25:01
+data:                                                                                 
+data:                               ______________     __      __     ___________     
+data:                              /||||||||||||||\   |||\    ///\   ||||||||||||\    
+data:                             | |||||||||||||| |  ||||   /// /   |||||||||||| |   
+data:                             |/____/||||\ ___\|  ||||  /// /    ||||\ ______\|   
+data:         |l      _,,,---,,_       | |||| |       |||| /// /     |||| |           
+data:  ZZZzz /,'.-'`'    -.  ;-;;,     | |||| |       ||||/// /      |||||||||| \     
+data:       |,4-  ) )-,_. ,( (  ''-'   | |||| |       |||///_/       ||||||||||| \    
+data:      '---''(_/--'  `-')_)        | |||| |       |||\\\ \       \_______|||| |   
+data:                                  | |||| |       ||||\\\ \              |||| |   
+data:        The MVS 3.8j              | |||| |       |||| \\\ \     |||||||||||| |   
+data:      Tur(n)key system            | |||| |       ||||  \\\_\    ||||||||||| /    
+data:                                  |/____\|       \__\   \___\   \__________/     
+data:                                                                                 
+data:       TK3  created by Volker Bandke      volker@bandke.org                      
+data:       TK4- update by Juergen Winkelmann  juergen.winkelmann@pebble-beach.ch     
+data:       TK5  update by Rob Prins           prin0096@gmail.com                     
+data:            see SYS2.JCLLIB(CREDITS) for complete credits                        
+data:                         MVS 3.8j Level 8505 - Update 5                          
+data:                                                                                 
+data: Logon ===>                                                                      
+data:                                                             RUNNING  TK5        
+U F U C(127.0.0.1) I 2 24 80 22 11 0x0 0.000
+ok
+L F U N N 2 24 80 22 11 0x0 0.001
+ok
+L F U N N 2 24 80 22 11 0x0 0.000
+ok
