@@ -6,7 +6,7 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
 
 ## Tasks
 
-- [ ] 1. Scaffold package structure and project configuration
+- [x] 1. Scaffold package structure and project configuration
   - Create `greenscreen/connector/__init__.py` and `greenscreen/connector/testing/__init__.py` with empty exports
   - Create `pyproject.toml` declaring the `greenscreen-connector` package with `requires-python = '>=3.11'`; list `pyyaml>=6.0.3` as the only runtime dependency under `[project.dependencies]`; add an `[project.optional-dependencies]` group named `dev` containing `hypothesis>=6.170.15`, `pytest>=8.0`, and `pyyaml>=6.0.3`; do NOT include `pytest-mark` (marks are built into pytest, not a separate package)
   - Create `pytest.ini` (or `[tool.pytest.ini_options]`) registering the `integration` mark and setting `testpaths = tests`
