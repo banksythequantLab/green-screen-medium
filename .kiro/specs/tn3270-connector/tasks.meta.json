@@ -239,6 +239,35 @@
         "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
         "timestamp": 1794797730982
       }
+    ],
+    "8.1 Implement `connector.py` — subprocess lifecycle (`open` / `close`)": [
+      {
+        "executionId": "db7844a5-81fb-493c-a843-3833c4eeffff",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794800277157
+      },
+      {
+        "executionId": "db7844a5-81fb-493c-a843-3833c4eeffff",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794800367377
+      }
+    ],
+    "8.2 Implement `connector.py` — `send`, action helpers, and screen capture": [
+      {
+        "executionId": "db7844a5-81fb-493c-a843-3833c4eeffff",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794800369367
+      },
+      {
+        "executionId": "278ebe3e-fcbf-43a7-a734-d4d43fc971a0",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794800394300
+      },
+      {
+        "executionId": "278ebe3e-fcbf-43a7-a734-d4d43fc971a0",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794800849196
+      }
     ]
   }
 }

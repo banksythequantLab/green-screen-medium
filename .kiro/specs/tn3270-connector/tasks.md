@@ -104,7 +104,7 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
     - **Validates: Requirements 9.6, 3.6**
 
 - [ ] 8. Implement `Connector`
-  - [ ] 8.1 Implement `connector.py` — subprocess lifecycle (`open` / `close`)
+  - [x] 8.1 Implement `connector.py` — subprocess lifecycle (`open` / `close`)
     - Implement `Connector.__init__` storing config, initialising `_proc = None`, `_reader = None`, `_closed = False`
     - Implement `open()`: build command line `[config.binary, "-model", config.model]`; `subprocess.Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)`; wrap `proc.stdout` in `PipeReader`; start daemon thread to drain and discard `proc.stderr`; send `Connect(host:port)` as first command; on error response terminate subprocess and raise `ConnectorError`; raise `ConnectorError` if already open
     - Implement `close()`: if closed or proc is None return silently; send `Disconnect()` then `Quit()`; `proc.wait(timeout=5)`; on `TimeoutExpired` call `terminate()`, `wait(5)`, then `kill()` if needed; log warning; set `_closed = True`
@@ -112,7 +112,7 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
     - Accept an optional `process_factory` parameter in `Connector.__init__` (default: `subprocess.Popen`); the factory is called with the same arguments as `Popen` and must return an object with `.stdin`, `.stdout`, `.stderr`, `.wait(timeout)`, `.terminate()`, `.kill()`, and `.poll()` attributes; this allows tests to inject `FakeS3270` without monkeypatching
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 2.10_
 
-  - [ ] 8.2 Implement `connector.py` — `send`, action helpers, and screen capture
+  - [x] 8.2 Implement `connector.py` — `send`, action helpers, and screen capture
     - Implement `_write(action: str)`: write `action + "\n"` to `proc.stdin` encoded as bytes; log at DEBUG with `direction="sent"`
     - Implement `_read_response(action: str, timeout: float) -> Response`: call `PipeReader.readline(timeout)` in a loop collecting `data:` lines, status line, and `ok`/`error`; strip `data: ` prefix; call `parse_status_line`; return `Response` on `ok`; raise `S3270Error` on `error`; raise `SessionClosedError` if `_closed`; log at DEBUG with `direction="received"`
     - Implement `send(action: str) -> Response`: validate non-empty, no newline; call `_write` then `_read_response` using `default_timeout`; on `ConnectorTimeoutError` terminate subprocess
