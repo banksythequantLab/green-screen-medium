@@ -92,4 +92,11 @@ code depends on them.
   log shows `LOGGED OFF`. Whole logon-to-logoff run took under 6 seconds.
 - Verified on ws3270 4.5 against the live host: `Wait(1,Output)` and
   `Wait(1.5,Output)` are both accepted; on an idle screen the error text is
-  `Wait(output): Timed out`. s3270 4.3 on Linux is still to be checked.
+  `Wait(output): Timed out`.
+- Verified 2026-11-16 on s3270 4.3 (Linux, on the host): `Wait(1,Output)`,
+  `Wait(1.5,Output)` and `Wait(0.001,Output)` are all accepted. An idle-screen
+  timeout returns `error` with the text `Wait(): Timed out` (4.5 says
+  `Wait(output): Timed out`). Match timeouts case-insensitively on "timed out".
+- `Wait(N,Output)` only blocks if the screen has been READ (Ascii, ReadBuffer)
+  since the last host output. With no read in between it returns `ok` at once.
+  This is why a bare Enter-then-Wait can return before the new screen exists.
