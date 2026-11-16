@@ -90,7 +90,7 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
     - Use `@settings(max_examples=200)`
     - **Validates: Requirements 9.2, 5.1**
 
-- [ ] 6. Checkpoint — parser and renderer complete
+- [x] 6. Checkpoint — parser and renderer complete
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 7. Implement s3270 string escaping helpers and `ConnectorConfig`
@@ -214,11 +214,11 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
     - Test that an extra command after all scripted responses are exhausted raises `AssertionError` with the unexpected command text
     - _Requirements: 8.2, 8.5_
 
-- [ ] 11. Checkpoint — unit tests and property tests complete
+- [x] 11. Checkpoint — unit tests and property tests complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 12. Write integration tests
-  - [ ] 12.1 Write integration test: logo then logon screen
+- [x] 12. Write integration tests
+  - [x] 12.1 Write integration test: logo then logon screen
     - Mark with `@pytest.mark.integration`; guard with `host_reachable` session fixture (auto-skip on no TCP connection)
     - Follow the corrected GOTCHA in the steering doc (TSO logon flow): after Connect the host sometimes shows the logon screen by itself within a second and sometimes leaves the Hercules logo up until Enter is pressed, so never press Enter blindly
     - Connect using `GS_HOST`/`GS_PORT`/`GS_S3270_BINARY`; call `wait_for_text("Logon ===>", timeout=5)`
@@ -228,7 +228,7 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
     - Never type credentials in this test; it must not skip when `TK5_USERNAME` or `TK5_PASSWORD` is unset
     - _Requirements: 4.8, 10.1, 10.2, 10.3, 10.4_
 
-  - [ ] 12.2 Write integration test: Wait timeout format acceptance (s3270 4.3 / ws3270 4.5)
+  - [x] 12.2 Write integration test: Wait timeout format acceptance (s3270 4.3 / ws3270 4.5)
     - Mark with `@pytest.mark.integration`; guard with `host_reachable`
     - After connecting and reaching an idle screen, send `Wait(1,Output)` and `Wait(1.5,Output)` through `send()` (not `wait_for_text`)
     - A format is accepted when the call returns `ok` or raises `S3270Error` whose text contains "timed out" (case-insensitive; ws3270 4.5 reports `Wait(output): Timed out` on an idle screen)
@@ -238,15 +238,15 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
     - Document the accepted format(s) in a comment so `Connector._format_seconds` can be changed in one place if a binary rejects a form
     - _Requirements: 10.1 (timeout format verification)_
 
-- [ ] 13. Wire up public exports and final checkpoint
-  - [ ] 13.1 Populate `greenscreen/connector/__init__.py` with public API exports
+- [x] 13. Wire up public exports and final checkpoint
+  - [x] 13.1 Populate `greenscreen/connector/__init__.py` with public API exports
     - Export `Connector`, `ConnectorConfig`, `Response`, `StatusLine`, `Screen`, `Field`, `SFToken`, `SAToken`
     - Export all exceptions: `ConnectorError`, `ConfigurationError`, `S3270Error`, `ConnectorTimeoutError`, `ParseError`, `SessionClosedError`
     - Export `ScreenParser`, `ScreenRenderer`
     - Verify that `from greenscreen.connector import Connector` works without additional imports
     - _Requirements: all_
 
-  - [ ] 13.2 Final checkpoint — all tests pass
+  - [x] 13.2 Final checkpoint — all tests pass
     - Run `pytest tests/unit tests/property -q` and confirm zero failures
     - Ensure all tests pass, ask the user if questions arise.
 

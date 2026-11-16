@@ -422,6 +422,82 @@
         "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
         "timestamp": 1794803713158
       }
+    ],
+    "12.1 Write integration test: logo then logon screen": [
+      {
+        "executionId": "e7660ab0-5374-4687-a8ba-fcff963c85ca",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794806894140
+      },
+      {
+        "executionId": "e7660ab0-5374-4687-a8ba-fcff963c85ca",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794807078621
+      }
+    ],
+    "13.1 Populate `greenscreen/connector/__init__.py` with public API exports": [
+      {
+        "executionId": "e7660ab0-5374-4687-a8ba-fcff963c85ca",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794806894338
+      },
+      {
+        "executionId": "e7660ab0-5374-4687-a8ba-fcff963c85ca",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794807078279
+      }
+    ],
+    "12.2 Write integration test: Wait timeout format acceptance (s3270 4.3 / ws3270 4.5)": [
+      {
+        "executionId": "e7660ab0-5374-4687-a8ba-fcff963c85ca",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794807081723
+      },
+      {
+        "executionId": "e7660ab0-5374-4687-a8ba-fcff963c85ca",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794807212716
+      }
+    ],
+    "12. Write integration tests": [
+      {
+        "executionId": "e7660ab0-5374-4687-a8ba-fcff963c85ca",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794807212856
+      }
+    ],
+    "13.2 Final checkpoint — all tests pass": [
+      {
+        "executionId": "e7660ab0-5374-4687-a8ba-fcff963c85ca",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794807215421
+      },
+      {
+        "executionId": "e7660ab0-5374-4687-a8ba-fcff963c85ca",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794807278670
+      }
+    ],
+    "13. Wire up public exports and final checkpoint": [
+      {
+        "executionId": "e7660ab0-5374-4687-a8ba-fcff963c85ca",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794807278850
+      }
+    ],
+    "6. Checkpoint — parser and renderer complete": [
+      {
+        "executionId": "e7660ab0-5374-4687-a8ba-fcff963c85ca",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794807282489
+      }
+    ],
+    "11. Checkpoint — unit tests and property tests complete": [
+      {
+        "executionId": "e7660ab0-5374-4687-a8ba-fcff963c85ca",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794807284560
+      }
     ]
   }
 }
