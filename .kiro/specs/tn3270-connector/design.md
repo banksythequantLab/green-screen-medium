@@ -630,17 +630,19 @@ for row_index, row_tokens in enumerate(data_lines):
 # This derivation happens lazily in Screen.fields (the computed property).
 ```
 
-**`c0` attribute byte decoding** (confirmed against fixtures):
+**`c0` attribute byte decoding** (IBM 3270 Data Stream Programmer's Reference, verified 2026-11-15):
 
-| `c0` hex value | Binary | `protected` (bit 5 / 0x20) | `modified` (bit 0 / 0x01) |
-|---|---|---|---|
-| `c8` | 1100 1000 | `False` (0x20 not set) | `False` |
-| `e0` | 1110 0000 | `True` | `False` |
-| `e8` | 1110 1000 | `True` | `False` |
-| `f0` | 1111 0000 | `True` | `False` |
-| `f8` | 1111 1000 | `True` | `False` |
+| `c0` hex value | Binary | `protected` (0x20) | `numeric` (0x10) | `hidden` (0x0C==0x0C) | `modified` (0x01) |
+|---|---|---|---|---|---|
+| `c8` | 1100 1000 | `False` | `False` | `False` | `False` |
+| `e0` | 1110 0000 | `True` | `False` | `False` | `False` |
+| `e8` | 1110 1000 | `True` | `False` | `False` | `False` |
+| `f0` | 1111 0000 | `True` | `False` | `False` | `False` |
+| `f8` | 1111 1000 | `True` | `False` | `False` | `False` |
 
-`c8` is the logon input field (unprotected); all others are protected headers.
+`c8` is the logon input field (unprotected, not hidden); all others are protected headers. A field attribute byte of `0xFC` (1111 1100) would be protected, numeric, and hidden (password field).
+
+Field construction is performed by a single shared `Screen._build_field(r, c, sf_tok, byte_length, cell_grid, columns)` static method. Both `Screen.fields` and `Screen.find_field` call this helper, ensuring the two code paths cannot drift.
 
 ---
 
@@ -760,10 +762,17 @@ Twelve named attributes corresponding to the 12 space-separated fields that s327
 
 | Attribute | Type | Description |
 |---|---|---|
-| `start_row` | `int` | Zero-origin row of the `SFToken` cell |
-| `start_col` | `int` | Zero-origin column of the `SFToken` cell |
-| `protected` | `bool` | `True` if bit 5 (`0x20`) of `SFToken.c0` is set |
-| `modified` | `bool` | `True` if bit 0 (`0x01`) of `SFToken.c0` is set |
+| `start_row` | `int` | Zero-origin row of the SF token |
+| `start_col` | `int` | Zero-origin col of the SF token |
+| `byte_length` | `int` | Number of data cells following the SF token, up to (not including) the next SF token, wrapping across row boundaries |
+| `protected` | `bool` | `bool(c0 & 0x20)` — field cannot be modified by the operator |
+| `numeric` | `bool` | `bool(c0 & 0x10)` — only numeric input accepted |
+| `hidden` | `bool` | `(c0 & 0x0C) == 0x0C` — non-display / password field |
+| `modified` | `bool` | `bool(c0 & 0x01)` — field has been modified since last read |
+| `c0` | `int` | Raw attribute byte from the SF token (e.g. `0xc8`) |
+| `text` | `str` | Decoded field content, exactly `byte_length` characters |
+
+> **Security — hidden fields:** A `Field` with `hidden=True` has display intensity bits 3 and 2 both set (`c0 & 0x0C == 0x0C`), which is the standard 3270 mechanism for password fields. Every component downstream of `ScreenParser` — the logger, the screen fingerprinter, the flow recorder, the MCP publisher — MUST check `field.hidden` before accessing `field.text`. Hidden field text must never be written to logs, persisted to disk, or transmitted outside the process. Source: IBM 3270 Data Stream Programmer's Reference, field attribute byte bit definitions (verified 2026-11-15).
 
 ### SFToken / SAToken
 

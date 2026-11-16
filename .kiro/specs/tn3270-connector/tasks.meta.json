@@ -12,6 +12,65 @@
         "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
         "timestamp": 1794765770760
       }
+    ],
+    "2.1 Implement `exceptions.py` with the full `ConnectorError` hierarchy": [
+      {
+        "executionId": "79ba9f5f-f3df-48ea-bf4c-d23d3faa412b",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794767749436
+      },
+      {
+        "executionId": "79ba9f5f-f3df-48ea-bf4c-d23d3faa412b",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794767822838
+      }
+    ],
+    "2.2 Implement `models.py` with all data model classes": [
+      {
+        "executionId": "79ba9f5f-f3df-48ea-bf4c-d23d3faa412b",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794767751165
+      },
+      {
+        "executionId": "79ba9f5f-f3df-48ea-bf4c-d23d3faa412b",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794767823027
+      }
+    ],
+    "2. Implement exception hierarchy and core value objects": [
+      {
+        "executionId": "79ba9f5f-f3df-48ea-bf4c-d23d3faa412b",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794767823131
+      }
+    ],
+    "3.1 Implement `_io.py` with `PipeReader`": [
+      {
+        "executionId": "2a717db7-0179-4979-ad5e-74df126b0b3f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797179059
+      }
+    ],
+    "4.1 Implement `parser.py` with `ScreenParser`": [
+      {
+        "executionId": "2a717db7-0179-4979-ad5e-74df126b0b3f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797181132
+      }
+    ],
+    "5.1 Implement `renderer.py` with `ScreenRenderer`": [
+      {
+        "executionId": "2a717db7-0179-4979-ad5e-74df126b0b3f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797183200
+      }
+    ],
+    "7.1 Implement `config.py` with `ConnectorConfig`": [
+      {
+        "executionId": "2a717db7-0179-4979-ad5e-74df126b0b3f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797184976
+      }
     ]
   }
 }

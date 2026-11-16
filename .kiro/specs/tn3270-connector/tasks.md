@@ -14,8 +14,8 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
   - Create `tests/conftest.py` with the session-scoped `host_reachable` fixture (TCP probe to `GS_HOST`:`GS_PORT`, `pytest.skip` on failure)
   - _Requirements: 2.1, 8.1, 10.2, 10.3_
 
-- [ ] 2. Implement exception hierarchy and core value objects
-  - [ ] 2.1 Implement `exceptions.py` with the full `ConnectorError` hierarchy
+- [x] 2. Implement exception hierarchy and core value objects
+  - [x] 2.1 Implement `exceptions.py` with the full `ConnectorError` hierarchy
     - Define `ConnectorError(Exception)` as base
     - Define `ConfigurationError(ConnectorError)` with `.parameter_name: str`
     - Define `S3270Error(ConnectorError)` with `.action: str`, `.data_lines: list[str]`, `.status_line: StatusLine | None`, `.exit_code: int | None`
@@ -24,18 +24,18 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
     - Define `SessionClosedError(ConnectorError)`
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6_
 
-  - [ ] 2.2 Implement `models.py` with all data model classes
+  - [x] 2.2 Implement `models.py` with all data model classes
     - Implement `SFToken(frozen=True)` with `c0: int`
     - Implement `SAToken(frozen=True)` with `value: int`
     - Define `CellValue = Union[int, SFToken]` type alias
     - Implement `StatusLine(frozen=True)` with all 12 named attributes and `serialize() -> str` method
-    - Implement `Field(frozen=True)` with `start_row`, `start_col`, `protected`, `modified`
+    - Implement `Field(frozen=True)` with `start_row`, `start_col`, `byte_length`, `protected`, `numeric`, `hidden`, `modified`, `c0`, `text` (see Requirement 5.3)
     - Implement `Screen` dataclass (not frozen) with `rows`, `columns`, `cursor_row`, `cursor_col`, `cell_grid`, `sa_tokens`, derived `text_grid` property (SFToken and 0x00 → `' '`), derived `fields` property (from SFToken positions, wrapping across rows), `text_at(row, col, length) -> str` (raises `ValueError` on out-of-bounds), `find_field(row, col) -> Field | None`, and `__eq__` defined on `cell_grid` and `sa_tokens` only
     - Implement `Response(frozen=True)` with `success: bool`, `data_lines: list[str]`, `status: StatusLine`
     - _Requirements: 5.2, 5.3, 5.6, 5.7, 5.8, 6.1, 6.2, 6.3, 6.4, 6.5_
 
 - [ ] 3. Implement cross-platform pipe I/O
-  - [ ] 3.1 Implement `_io.py` with `PipeReader`
+  - [-] 3.1 Implement `_io.py` with `PipeReader`
     - Implement `PipeReader.__init__` accepting a binary readable pipe, creating a `queue.Queue[bytes | None]`, and starting the daemon reader thread named `"gs-pipe-reader"`
     - Implement `_reader_loop` to call `readline()` in a loop, stripping `\r\n` with `rstrip(b"\r\n")` before enqueuing, and putting `None` sentinel on EOF
     - Implement `readline(timeout: float) -> bytes` that calls `queue.get(timeout=timeout)`, raises `ConnectorTimeoutError` on `queue.Empty`, and raises `S3270Error` (with `exit_code`) when the `None` sentinel is received
@@ -48,7 +48,7 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
     - _Requirements: 11.4_
 
 - [ ] 4. Implement `ScreenParser`
-  - [ ] 4.1 Implement `parser.py` with `ScreenParser`
+  - [-] 4.1 Implement `parser.py` with `ScreenParser`
     - Implement `parse_status_line(raw: str) -> StatusLine`: split on whitespace, assert exactly 12 tokens, parse integer fields 7–10, raise `ParseError(raw=raw)` on wrong count or non-integer
     - Implement `_escape_s3270_string(text: str) -> str` and `_unescape_s3270_string(escaped: str) -> str` (backslash before double-quote in escape order; for testing only)
     - Implement `_tokenize(data_lines, rows, cols)`: iterate all rows as a flat sequence, classify each token as hex cell (`[0-9a-fA-F]{2}`), `SF(c0=xx)`, or `SA(42=xx)`, advance `col_index` for hex and SF tokens only (SA does not advance), store `SFToken` in `cell_grid`, store `SAToken` in `sa_tokens`, raise `ParseError(raw=token)` on unrecognised tokens
@@ -73,7 +73,7 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
     - **Validates: Requirements 3.2**
 
 - [ ] 5. Implement `ScreenRenderer`
-  - [ ] 5.1 Implement `renderer.py` with `ScreenRenderer`
+  - [-] 5.1 Implement `renderer.py` with `ScreenRenderer`
     - Implement `render(screen: Screen) -> list[str]`: iterate `cell_grid` row by row; before each cell check `sa_tokens[row]` for `SAToken` at that column and emit `SA(42=xx)` first; emit `int` cells as lowercase zero-padded two-digit hex; emit `SFToken` cells as `SF(c0=xx)` using the raw `c0` byte verbatim (never recompute from flags); join tokens per row with single space
     - _Requirements: 9.1, 9.2_
 
@@ -93,7 +93,7 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 7. Implement s3270 string escaping helpers and `ConnectorConfig`
-  - [ ] 7.1 Implement `config.py` with `ConnectorConfig`
+  - [-] 7.1 Implement `config.py` with `ConnectorConfig`
     - Implement `ConnectorConfig` dataclass with `binary`, `host`, `port`, `model`, `default_timeout` fields and `__post_init__` applying env-var fallbacks (`GS_S3270_BINARY`, `GS_HOST`, `GS_PORT`) and `_validate()` raising `ConfigurationError` with `.parameter_name` on missing or out-of-range values
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
@@ -196,7 +196,7 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
     - Test `Screen.text_at` valid range extracts correct substring
     - Test `Screen.text_at` raises `ValueError` for row out-of-range, col out-of-range, length < 1, range exceeding row boundary
     - Test `Screen.find_field` returns correct `Field` for a position inside a field
-    - Test `Screen.find_field` returns `None` for a position between fields
+    - Test `Screen.find_field` returns `None` only for an unformatted screen (no SF tokens); on a formatted screen, assert `find_field` returns a non-None `Field` for every cell position
     - Test `Screen.text_grid` derived property: SFToken cells → `' '`, `0x00` → `' '`, other bytes → `chr(byte)`
     - Test `ScreenRenderer.render` on a minimal screen and verify token format
     - Test `load_fixture` loads `tk5-logo.yaml` and `tk5-logon.yaml` without error
