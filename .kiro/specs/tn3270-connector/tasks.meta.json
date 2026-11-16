@@ -1,5 +1,10 @@
 {
-  "pbtResults": {},
+  "pbtResults": {
+    "7.2 Write property test for s3270 string escaping round-trip (Property 4)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794797552588
+    }
+  },
   "executionHistory": {
     "1. Scaffold package structure and project configuration": [
       {
@@ -90,6 +95,149 @@
         "executionId": "2a717db7-0179-4979-ad5e-74df126b0b3f",
         "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
         "timestamp": 1794797363842
+      }
+    ],
+    "3.2 Write unit tests for `PipeReader`": [
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797463985
+      },
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797730887
+      }
+    ],
+    "4.2 Write property test for `StatusLine` serialize–parse round-trip (Property 3)": [
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797465890
+      },
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797730426
+      }
+    ],
+    "4.3 Write property test for `c0` attribute byte flag correctness (Property 5)": [
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797466378
+      },
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797729995
+      }
+    ],
+    "4.4 Write property test for `data:` prefix stripping (Property 9)": [
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797466828
+      },
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797729562
+      }
+    ],
+    "5.2 Write property test for screen parse→render→parse round-trip (Property 1)": [
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797467281
+      },
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797726731
+      }
+    ],
+    "5.3 Write property test for render-is-left-inverse-of-parse (Property 2)": [
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797467758
+      },
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797727163
+      }
+    ],
+    "7.2 Write property test for s3270 string escaping round-trip (Property 4)": [
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797468016
+      },
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797725320
+      }
+    ],
+    "9.1 Implement `testing/fake.py` with `FakeS3270`": [
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797468450
+      },
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797725704
+      }
+    ],
+    "9.2 Implement `testing/fixtures.py` and YAML fixture files": [
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797468793
+      },
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797726217
+      }
+    ],
+    "7. Implement s3270 string escaping helpers and `ConnectorConfig`": [
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797725515
+      }
+    ],
+    "9. Implement testing harness": [
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797726337
+      }
+    ],
+    "5. Implement `ScreenRenderer`": [
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797727279
+      }
+    ],
+    "4. Implement `ScreenParser`": [
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797730505
+      }
+    ],
+    "3. Implement cross-platform pipe I/O": [
+      {
+        "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794797730982
       }
     ]
   }
