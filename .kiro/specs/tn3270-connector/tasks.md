@@ -35,7 +35,7 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
     - _Requirements: 5.2, 5.3, 5.6, 5.7, 5.8, 6.1, 6.2, 6.3, 6.4, 6.5_
 
 - [ ] 3. Implement cross-platform pipe I/O
-  - [-] 3.1 Implement `_io.py` with `PipeReader`
+  - [x] 3.1 Implement `_io.py` with `PipeReader`
     - Implement `PipeReader.__init__` accepting a binary readable pipe, creating a `queue.Queue[bytes | None]`, and starting the daemon reader thread named `"gs-pipe-reader"`
     - Implement `_reader_loop` to call `readline()` in a loop, stripping `\r\n` with `rstrip(b"\r\n")` before enqueuing, and putting `None` sentinel on EOF
     - Implement `readline(timeout: float) -> bytes` that calls `queue.get(timeout=timeout)`, raises `ConnectorTimeoutError` on `queue.Empty`, and raises `S3270Error` (with `exit_code`) when the `None` sentinel is received
@@ -48,7 +48,7 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
     - _Requirements: 11.4_
 
 - [ ] 4. Implement `ScreenParser`
-  - [-] 4.1 Implement `parser.py` with `ScreenParser`
+  - [x] 4.1 Implement `parser.py` with `ScreenParser`
     - Implement `parse_status_line(raw: str) -> StatusLine`: split on whitespace, assert exactly 12 tokens, parse integer fields 7–10, raise `ParseError(raw=raw)` on wrong count or non-integer
     - Implement `_escape_s3270_string(text: str) -> str` and `_unescape_s3270_string(escaped: str) -> str` (backslash before double-quote in escape order; for testing only)
     - Implement `_tokenize(data_lines, rows, cols)`: iterate all rows as a flat sequence, classify each token as hex cell (`[0-9a-fA-F]{2}`), `SF(c0=xx)`, or `SA(42=xx)`, advance `col_index` for hex and SF tokens only (SA does not advance), store `SFToken` in `cell_grid`, store `SAToken` in `sa_tokens`, raise `ParseError(raw=token)` on unrecognised tokens
@@ -73,7 +73,7 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
     - **Validates: Requirements 3.2**
 
 - [ ] 5. Implement `ScreenRenderer`
-  - [-] 5.1 Implement `renderer.py` with `ScreenRenderer`
+  - [x] 5.1 Implement `renderer.py` with `ScreenRenderer`
     - Implement `render(screen: Screen) -> list[str]`: iterate `cell_grid` row by row; before each cell check `sa_tokens[row]` for `SAToken` at that column and emit `SA(42=xx)` first; emit `int` cells as lowercase zero-padded two-digit hex; emit `SFToken` cells as `SF(c0=xx)` using the raw `c0` byte verbatim (never recompute from flags); join tokens per row with single space
     - _Requirements: 9.1, 9.2_
 
@@ -93,7 +93,7 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 7. Implement s3270 string escaping helpers and `ConnectorConfig`
-  - [-] 7.1 Implement `config.py` with `ConnectorConfig`
+  - [x] 7.1 Implement `config.py` with `ConnectorConfig`
     - Implement `ConnectorConfig` dataclass with `binary`, `host`, `port`, `model`, `default_timeout` fields and `__post_init__` applying env-var fallbacks (`GS_S3270_BINARY`, `GS_HOST`, `GS_PORT`) and `_validate()` raising `ConfigurationError` with `.parameter_name` on missing or out-of-range values
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
