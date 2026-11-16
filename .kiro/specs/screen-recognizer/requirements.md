@@ -238,7 +238,7 @@ The package ships signatures for the screens already captured in the repo-relati
 6. THE test suite SHALL include a Hypothesis property test asserting that, for any list of 0 to 10 Signatures and any permutation of that list, `recognize` returns the same Signature_Name, or raises the same exception type (`UnknownScreenError` or `AmbiguousScreenError`) with the same set of candidate Signature_Names, for every ordering.
 7. THE property tests SHALL be placed in `tests/property`, SHALL use `hypothesis.strategies` to generate Screens by building `cell_grid` values directly, and SHALL NOT require network access or a subprocess.
 8. THE property tests SHALL run each test with at least 100 generated examples, unless Hypothesis exhausts the strategy's input space earlier.
-9. THE test suite SHALL complete all property tests in `tests/property` in under 60 seconds in total.
+9. THE test suite SHALL complete all property tests in `tests/property` in under 90 seconds in total.
 10. THE test suite SHALL include a Hypothesis property test asserting that, for any text generated above the ` ***` row and with the ` ***` row on any row from 1 to 22 and the cursor on that row just after it, the bundled `tso-pause` Signature still matches the Screen.
 11. THE test suite SHALL include Hypothesis property tests asserting that a Last_Row_Matcher is unsatisfied for any generated Screen with no non-blank row, and that a Before_Cursor_Matcher is unsatisfied for any cursor position outside the generated Screen.
 

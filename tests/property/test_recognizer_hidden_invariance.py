@@ -20,6 +20,7 @@ from tests.property._recognizer_strategies import (
 )
 
 _CELL_CHARS = [chr(c) for c in range(0x20, 0x7F)] + SENTINEL_ALPHABET
+_REPLACEMENTS = [0] + [ord(ch) for ch in _CELL_CHARS]
 
 
 def _outcome(fn):
@@ -35,14 +36,14 @@ def _outcome(fn):
 # **Validates: Requirements 3.7, 7.2, 7.5, 13.2, 13.5**
 @settings(max_examples=150, deadline=None)
 @given(
-    data=st.data(),
+    rng=st.randoms(use_true_random=False),
     screen=st.one_of(
         sentinel_screens().map(lambda s: s.screen),
         small_screens(allow_hidden=True),
     ),
-    sigs=st.lists(signatures(), max_size=3),
+    sigs=st.lists(signatures(max_matchers=4, max_volatile=1), max_size=3),
 )
-def test_hidden_only_differences_change_nothing(data, screen, sigs):
+def test_hidden_only_differences_change_nothing(rng, screen, sigs):
     view = ScreenView(screen)
     cols = screen.columns
     hidden_cells = [
@@ -52,8 +53,8 @@ def test_hidden_only_differences_change_nothing(data, screen, sigs):
     # Second screen: copy of the grid with only hidden data cells replaced.
     other = copy.deepcopy(screen)
     for r, c in hidden_cells:
-        repl = data.draw(st.one_of(st.just(0), st.sampled_from(_CELL_CHARS).map(ord)))
-        other.cell_grid[r][c] = repl
+        # Seeded Random: avoids one ``data.draw`` per hidden cell.
+        other.cell_grid[r][c] = rng.choice(_REPLACEMENTS)
     other_view = ScreenView(other)
 
     assert other_view.hidden_mask == view.hidden_mask

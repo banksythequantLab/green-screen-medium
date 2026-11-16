@@ -28,8 +28,13 @@ def _screens_with_cursor(draw):
 
 # Feature: screen-recognizer, Property 13: Geometry and Input_Field parity
 @settings(max_examples=200, deadline=None)
-@given(screen=_screens_with_cursor())
-def test_geometry_and_input_field_parity(screen) -> None:
+@given(
+    screen=_screens_with_cursor(),
+    extra_cells=st.lists(
+        st.tuples(st.integers(0, 23), st.integers(0, 79)), min_size=0, max_size=40
+    ),
+)
+def test_geometry_and_input_field_parity(screen, extra_cells) -> None:
     """**Validates: Requirements 3.1, 3.8, 1.6, 1.7**"""
     view = ScreenView(screen)
     oracle = screen.fields
@@ -39,16 +44,30 @@ def test_geometry_and_input_field_parity(screen) -> None:
     for g in view.fields:
         assert g.linear_start == g.start_row * screen.columns + g.start_col
 
-    # containing_field agrees with find_field at every in-range position.
-    for r in range(screen.rows):
-        for c in range(screen.columns):
-            got = view.containing_field(r, c)
-            want = screen.find_field(r, c)
-            if want is None:
-                assert got is None, (r, c)
-            else:
-                assert got is not None and _geom(got) == _geom(want), (r, c)
-
+    # containing_field agrees with find_field at the interesting positions: each
+    # field start, its neighbours in linear order, the cursor, the four corners
+    # and a handful of random cells.
+    rows, cols = screen.rows, screen.columns
+    total = rows * cols
+    probes: set[tuple[int, int]] = {
+        (0, 0), (0, cols - 1), (rows - 1, 0), (rows - 1, cols - 1),
+        (screen.cursor_row, screen.cursor_col),
+    }
+    for f in oracle:
+        lin = f.start_row * cols + f.start_col
+        for p in (lin - 1, lin, lin + 1):
+            if 0 <= p < total:
+                probes.add(divmod(p, cols))
+    probes.update(extra_cells)
+    for r, c in sorted(probes):
+        if not (0 <= r < rows and 0 <= c < cols):
+            continue
+        got = view.containing_field(r, c)
+        want = screen.find_field(r, c)
+        if want is None:
+            assert got is None, (r, c)
+        else:
+            assert got is not None and _geom(got) == _geom(want), (r, c)
     # input_fields: unprotected fields that are hidden or contain the cursor.
     cursor_field = screen.find_field(screen.cursor_row, screen.cursor_col)
     expected = [

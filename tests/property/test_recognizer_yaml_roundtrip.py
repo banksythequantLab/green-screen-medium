@@ -31,6 +31,15 @@ def _text(min_size: int, max_size: int) -> st.SearchStrategy[str]:
 
 
 _NONEMPTY = _text(1, 40)
+_DESCRIPTION = _text(0, 100)
+_NAME = st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-", min_size=1, max_size=64)
+_VOLATILE = st.builds(
+    VolatileRegion,
+    row=st.integers(100, 120),
+    col=st.integers(0, 100),
+    length=st.integers(1, 50),
+)
+_POSITIONS = st.lists(st.tuples(st.integers(0, 255), st.integers(0, 255)), max_size=5)
 _ROW = st.integers(0, 23)
 _COL = st.integers(0, 100)
 
@@ -43,7 +52,7 @@ def _matcher(draw):
     if kind == 1:
         return RowContainsMatcher(row=draw(_ROW), text=draw(_NONEMPTY))
     if kind == 2:
-        ps = tuple(draw(st.lists(st.tuples(st.integers(0, 255), st.integers(0, 255)), max_size=5)))
+        ps = tuple(draw(_POSITIONS))
         return FieldLayoutMatcher(count=len(ps), positions=ps)
     if kind == 3:
         return CursorFieldMatcher(row=draw(_ROW), col=draw(_COL), hidden=draw(st.booleans()))
@@ -63,19 +72,9 @@ def _matcher(draw):
 def _signature(draw):
     ms = draw(st.lists(_matcher(), min_size=1, max_size=8))
     # Volatile rows 100..120 never share a row with a matcher rectangle (rows 0..23).
-    vs = draw(
-        st.lists(
-            st.builds(
-                VolatileRegion,
-                row=st.integers(100, 120),
-                col=st.integers(0, 100),
-                length=st.integers(1, 50),
-            ),
-            max_size=3,
-        )
-    )
-    name = draw(st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-", min_size=1, max_size=64))
-    description = draw(_text(0, 100))
+    vs = draw(st.lists(_VOLATILE, max_size=3))
+    name = draw(_NAME)
+    description = draw(_DESCRIPTION)
     return ScreenSignature(name=name, matchers=tuple(ms), volatile=tuple(vs), description=description)
 
 

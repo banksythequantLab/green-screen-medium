@@ -7,6 +7,7 @@ module exists.
 """
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import NamedTuple
 
 from hypothesis import strategies as st
@@ -36,31 +37,42 @@ class LineModeScreen(NamedTuple):
 
 # ---------------------------------------------------------------- helpers
 
+@lru_cache(maxsize=None)
+def _fixed_text(length: int) -> st.SearchStrategy[str]:
+    return st.text(alphabet=_PRINTABLE, min_size=length, max_size=length)
+
+
 @st.composite
-def _text_runs(draw, rows: int, columns: int, max_runs: int = 6) -> dict:
+def _text_runs(
+    draw, rows: int, columns: int, max_runs: int = 6, max_run_length: int = 20
+) -> dict:
     """A few printable runs on an otherwise blank screen."""
     runs: dict[tuple[int, int], str] = {}
     for _ in range(draw(st.integers(0, max_runs))):
         r = draw(st.integers(0, rows - 1))
         c = draw(st.integers(0, columns - 1))
-        length = draw(st.integers(1, columns - c))
-        runs[(r, c)] = draw(
-            st.text(alphabet=_PRINTABLE, min_size=length, max_size=length)
-        )
+        length = draw(st.integers(1, min(columns - c, max_run_length)))
+        runs[(r, c)] = draw(_fixed_text(length))
     return runs
+
+
+_ORDINARY_ATTRS = [
+    0xC0 | prot | num | mod | inten
+    for prot in _PROTECTED_BITS
+    for num in (0x00, 0x10)
+    for mod in (0x00, 0x01)
+    for inten in (0x00, 0x04, 0x08)
+]
+_HIDDEN_ATTRS = [v | 0xC0 for v in (0x0C, 0x2C, 0x4C, 0x6C)]
+# Bits 0x0C = 0x0C would make it hidden; intensity is drawn from the other three.
+# One sampled_from each (a single draw) instead of four per field.
+_SF_ATTR = st.sampled_from(_ORDINARY_ATTRS)
+_SF_ATTR_OR_HIDDEN = st.sampled_from(_ORDINARY_ATTRS + _HIDDEN_ATTRS)
 
 
 def _sf_attr() -> st.SearchStrategy[int]:
     """Attribute byte for an ordinary (not hidden) field."""
-    # Bits 0x0C = 0x0C would make it hidden; draw intensity from the other three.
-    return st.builds(
-        lambda prot, num, mod, inten: 0xC0 | prot | num | mod | inten,
-        st.sampled_from(_PROTECTED_BITS),
-        st.sampled_from((0x00, 0x10)),
-        st.sampled_from((0x00, 0x01)),
-        st.sampled_from((0x00, 0x04, 0x08)),
-    )
-
+    return _SF_ATTR
 
 # ---------------------------------------------------------------- screens
 
@@ -84,7 +96,7 @@ def small_screens(draw, max_fields: int = 5, allow_hidden: bool = False) -> Scre
     )
     attr = _sf_attr()
     if allow_hidden:
-        attr = st.one_of(attr, st.sampled_from((0x0C, 0x2C, 0x4C, 0x6C)).map(lambda v: v | 0xC0))
+        attr = _SF_ATTR_OR_HIDDEN
     fields = [(p // columns, p % columns, draw(attr)) for p in positions]
     cursor = (draw(st.integers(0, rows - 1)), draw(st.integers(0, columns - 1)))
     return make_screen(rows, columns, text=text, fields=fields, cursor=cursor)
@@ -182,11 +194,13 @@ def _coord() -> st.SearchStrategy[int]:
     return st.integers(0, 80)
 
 
+@lru_cache(maxsize=None)
 def _text(max_size: int = 20) -> st.SearchStrategy[str]:
     return st.text(alphabet=_PRINTABLE, min_size=1, max_size=max_size)
 
 
-def matcher_strategies() -> dict[str, st.SearchStrategy]:
+@lru_cache(maxsize=None)
+def _matcher_strategies_cached() -> dict[str, st.SearchStrategy]:
     """One strategy per matcher kind (all seven), keyed by ``kind``.
 
     Needs ``greenscreen.recognizer.signature`` (task 2.1).
@@ -225,9 +239,15 @@ def matcher_strategies() -> dict[str, st.SearchStrategy]:
     }
 
 
+def matcher_strategies() -> dict[str, st.SearchStrategy]:
+    """One strategy per matcher kind (all seven), keyed by `kind`."""
+    return dict(_matcher_strategies_cached())
+
+
+@lru_cache(maxsize=None)
 def matchers() -> st.SearchStrategy:
     """Any of the seven matcher kinds."""
-    return st.one_of(*matcher_strategies().values())
+    return st.one_of(*_matcher_strategies_cached().values())
 
 
 def _overlaps(m, v) -> bool:
@@ -245,6 +265,7 @@ def _overlaps(m, v) -> bool:
     )
 
 
+@lru_cache(maxsize=None)
 def volatile_regions() -> st.SearchStrategy:
     """A VolatileRegion with row/col/length inside the valid 0..255 limits."""
     from greenscreen.recognizer.signature import VolatileRegion

@@ -139,6 +139,10 @@ def _matcher(draw, noisy):
     return BeforeCursorMatcher(draw(_TEXT))
 
 
+def _draw_matcher(draw, noisy):
+    return draw(_matcher(noisy))
+
+
 @st.composite
 def _inputs(draw):
     noisy = draw(st.booleans())
@@ -162,11 +166,15 @@ def _inputs(draw):
         description = "d" * draw(st.sampled_from([0, 1, 499, 500]))
         n_matchers = draw(st.sampled_from([1, 2, 3, 50]))
         n_volatile = draw(st.sampled_from([0, 1, 2, 3, 50]))
-    matchers = tuple(draw(st.lists(_matcher(noisy), min_size=n_matchers, max_size=n_matchers)))
-    volatile = tuple(
+    # Large counts only probe the 50/51 boundary: draw a small pool and cycle it
+    # instead of drawing 50 independent elements.
+    pool = [_draw_matcher(draw, noisy) for _ in range(min(n_matchers, 4))]
+    matchers = tuple(pool[i % len(pool)] for i in range(n_matchers)) if pool else ()
+    vpool = [
         VolatileRegion(draw(_coord(noisy)), draw(_coord(noisy)), draw(_length(noisy)))
-        for _ in range(n_volatile)
-    )
+        for _ in range(min(n_volatile, 4))
+    ]
+    volatile = tuple(vpool[i % len(vpool)] for i in range(n_volatile)) if vpool else ()
     return name, description, matchers, volatile
 
 

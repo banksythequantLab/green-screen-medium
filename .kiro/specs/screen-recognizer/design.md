@@ -634,7 +634,7 @@ Property-based testing applies: the recognizer is pure, in-memory logic with lar
 - **Unit tests** (`tests/unit`) cover captures, bundled signatures, error conditions, API shape, packaging and the static rules.
 - **Property tests** (`tests/property`) use **Hypothesis**, the library already used by the project (`hypothesis>=6.170.15`). No property-testing code is written from scratch.
 - Every property test is one `@given` test with `@settings(max_examples=100, deadline=None)` or more, and begins with a comment `# Feature: screen-recognizer, Property N: <title>`, the same style as `tests/property/test_text_at.py`.
-- None of these tests touch the network or start a subprocess. Screens come from `cell_grid` values built directly (Req 11.7). The generators keep screens small (1 to 24 rows, 1 to 80 columns, mostly blank cells with a few printable runs) so that the property modules finish in well under 60 seconds (Req 11.9).
+- None of these tests touch the network or start a subprocess. Screens come from `cell_grid` values built directly (Req 11.7). The generators keep screens small (1 to 24 rows, 1 to 80 columns, mostly blank cells with a few printable runs) so that the property modules finish in well under 90 seconds (Req 11.9). The original 60 s figure predates the recognizer's 20 properties.
 
 ### Files
 

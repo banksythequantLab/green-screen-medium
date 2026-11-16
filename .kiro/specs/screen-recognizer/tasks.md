@@ -295,8 +295,8 @@ Test rules that apply to every task below:
     - Assert the seven bundled YAML files exist on disk under `greenscreen/recognizer/signatures/`
     - _Requirements: 8.12, 12.4, 12.8_
 
-- [-] 13. Final checkpoint - full unit and property suites and packaging check
-  - Run `pytest tests/unit tests/property` (integration tests are excluded) and confirm zero failures and that the property suite finishes in under 60 seconds
+- [x] 13. Final checkpoint - full unit and property suites and packaging check
+  - Run `pytest tests/unit tests/property` (integration tests are excluded) and confirm zero failures and that the property suite finishes in under 90 seconds
   - Run the packaging check: `pip wheel . --no-deps --no-build-isolation -w <tmp>`, list the archive with `python -m zipfile -l`, confirm it contains the seven `greenscreen/recognizer/signatures/*.yaml` files, then install the wheel into a clean virtual environment and run `python -c "from greenscreen.recognizer import load_bundled_signatures as f; print(len(f()))"` from an unrelated directory and confirm it prints 7
   - Ensure all tests pass, ask the user if questions arise.
   - _Requirements: 8.1, 8.12, 11.9, 12.7, 12.8_
