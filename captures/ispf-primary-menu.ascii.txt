@@ -1,0 +1,26 @@
+data:                             ISPF primary option menu                            
+data:  Option  ===>                                                                   
+data:                                                             USERID   : HERC01   
+data:     0  ISPF PARMS    Specify terminal and user parms        TIME     : 04:09    
+data:     1  BROWSE        Display source data using Review       TERMINAL : 3277     
+data:     2  EDIT          Change source data using Revedit       PF KEYS  : 0012     
+data:     R  RPF           Browse, EDIT, Reset, PDS with RPF      PANEL    : ISP@PRIM 
+data:     3  UTILITIES     Perform utility functions              SCREEN   : 1        
+data:     4  FOREGROUND    Invoke language processors             LANGUAGE : ENGLISH  
+data:     5  BATCH         Submit job for language processing     APPL ID  : ISP      
+data:     6  COMMAND       Enter TSO command or CLIST             RELEASE  : V2.2.000 
+data:     7  DIALOG TEST   Perform dialog testing                 PRIM     : YES      
+data:     C  CHANGES       Summary of changes for this release    SYSTEMID : TK5R     
+data:     M  TSOAPPLS      Productivity tools and handy apps      PROC     : ISPLOGON 
+data:     T  TUTORIAL      Display information about ISPF                             
+data:     T1 TK5           Summary of changes made in TK5                             
+data:     X  EXIT          Terminate ISPF using log and list defaults                 
+data:                                                                                 
+data:  Enter END command to terminate ISPF.                                           
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+U F U C(127.0.0.1) I 2 24 80 1 14 0x0 0.000
+ok

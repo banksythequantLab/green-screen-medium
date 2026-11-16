@@ -28,8 +28,7 @@ code depends on them.
   unread output is lost. Always end a session with `Disconnect()` and `Quit()`.
 
 ## Not yet verified
-- Logging in to TSO with a stock TK5 account and reaching a READY prompt.
-- Which transaction will be the demo story (inquiry plus update).
+- Which ISPF/TSO transaction will be the demo story (inquiry plus update).
 - 5250 (AS/400) support. Out of scope until the 3270 path works end to end.
 
 ## Rules for tests
@@ -56,3 +55,41 @@ code depends on them.
 - SA tokens do NOT occupy a cell (settled by counting the captures): every row
   in both ReadBuffer captures has exactly 80 non-SA tokens, including the 13
   logon rows that carry SA tokens (up to 88 tokens in a row). Hex is lowercase.
+
+## Verified 2026-11-15: TSO logon flow (captures: tso-password-prompt, ispf-primary-menu)
+- Flow that works: Connect, wait for the logon screen (see GOTCHA), type the userid at
+  `Logon ===>`, Enter, then the line-mode prompt `ENTER CURRENT PASSWORD FOR
+  <userid>-` appears, type the password, Enter, then two `***` pauses (press
+  Enter at each), then the full-screen `ISPF primary option menu`.
+- Credentials are the stock TK5 demo account. They come only from the
+  TK5_USERNAME / TK5_PASSWORD environment variables; never write them in code,
+  fixtures or logs.
+- The password prompt has a hidden input field: `SF(c0=cc)` at row 1 col 0,
+  cursor at row 1 col 1. `Field.hidden` is True for it on real data.
+- In TSO line mode the prompt TEXT itself sits in an unprotected field (c8).
+  "Unprotected" does not mean "the input field"; use the cursor position and
+  the hidden flag as well.
+- ISPF primary menu: 84 fields, 63 SA tokens, exactly one unprotected field
+  (`Option ===>`, row 1 col 13). It shows the time of day, so fingerprints
+  must ignore that cell range.
+- GOTCHA: `Wait(N,Output)` returns on the FIRST screen update, which is often
+  a blank or partial screen. After Enter, poll the screen until the expected
+  text appears (or a timeout); never assume one Wait means the screen is ready.
+- GOTCHA (corrected after live runs through the Connector): after Connect the
+  host sometimes replaces the Hercules logo with the logon screen by itself
+  within a second, and sometimes leaves the logo up until Enter is pressed.
+  Never press Enter blindly. Poll for `Logon ===>` first; press Enter only if
+  the logo is still showing after a few seconds. An Enter with nothing typed on
+  the logon screen produces a screen containing only `INPUT NOT RECOGNIZED`.
+  How to get from that screen back to the logon screen is NOT yet verified.
+- A logon abandoned midway can also leave `IKJ56700A ENTER USERID -` showing
+  on the next connection; typing the userid there continues the logon.
+- Disconnecting while logged on ends the TSO session on this host (the log
+  shows the user ENDED and PURGED within seconds). A clean exit is still
+  preferred: ISPF option X, then LOGOFF at READY.
+- Clean exit verified through the Connector: type X at `Option ===>`, Enter,
+  wait for `READY`, type LOGOFF, Enter; the logon screen returns and the host
+  log shows `LOGGED OFF`. Whole logon-to-logoff run took under 6 seconds.
+- Verified on ws3270 4.5 against the live host: `Wait(1,Output)` and
+  `Wait(1.5,Output)` are both accepted; on an idle screen the error text is
+  `Wait(output): Timed out`. s3270 4.3 on Linux is still to be checked.
