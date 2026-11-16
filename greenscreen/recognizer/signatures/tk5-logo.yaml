@@ -1,0 +1,21 @@
+version: 1
+name: tk5-logo
+description: TK5 Hercules splash screen with the MVS 3.8j banner.
+matchers:
+- kind: text_at
+  row: 0
+  col: 1
+  text: 'Hercules Version  :'
+- kind: row_contains
+  row: 16
+  text: The MVS 3.8j
+- kind: row_contains
+  row: 17
+  text: Tur(n)key System
+- kind: row_contains
+  row: 23
+  text: see SYS2.JCLLIB(CREDITS) for complete credits
+- kind: field_layout
+  count: 0
+  positions: []
+volatile: []

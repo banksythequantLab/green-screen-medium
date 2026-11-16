@@ -25,6 +25,7 @@ include = ["greenscreen*"]
 
 [tool.setuptools.package-data]
 "greenscreen.connector.testing" = ["fixtures/*.yaml"]
+"greenscreen.recognizer.signatures" = ["*.yaml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

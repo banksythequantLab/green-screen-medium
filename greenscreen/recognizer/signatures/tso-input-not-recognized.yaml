@@ -1,0 +1,11 @@
+version: 1
+name: tso-input-not-recognized
+description: Line-mode message shown when the logon input is not recognized.
+matchers:
+- kind: text_at
+  row: 3
+  col: 0
+  text: INPUT NOT RECOGNIZED
+- kind: last_row
+  text: INPUT NOT RECOGNIZED
+volatile: []

@@ -1,0 +1,32 @@
+version: 1
+name: tk5-logon
+description: TK5 logon screen with the date and time values ignored.
+matchers:
+- kind: text_at
+  row: 22
+  col: 0
+  text: Logon ===>
+- kind: text_at
+  row: 0
+  col: 66
+  text: Date
+- kind: text_at
+  row: 1
+  col: 66
+  text: Time
+- kind: field_layout
+  count: 1
+  positions:
+  - row: 22
+    col: 10
+- kind: cursor_field
+  row: 22
+  col: 10
+  hidden: false
+volatile:
+- row: 0
+  col: 72
+  length: 8
+- row: 1
+  col: 72
+  length: 8

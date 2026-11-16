@@ -1,0 +1,25 @@
+version: 1
+name: ispf-primary-menu
+description: ISPF primary option menu with the clock ignored.
+matchers:
+- kind: text_at
+  row: 0
+  col: 28
+  text: ISPF primary option menu
+- kind: text_at
+  row: 1
+  col: 1
+  text: Option  ===>
+- kind: field_layout
+  count: 1
+  positions:
+  - row: 1
+    col: 13
+- kind: cursor_field
+  row: 1
+  col: 13
+  hidden: false
+volatile:
+- row: 3
+  col: 71
+  length: 5

@@ -1,0 +1,7 @@
+version: 1
+name: tso-ready
+description: TSO line-mode READY prompt.
+matchers:
+- kind: last_row
+  text: ' READY'
+volatile: []

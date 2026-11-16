@@ -1,0 +1,9 @@
+version: 1
+name: tso-pause
+description: TSO line-mode pause screen waiting at the *** prompt.
+matchers:
+- kind: last_row
+  text: ' ***'
+- kind: before_cursor
+  text: ' ***'
+volatile: []

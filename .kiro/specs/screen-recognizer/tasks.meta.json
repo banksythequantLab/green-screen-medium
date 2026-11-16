@@ -1,0 +1,717 @@
+{
+  "pbtResults": {
+    "2.3 Write property test for signature validation (Property 14)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794848548219
+    },
+    "7.3 Write property test for the YAML round trip (Property 6)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794850589081
+    },
+    "3.3 Write property test for geometry and Input_Field parity (Property 13)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794850617754
+    },
+    "4.4 Write property test for out-of-screen addressing (Property 11)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794851002557
+    },
+    "4.3 Write property test for matchers against a direct model (Property 10)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794851012781
+    },
+    "6.4 Write property test for the redacted summary (Property 15)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794851201103
+    },
+    "6.6 Write property test for order and iterator independence (Property 7)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794851205562
+    },
+    "8.5 Write property test for one-cell mutation (Property 3)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794851286838
+    },
+    "8.4 Write property test for volatile content (Property 2)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794851290672
+    },
+    "6.7 Write property test for exceptions holding no Screen reference (Property 19)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794851784032
+    },
+    "10.1 Write property test for hidden content in output (Property 4)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794852338039
+    },
+    "8.6 Write property test for suggested signature structure (Property 17)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794852347007
+    },
+    "10.3 Write property test for hidden-only differences (Property 20)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794852351380
+    },
+    "10.2 Write property test for residual hidden content on non-password screens (Property 5)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794852426839
+    },
+    "11.5 Write property test for `tso-pause` position independence (Property 8)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794852578933
+    }
+  },
+  "executionHistory": {
+    "1.1 Create the package skeleton, `errors.py` and the package-data entry": [
+      {
+        "executionId": "fbc1b7ff-8d23-453a-bdc1-96f4fc40a6ce",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794846610965
+      },
+      {
+        "executionId": "fbc1b7ff-8d23-453a-bdc1-96f4fc40a6ce",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848277059
+      }
+    ],
+    "1.2 Create test support modules": [
+      {
+        "executionId": "fbc1b7ff-8d23-453a-bdc1-96f4fc40a6ce",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794846611220
+      },
+      {
+        "executionId": "fbc1b7ff-8d23-453a-bdc1-96f4fc40a6ce",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848277282
+      }
+    ],
+    "1.3 Write the capture inventory test": [
+      {
+        "executionId": "fbc1b7ff-8d23-453a-bdc1-96f4fc40a6ce",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848279437
+      },
+      {
+        "executionId": "fbc1b7ff-8d23-453a-bdc1-96f4fc40a6ce",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848468316
+      }
+    ],
+    "1.4 Write the capture facts test": [
+      {
+        "executionId": "fbc1b7ff-8d23-453a-bdc1-96f4fc40a6ce",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848280129
+      },
+      {
+        "executionId": "fbc1b7ff-8d23-453a-bdc1-96f4fc40a6ce",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848469094
+      }
+    ],
+    "2.1 Implement `signature.py`": [
+      {
+        "executionId": "fbc1b7ff-8d23-453a-bdc1-96f4fc40a6ce",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848280353
+      },
+      {
+        "executionId": "fbc1b7ff-8d23-453a-bdc1-96f4fc40a6ce",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848469523
+      }
+    ],
+    "1. Scaffold package, packaging entry and test support": [
+      {
+        "executionId": "fbc1b7ff-8d23-453a-bdc1-96f4fc40a6ce",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848469282
+      }
+    ],
+    "2.2 Write unit tests for signature validation": [
+      {
+        "executionId": "fbc1b7ff-8d23-453a-bdc1-96f4fc40a6ce",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848471835
+      },
+      {
+        "executionId": "fbc1b7ff-8d23-453a-bdc1-96f4fc40a6ce",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848727098
+      }
+    ],
+    "2.3 Write property test for signature validation (Property 14)": [
+      {
+        "executionId": "fbc1b7ff-8d23-453a-bdc1-96f4fc40a6ce",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848472480
+      },
+      {
+        "executionId": "fbc1b7ff-8d23-453a-bdc1-96f4fc40a6ce",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848727514
+      }
+    ],
+    "3.1 Implement `view.py`": [
+      {
+        "executionId": "fbc1b7ff-8d23-453a-bdc1-96f4fc40a6ce",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848473149
+      },
+      {
+        "executionId": "fbc1b7ff-8d23-453a-bdc1-96f4fc40a6ce",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848728252
+      }
+    ],
+    "7.1 Implement `yamlio.py`": [
+      {
+        "executionId": "fbc1b7ff-8d23-453a-bdc1-96f4fc40a6ce",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848473449
+      },
+      {
+        "executionId": "fbc1b7ff-8d23-453a-bdc1-96f4fc40a6ce",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848728630
+      }
+    ],
+    "2. Implement the signature model and validation": [
+      {
+        "executionId": "fbc1b7ff-8d23-453a-bdc1-96f4fc40a6ce",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848727778
+      }
+    ],
+    "4.1 Implement `matching.py`": [
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848829220
+      },
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794850329757
+      }
+    ],
+    "6.1 Implement `summary.py`": [
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848829547
+      },
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794850329561
+      }
+    ],
+    "8.1 Implement `suggest.py`": [
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848829802
+      },
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794850329097
+      }
+    ],
+    "11.1 Create the seven bundled YAML files and `bundled.py`": [
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848830031
+      },
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794850329336
+      }
+    ],
+    "3.2 Write unit tests for `ScreenView` on the captures": [
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794848830292
+      },
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794850328859
+      }
+    ],
+    "3.3 Write property test for geometry and Input_Field parity (Property 13)": [
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794850334055
+      },
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794850899681
+      }
+    ],
+    "3.4 Write property test for Visible_Text construction (Property 12)": [
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794850334277
+      },
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794850900056
+      }
+    ],
+    "7.2 Write unit tests for YAML loading and emission": [
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794850334473
+      },
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794850900399
+      }
+    ],
+    "7.3 Write property test for the YAML round trip (Property 6)": [
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794850334963
+      },
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794850900723
+      }
+    ],
+    "7.4 Write property test for load errors that never echo scalars (Property 18)": [
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794850335337
+      },
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794850900980
+      }
+    ],
+    "3. Implement `ScreenView`": [
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794850900182
+      }
+    ],
+    "7. Implement YAML serialization": [
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794850901103
+      }
+    ],
+    "4.2 Write unit tests for every matcher kind": [
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794850903642
+      },
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851027606
+      }
+    ],
+    "4.3 Write property test for matchers against a direct model (Property 10)": [
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794850903997
+      },
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851028016
+      }
+    ],
+    "4.4 Write property test for out-of-screen addressing (Property 11)": [
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794850905004
+      },
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851028328
+      }
+    ],
+    "4.5 Write property test for `last_row` and `before_cursor` unsatisfied cases (Property 9)": [
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794850905344
+      },
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851028566
+      }
+    ],
+    "6.2 Implement `recognizer.py`": [
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794850905755
+      },
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851029090
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851800533
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852441481
+      }
+    ],
+    "4. Implement matching": [
+      {
+        "executionId": "efb0614c-6aed-43cb-b799-fbf689977f9e",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851028808
+      }
+    ],
+    "12.1 Populate `greenscreen/recognizer/__init__.py`": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851133000
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851217868
+      }
+    ],
+    "6.3 Write unit tests for `recognize`": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851133363
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851218241
+      }
+    ],
+    "6.4 Write property test for the redacted summary (Property 15)": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851133646
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851218479
+      }
+    ],
+    "6.5 Write property test for recognition outcomes and messages (Property 16)": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851134033
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851218716
+      }
+    ],
+    "6.6 Write property test for order and iterator independence (Property 7)": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851134728
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851219170
+      }
+    ],
+    "6.7 Write property test for exceptions holding no Screen reference (Property 19)": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851221773
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852623024
+      }
+    ],
+    "8.2 Write unit tests for `suggest_signature`": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851222422
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851799276
+      }
+    ],
+    "8.3 Write property test for suggest then recognize (Property 1)": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851223133
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851799639
+      }
+    ],
+    "8.4 Write property test for volatile content (Property 2)": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851223789
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851799924
+      }
+    ],
+    "8.5 Write property test for one-cell mutation (Property 3)": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851224099
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851800178
+      }
+    ],
+    "8.6 Write property test for suggested signature structure (Property 17)": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851804435
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852440072
+      }
+    ],
+    "10.1 Write property test for hidden content in output (Property 4)": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851804771
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852440456
+      }
+    ],
+    "10.2 Write property test for residual hidden content on non-password screens (Property 5)": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851805136
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852440714
+      }
+    ],
+    "10.3 Write property test for hidden-only differences (Property 20)": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794851805425
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852441175
+      }
+    ],
+    "8. Implement `suggest_signature`": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852440213
+      }
+    ],
+    "10. Verify hidden-field protection": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852441278
+      }
+    ],
+    "11.2 Write unit tests for bundled signatures": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852442486
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852588186
+      }
+    ],
+    "11.3 Write the 7-by-7 capture matrix test": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852443215
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852588437
+      }
+    ],
+    "11.4 Write unit tests for `tso-pause` and `tso-ready`": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852444224
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852588627
+      }
+    ],
+    "11.5 Write property test for `tso-pause` position independence (Property 8)": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852444502
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852589125
+      }
+    ],
+    "11. Implement bundled signatures": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852589397
+      }
+    ],
+    "12.2 Write unit tests for the public API": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852596324
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852746567
+      }
+    ],
+    "12.3 Write static source-scan tests": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852597019
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852746807
+      }
+    ],
+    "12.4 Write the packaging unit test": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852597704
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852746973
+      }
+    ],
+    "6. Implement the redacted summary and `recognize`": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852623286
+      }
+    ],
+    "12. Wire up the public API and verify packaging and static rules": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852747093
+      }
+    ],
+    "5. Checkpoint - model, view and matching complete": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794852749043
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794853148799
+      }
+    ],
+    "9. Checkpoint - recognition, YAML and suggestion complete": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794853150806
+      },
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794853155471
+      }
+    ],
+    "13. Final checkpoint - full unit and property suites and packaging check": [
+      {
+        "executionId": "93726ae0-6790-473f-b05f-5796927f7d65",
+        "chatSessionId": "sess_190da80a-cc56-4033-8825-76fb714a958b",
+        "timestamp": 1794853157739
+      }
+    ]
+  }
+}
