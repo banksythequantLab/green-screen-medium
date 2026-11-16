@@ -16,8 +16,8 @@ from greenscreen.connector.renderer import ScreenRenderer
 @st.composite
 def arbitrary_readbuffer_output(draw):
     """Generate valid ReadBuffer(Ascii) lines with a matching status line."""
-    rows = draw(st.integers(min_value=1, max_value=24))
-    cols = draw(st.integers(min_value=1, max_value=80))
+    rows = draw(st.one_of(st.integers(1, 6), st.integers(1, 24)))
+    cols = draw(st.one_of(st.integers(1, 8), st.integers(1, 80)))
 
     # Choose SF token positions (up to 5 per screen)
     total = rows * cols
@@ -26,7 +26,10 @@ def arbitrary_readbuffer_output(draw):
         st.lists(st.integers(min_value=0, max_value=total - 1),
                  min_size=num_sf, max_size=num_sf, unique=True)
     )
-    sf_c0s = {lin: draw(st.integers(0, 0xFF)) for lin in sf_linears}
+    sf_c0s = dict(zip(sf_linears,
+                      draw(st.lists(st.integers(0, 0xFF),
+                                    min_size=num_sf, max_size=num_sf))))
+    flat = list(draw(st.binary(min_size=total, max_size=total)))
 
     # SA tokens: at most 2 per row, at column positions not exceeding cols-1
     # SA tokens are stored per row but emitted inline — we track them per linear pos
@@ -37,7 +40,9 @@ def arbitrary_readbuffer_output(draw):
         sa_cols = draw(
             st.lists(st.integers(0, cols - 1), min_size=num_sa, max_size=num_sa, unique=True)
         )
-        sa_per_row[r] = [(c, draw(st.integers(0, 0xFF))) for c in sorted(sa_cols)]
+        sa_vals = draw(st.lists(st.integers(0, 0xFF),
+                                min_size=num_sa, max_size=num_sa))
+        sa_per_row[r] = list(zip(sorted(sa_cols), sa_vals))
 
     # Build data lines
     data_lines = []
@@ -53,8 +58,7 @@ def arbitrary_readbuffer_output(draw):
             if linear in sf_c0s:
                 tokens.append(f"SF(c0={sf_c0s[linear]:02x})")
             else:
-                byte_val = draw(st.integers(0, 0xFF))
-                tokens.append(f"{byte_val:02x}")
+                tokens.append(f"{flat[linear]:02x}")
         data_lines.append(" ".join(tokens))
 
     status = StatusLine(
@@ -92,7 +96,32 @@ def test_render_left_inverse(data_and_status) -> None:
 
 def _captures_dir() -> pathlib.Path:
     """Resolve captures/ relative to repo root (this file is in tests/property/)."""
-    return pathlib.Path(__file__).parent.parent.parent / "captures"
+    return pathlib.Path(__file__).parents[2] / "captures"
+
+
+MIN_CAPTURES = 2
+REQUIRED_CAPTURES = ("tk5-logo.readbuffer.txt", "tk5-logon.readbuffer.txt")
+
+
+def _capture_params(directory: pathlib.Path | None = None) -> list:
+    """Build parametrization; never empty. Yields a failing case if too few files."""
+    directory = _captures_dir() if directory is None else directory
+    files = sorted(directory.glob("*.readbuffer.txt")) if directory.is_dir() else []
+    if len(files) < MIN_CAPTURES:
+        return [pytest.param(None, id="NO-CAPTURES-FOUND")]
+    return [pytest.param(f, id=f.name) for f in files]
+
+
+def test_captures_glob_finds_files() -> None:
+    """The captures directory must exist and contain the expected readbuffer files."""
+    directory = _captures_dir().resolve()
+    found = sorted(p.name for p in directory.glob("*.readbuffer.txt")) if directory.is_dir() else []
+    assert directory.is_dir(), f"Captures directory does not exist: {directory}"
+    assert len(found) >= MIN_CAPTURES, (
+        f"Expected at least {MIN_CAPTURES} *.readbuffer.txt files in {directory}, found: {found}"
+    )
+    for name in REQUIRED_CAPTURES:
+        assert name in found, f"{name} missing from {directory}; found: {found}"
 
 
 def _parse_capture_readbuffer(path: pathlib.Path):
@@ -128,12 +157,16 @@ def _parse_capture_readbuffer(path: pathlib.Path):
     return None, None
 
 
-@pytest.mark.parametrize("capture_file", list(_captures_dir().glob("*.readbuffer.txt")))
-def test_render_left_inverse_on_captures(capture_file: pathlib.Path) -> None:
+@pytest.mark.parametrize("capture_file", _capture_params())
+def test_render_left_inverse_on_captures(capture_file) -> None:
     """render(parse(x)) == x for every actual s3270 capture file."""
+    if capture_file is None:
+        pytest.fail(
+            f"No capture files found: fewer than {MIN_CAPTURES} *.readbuffer.txt "
+            f"in {_captures_dir().resolve()}"
+        )
     data_lines, status_raw = _parse_capture_readbuffer(capture_file)
-    if data_lines is None:
-        pytest.skip(f"Could not extract data from {capture_file.name}")
+    assert data_lines, f"Could not extract data lines from {capture_file.name}"
 
     parser = ScreenParser()
     renderer = ScreenRenderer()

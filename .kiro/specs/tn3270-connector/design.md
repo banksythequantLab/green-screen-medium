@@ -129,7 +129,7 @@ import os
 @dataclass
 class ConnectorConfig:
     host: str = ""                   # falls back to GS_HOST env var
-    port: int = 23                   # falls back to GS_PORT env var; range 1–65535
+    port: int | None = None          # None = not set: GS_PORT if set, else 23; explicit range 1–65535
     binary: str = ""                 # falls back to GS_S3270_BINARY env var
     model: str = "3279-2"
     default_timeout: float = 30.0    # range 1–3600
@@ -140,10 +140,9 @@ class ConnectorConfig:
             self.binary = os.environ.get("GS_S3270_BINARY", "")
         if not self.host:
             self.host = os.environ.get("GS_HOST", "")
-        if self.port == 23:  # sentinel: check env override
+        if self.port is None:  # sentinel: None means "not set"
             env_port = os.environ.get("GS_PORT", "")
-            if env_port:
-                self.port = int(env_port)
+            self.port = int(env_port) if env_port else 23
         self._validate()
 
     def _validate(self) -> None:
@@ -157,9 +156,11 @@ Fields requiring resolution before the first subprocess start:
 |---|---|---|---|
 | `binary` | `GS_S3270_BINARY` | — (required) | non-empty path |
 | `host` | `GS_HOST` | — (required) | non-empty string |
-| `port` | `GS_PORT` | `23` | 1–65535 |
+| `port` | `GS_PORT` | `23` (when `None` and `GS_PORT` unset) | 1–65535 |
 | `model` | — | `3279-2` | any non-empty string |
 | `default_timeout` | — | `30.0` | 1–3600 |
+
+The "port not set" sentinel is `None`. Any explicitly supplied port outside 1–65535 (including `0` and `-1`) or of a non-int type raises `ConfigurationError(parameter_name="port")`; an explicit `23` is just a value, not a request for the env override.
 
 Credentials (`username`, `password`) are explicitly excluded from `ConnectorConfig`; they are passed as arguments at call time or read from env vars by the caller.
 
@@ -384,8 +385,10 @@ class PipeReader:
 
 ```python
 import logging
+import math
 import subprocess
 import sys
+import time
 from types import TracebackType
 
 logger = logging.getLogger("greenscreen.connector")
@@ -458,15 +461,32 @@ class Connector:
         t = self._resolve_timeout(timeout)
         # Read deadline = t + WAIT_GRACE_SECONDS so s3270's own Wait(t,...) always
         # fires and writes its response before the PipeReader deadline expires.
-        return self._send_with_deadline(f"Wait({t},Output)", deadline=t + WAIT_GRACE_SECONDS)
+        # _format_seconds(t) is fixed-point, <= 3 decimals, trailing zeros stripped.
+        return self._send_with_deadline(
+            f"Wait({self._format_seconds(t)},Output)", deadline=t + WAIT_GRACE_SECONDS
+        )
 
     def wait_for_field(self, timeout: float | None = None) -> Response:
         t = self._resolve_timeout(timeout)
-        return self._send_with_deadline(f"Wait({t},InputField)", deadline=t + WAIT_GRACE_SECONDS)
+        return self._send_with_deadline(
+            f"Wait({self._format_seconds(t)},InputField)", deadline=t + WAIT_GRACE_SECONDS
+        )
 
     def wait_for_unlock(self, timeout: float | None = None) -> Response:
         t = self._resolve_timeout(timeout)
-        return self._send_with_deadline(f"Wait({t},Unlock)", deadline=t + WAIT_GRACE_SECONDS)
+        return self._send_with_deadline(
+            f"Wait({self._format_seconds(t)},Unlock)", deadline=t + WAIT_GRACE_SECONDS
+        )
+
+    def wait_for_text(
+        self, text: str, timeout: float | None = None, poll_interval: float = 0.25
+    ) -> Screen:
+        """Poll read_screen() until `text` is in the visible screen text; return that Screen.
+
+        Raises ValueError (empty text / non-positive poll_interval) and
+        ConnectorTimeoutError(operation="wait_for_text") on expiry.
+        """
+        ...
 
     def snap_save(self) -> Response:
         return self.send("Snap(Save)")
@@ -490,13 +510,29 @@ class Connector:
     # ── Internal helpers ──────────────────────────────────────────────────
     WAIT_GRACE_SECONDS: float = 5.0  # added to the s3270 Wait(N,...) timeout
 
+    MIN_TIMEOUT: float = 0.001
+    MAX_TIMEOUT: float = 3600.0
+
     def _resolve_timeout(self, timeout: float | None) -> float:
+        """None -> default_timeout. ValueError unless 0.001 <= t <= 3600.
+
+        Also rejects bool, non-numbers, NaN and infinity. Nothing is sent on error.
+        """
         t = timeout if timeout is not None else self._config.default_timeout
-        if t <= 0:
-            raise ValueError(f"timeout must be positive, got {t!r}")
-        if t > 3600:
-            raise ValueError(f"timeout must be at most 3600, got {t!r}")
+        if isinstance(t, bool) or not isinstance(t, (int, float)):
+            raise ValueError(f"timeout must be a number, got {t!r}")
+        if math.isnan(t) or math.isinf(t):
+            raise ValueError(f"timeout must be finite, got {t!r}")
+        if t < self.MIN_TIMEOUT or t > self.MAX_TIMEOUT:
+            raise ValueError(f"timeout must be in 0.001..3600, got {t!r}")
         return t
+
+    @staticmethod
+    def _format_seconds(t: float) -> str:
+        """Fixed-point, rounded to 3 decimals, trailing zeros/dot stripped, clamped
+        to 0.001..3600; never an exponent. 30.0 -> "30", 1.5 -> "1.5"."""
+        t = min(max(float(t), 0.001), 3600.0)
+        return format(t, ".3f").rstrip("0").rstrip(".") or "0.001"
 
     def _send_with_deadline(self, action: str, deadline: float) -> Response:
         """Write action to stdin; read response with the given deadline (not default_timeout).
@@ -533,6 +569,16 @@ class Connector:
 6. Mark `_closed = True`.
 
 ---
+
+**Why `wait_for_text` exists:** `Wait(N,Output)` returns on the first, often partial, screen update (steering doc GOTCHA, 2026-11-15), so a single wait cannot tell the caller the expected screen has arrived. `wait_for_text` polls `read_screen()` until the expected text is visible.
+
+Polling algorithm:
+1. Validate: `text` non-empty and `poll_interval > 0`, else `ValueError`; resolve the timeout with `_resolve_timeout`.
+2. Compute `end = time.monotonic() + t`.
+3. Loop: `read_screen()`; if `text` is in the visible text, return that Screen. Otherwise compute `remaining = end - time.monotonic()`; if `remaining <= 0` raise `ConnectorTimeoutError(operation="wait_for_text")`; else `time.sleep(min(poll_interval, remaining))`. The loop therefore polls at least once and makes a final poll at the deadline.
+4. A `ParseError` from `read_screen()` propagates.
+
+Matching rules: the visible text is the screen's rows joined with `"\n"`, so a match cannot span rows unless `text` contains newlines. Cells belonging to `Field.hidden` fields (the cells following the SF token, `byte_length` of them, wrapping) are blanked before matching, so password content is never matched. The timeout error message contains the searched text and the timeout but never screen contents. Callers must not pass secrets as `text`.
 
 ### `parser.py` — ScreenParser
 
@@ -727,7 +773,7 @@ The key ordering invariant: backslashes must be escaped before double-quotes. If
 |---|---|---|---|---|
 | `binary` | `str` | (required) | non-empty | `GS_S3270_BINARY` |
 | `host` | `str` | (required) | non-empty | `GS_HOST` |
-| `port` | `int` | `23` | 1–65535 | `GS_PORT` |
+| `port` | `int \| None` | `None` → `GS_PORT`, else `23` | 1–65535 | `GS_PORT` |
 | `model` | `str` | `"3279-2"` | non-empty | — |
 | `default_timeout` | `float` | `30.0` | 1.0–3600.0 | — |
 
@@ -845,7 +891,7 @@ Twelve named attributes corresponding to the 12 space-separated fields that s327
 
 ### Property 8: Wait timeout substitution
 
-*For any* `ConnectorConfig` with a given `default_timeout` and any `timeout` argument in `(0.0, 3600.0]`, the s3270 command sent by `wait_for_output` / `wait_for_field` / `wait_for_unlock` contains the exact numeric timeout value; when `timeout=None`, the command contains the `default_timeout` value.
+*For any* `ConnectorConfig` with a given `default_timeout` and any `timeout` argument in `[0.001, 3600.0]`, the number `N` in the s3270 command `Wait(N,...)` sent by `wait_for_output` / `wait_for_field` / `wait_for_unlock` equals the intended timeout rounded to 3 decimals and matches `^\d+(\.\d{1,3})?$` (never scientific notation); when `timeout=None`, `N` is the `default_timeout` value formatted the same way. Any explicit timeout below 0.001, above 3600, NaN or infinite raises `ValueError` and sends nothing.
 
 **Validates: Requirements 4.1, 4.2, 4.3**
 
@@ -914,7 +960,8 @@ Coverage targets:
 - `string()` escaping: specific examples with backslashes, double-quotes, mixed.
 - `move_cursor()`: negative-coordinate `ValueError`.
 - `pf()` / `pa()`: boundary values (n=1, n=24, n=0, n=25).
-- Wait methods: timeout substitution (None → default), `ValueError` for ≤ 0.
+- Wait methods: timeout substitution (None → default), fixed-point formatting (30.0 → `Wait(30,Output)`, 1.5 → `Wait(1.5,Output)`), `ValueError` for < 0.001, > 3600, NaN, infinity.
+- `wait_for_text`: returns the matching Screen, polls at least once and at the deadline, never matches hidden-field cells, `ConnectorTimeoutError` message holds the text and timeout but no screen contents, `ValueError` for empty text or non-positive `poll_interval`, `ParseError` propagates (covered by `tests/unit/test_connector.py`).
 - `ScreenParser.parse_status_line()`: valid input, wrong token count, non-integer numeric fields.
 - `ScreenParser._parse_readbuffer_lines()`: `SF` decoding, `SA` recording, `ParseError` on invalid hex.
 - `Screen.text_at()`: valid range, each out-of-bounds case.
@@ -1069,11 +1116,11 @@ def test_wait_timeout_format(host_reachable):
         resp_int = conn.send("Wait(1,Output)")
         assert resp_int is not None   # ok or error response, not a parse error
         # Decimal seconds format
-        resp_dec = conn.send("Wait(1.0,Output)")
+        resp_dec = conn.send("Wait(1.5,Output)")
         assert resp_dec is not None
 ```
 
-**Design note — Wait timeout format**: The timeout format sent to `Wait(N,...)` must be verified against both s3270 4.3 and ws3270 4.5. The `_resolve_timeout()` method emits a float (e.g. `30.0`). The integration test `test_wait_timeout_format` verifies both integer and decimal notation are accepted; if only one is, the design will be updated to match.
+**Design note — Wait timeout format**: The timeout format sent to `Wait(N,...)` must be verified against both s3270 4.3 and ws3270 4.5. The connector sends fixed-point notation via `_format_seconds()` (at most 3 decimals, trailing zeros stripped, never an exponent): `30.0` → `Wait(30,Output)`, `1.5` → `Wait(1.5,Output)`. Verified on ws3270 4.5 against the live host (steering doc): both `Wait(1,Output)` and `Wait(1.5,Output)` are accepted, and on an idle screen the error text is `Wait(output): Timed out`. s3270 4.3 on Linux is still to be checked by the integration test `test_wait_timeout_format`; if it rejects a form, `_format_seconds()` is the single place to change.
 
 ---
 
@@ -1099,18 +1146,32 @@ class FakeS3270:
         # Expose pipe-like stdin/stdout so Connector can wrap it in PipeReader
         self.stdin:  IO[bytes]  = ...
         self.stdout: IO[bytes]  = ...
+        self.failure: AssertionError | None = None   # first mismatch/exhaustion
+
+    def raise_if_failed(self) -> None:
+        if self.failure is not None:
+            raise self.failure
+
+    def _fail(self, message: str) -> None:
+        # Store the error and close the write end of stdout so the Connector's
+        # PipeReader sees EOF at once (fail fast, no timeout). Test fixtures
+        # call raise_if_failed() at teardown to surface the AssertionError.
+        self.failure = self.failure or AssertionError(message)
+        self._close_stdout_write_end()
 
     def _handle_command(self, command: str) -> None:
         if self._index >= len(self._script):
-            raise AssertionError(
+            self._fail(
                 f"FakeS3270 exhausted: no scripted response for command {command!r}"
             )
+            return
         entry = self._script[self._index]
         if not re.fullmatch(entry.command_pattern, command.strip()):
-            raise AssertionError(
+            self._fail(
                 f"FakeS3270 expected pattern {entry.command_pattern!r}, "
                 f"got command {command!r}"
             )
+            return
         self._index += 1
         for line in entry.response_lines:
             self.stdout.write(f"data: {line}\n".encode())
@@ -1118,6 +1179,8 @@ class FakeS3270:
         self.stdout.write(f"{entry.result}\n".encode())
         self.stdout.flush()
 ```
+
+On a mismatch or exhaustion the fake does not raise inside the Connector's I/O path (the exception would die in a writer or reader thread and the Connector would wait for a timeout). It stores the `AssertionError` on `fake.failure`, closes its stdout write end so the reader gets EOF immediately, and the Connector fails fast with `S3270Error`. The test helper/conftest fixture that creates the fake calls `raise_if_failed()` at teardown, so the `AssertionError` (with the expected pattern or the unexpected command text) still fails the test.
 
 ### Fixture File Schema (`testing/fixtures/`)
 

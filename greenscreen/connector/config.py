@@ -7,8 +7,6 @@ from dataclasses import dataclass, field
 
 from greenscreen.connector.exceptions import ConfigurationError
 
-_UNSET_PORT = -1  # sentinel: user did not supply a port argument
-
 
 @dataclass
 class ConnectorConfig:
@@ -23,13 +21,18 @@ class ConnectorConfig:
       model           = "3279-2"
       default_timeout = 30.0
 
+    ``port=None`` is the "not set" sentinel: GS_PORT is used if non-empty,
+    else 23. Any explicit value must be an int (bool rejected) in 1..65535,
+    otherwise ConfigurationError is raised. The field is annotated
+    ``int | None`` but after __post_init__ ``port`` is always an ``int``.
+
     Validation happens in __post_init__. ConfigurationError is raised at
     construction time before any subprocess is started.
     """
 
     binary:          str   = ""         # path to s3270 / ws3270 binary
     host:            str   = ""         # TN3270 host address
-    port:            int   = _UNSET_PORT  # TN3270 port; -1 means "use env/default"
+    port:            int | None = None  # TN3270 port; None means "use env/default"
     model:           str   = "3279-2"   # terminal model string
     default_timeout: float = 30.0       # seconds; range 1.0–3600.0
 
@@ -39,7 +42,7 @@ class ConnectorConfig:
             self.binary = os.environ.get("GS_S3270_BINARY", "")
         if not self.host:
             self.host = os.environ.get("GS_HOST", "")
-        if self.port == _UNSET_PORT:
+        if self.port is None:
             env_port = os.environ.get("GS_PORT", "")
             if env_port:
                 try:
@@ -51,6 +54,11 @@ class ConnectorConfig:
                     )
             else:
                 self.port = 23  # default port when neither arg nor env var is set
+        elif isinstance(self.port, bool) or not isinstance(self.port, int):
+            raise ConfigurationError(
+                f"Port must be an integer, got {self.port!r}.",
+                parameter_name="port",
+            )
 
         self._validate()
 

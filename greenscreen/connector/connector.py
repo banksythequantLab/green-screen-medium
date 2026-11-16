@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import math
 import subprocess
 import time
 from types import TracebackType
@@ -183,25 +184,43 @@ class Connector:
     # before the pipe read deadline expires.
     WAIT_GRACE_SECONDS: float = 5.0
 
+    MIN_TIMEOUT: float = 0.001
+    MAX_TIMEOUT: float = 3600.0
+
     def _resolve_timeout(self, timeout: float | None) -> float:
-        """None -> config.default_timeout; ValueError unless 0 < t <= 3600."""
+        """None -> config.default_timeout; ValueError unless 0.001 <= t <= 3600.
+
+        Also rejects bool, non-numbers, NaN and infinity with ValueError.
+        """
         t = timeout if timeout is not None else self._config.default_timeout
+        if isinstance(t, bool) or not isinstance(t, (int, float)):
+            raise ValueError(f"timeout must be a number, got {t!r}")
+        if math.isnan(t) or math.isinf(t):
+            raise ValueError(f"timeout must be finite, got {t!r}")
         if t <= 0:
             raise ValueError(f"timeout must be positive, got {t!r}")
-        if t > 3600:
+        if t < self.MIN_TIMEOUT:
+            raise ValueError(
+                f"timeout must be at least {self.MIN_TIMEOUT}, got {t!r}"
+            )
+        if t > self.MAX_TIMEOUT:
             raise ValueError(f"timeout must be at most 3600, got {t!r}")
         return t
 
     @staticmethod
     def _format_seconds(t: float) -> str:
-        """Format a Wait() timeout: whole values as integers, others as decimals.
+        """Format a Wait() timeout in fixed-point notation (never an exponent).
 
-        The notation accepted by s3270 4.3 / ws3270 4.5 is verified by
-        integration test 12.2; this helper is the single place to change.
+        Valid timeouts are 0.001..3600 seconds. The value is rounded to 3
+        decimal places for the wire, trailing zeros and a trailing dot are
+        stripped, and the result is clamped to "0.001".."3600" so rounding can
+        never produce 0 or exceed the maximum. ws3270 4.5 accepts both
+        integer ("1") and decimal ("1.5") forms; this helper is the single
+        place to change the notation.
         """
-        if float(t).is_integer():
-            return str(int(t))
-        return repr(float(t))
+        t = min(max(float(t), 0.001), 3600.0)
+        text = format(t, ".3f").rstrip("0").rstrip(".")
+        return text or "0.001"
 
     def _wait(self, wait_type: str, timeout: float | None) -> Response:
         t = self._resolve_timeout(timeout)

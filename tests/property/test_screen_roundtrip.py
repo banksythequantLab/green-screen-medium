@@ -13,30 +13,22 @@ from greenscreen.connector.renderer import ScreenRenderer
 @st.composite
 def arbitrary_screen(draw):
     """Build a Screen from raw cell grid with SF tokens at chosen positions."""
-    rows = draw(st.integers(min_value=1, max_value=24))
-    cols = draw(st.integers(min_value=1, max_value=80))
+    rows = draw(st.one_of(st.integers(1, 6), st.integers(1, 24)))
+    cols = draw(st.one_of(st.integers(1, 8), st.integers(1, 80)))
     total = rows * cols
 
-    # Choose SF token positions (up to 10, unique linear positions)
     num_sf = draw(st.integers(min_value=0, max_value=min(10, total)))
     sf_linears = draw(
         st.lists(st.integers(min_value=0, max_value=total - 1),
                  min_size=num_sf, max_size=num_sf, unique=True)
     )
-    sf_c0s = [draw(st.integers(min_value=0, max_value=0xFF)) for _ in sf_linears]
+    sf_c0s = draw(st.lists(st.integers(0, 0xFF), min_size=num_sf, max_size=num_sf))
 
-    # Build the cell grid
-    cell_grid = []
-    for r in range(rows):
-        row = []
-        for c in range(cols):
-            linear = r * cols + c
-            if linear in sf_linears:
-                idx = sf_linears.index(linear)
-                row.append(SFToken(c0=sf_c0s[idx]))
-            else:
-                row.append(draw(st.integers(min_value=0, max_value=0xFF)))
-        cell_grid.append(row)
+    # Bulk-draw cells, then overwrite SF positions.
+    flat = list(draw(st.binary(min_size=total, max_size=total)))
+    for lin, c0 in zip(sf_linears, sf_c0s):
+        flat[lin] = SFToken(c0=c0)
+    cell_grid = [flat[r * cols:(r + 1) * cols] for r in range(rows)]
 
     # SA tokens: 0–3 per row, but at most cols distinct column indices
     sa_tokens = []
@@ -47,8 +39,9 @@ def arbitrary_screen(draw):
             st.lists(st.integers(min_value=0, max_value=cols - 1),
                      min_size=num_sa, max_size=num_sa, unique=True)
         )
-        for col_idx in sorted(sa_cols):
-            val = draw(st.integers(min_value=0, max_value=0xFF))
+        vals = draw(st.lists(st.integers(0, 0xFF),
+                             min_size=num_sa, max_size=num_sa))
+        for col_idx, val in zip(sorted(sa_cols), vals):
             row_sa.append((col_idx, SAToken(value=val)))
         sa_tokens.append(row_sa)
 

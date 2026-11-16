@@ -36,6 +36,7 @@ class FakeS3270:
         self._script = list(script)
         self._index = 0
         self._terminated = False
+        self.failure: AssertionError | None = None
 
         # Stdin: Connector writes here; we read from stdin_read
         stdin_read_fd, stdin_write_fd = os.pipe()
@@ -61,11 +62,35 @@ class FakeS3270:
 
     def _handle_loop(self) -> None:
         """Read commands from stdin pipe and emit scripted responses."""
-        for raw_line in self._stdin_read:
-            command = raw_line.rstrip(b"\r\n").decode("utf-8", errors="replace")
-            if not command:
-                continue
-            self._dispatch(command)
+        failed = False
+        try:
+            for raw_line in self._stdin_read:
+                if failed:
+                    continue  # drain so the writer never blocks
+                command = raw_line.rstrip(b"\r\n").decode("utf-8", errors="replace")
+                if not command:
+                    continue
+                try:
+                    self._dispatch(command)
+                except AssertionError as exc:
+                    if self.failure is None:
+                        self.failure = exc
+                    failed = True
+                    # Close only the write end so readers see EOF at once.
+                    self._close_stdout_write()
+        except (OSError, ValueError):
+            pass
+
+    def _close_stdout_write(self) -> None:
+        try:
+            self._stdout_write.close()
+        except Exception:
+            pass
+
+    def raise_if_failed(self) -> None:
+        """Re-raise the stored script mismatch/exhaustion failure, if any."""
+        if self.failure is not None:
+            raise self.failure
 
     def _dispatch(self, command: str) -> None:
         if self._index >= len(self._script):
@@ -94,10 +119,7 @@ class FakeS3270:
 
     def terminate(self) -> None:
         self._terminated = True
-        try:
-            self._stdout_write.close()
-        except Exception:
-            pass
+        self._close_stdout_write()
 
     def kill(self) -> None:
         self.terminate()

@@ -3,6 +3,10 @@
     "7.2 Write property test for s3270 string escaping round-trip (Property 4)": {
       "status": "passed",
       "lastRunTimestamp": 1794797552588
+    },
+    "8.3 Write property test for `pf`/`pa` `ValueError` boundary (Property 7)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794801538399
     }
   },
   "executionHistory": {
@@ -95,6 +99,16 @@
         "executionId": "2a717db7-0179-4979-ad5e-74df126b0b3f",
         "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
         "timestamp": 1794797363842
+      },
+      {
+        "executionId": "7da6548b-4bc7-42f2-8bcd-63f93c8af93c",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794805704885
+      },
+      {
+        "executionId": "7da6548b-4bc7-42f2-8bcd-63f93c8af93c",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794806350573
       }
     ],
     "3.2 Write unit tests for `PipeReader`": [
@@ -167,6 +181,16 @@
         "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
         "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
         "timestamp": 1794797727163
+      },
+      {
+        "executionId": "7da6548b-4bc7-42f2-8bcd-63f93c8af93c",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794805705222
+      },
+      {
+        "executionId": "7da6548b-4bc7-42f2-8bcd-63f93c8af93c",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794806350954
       }
     ],
     "7.2 Write property test for s3270 string escaping round-trip (Property 4)": [
@@ -191,6 +215,16 @@
         "executionId": "8a806376-1784-412e-a5f5-c872709ab40f",
         "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
         "timestamp": 1794797725704
+      },
+      {
+        "executionId": "7da6548b-4bc7-42f2-8bcd-63f93c8af93c",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794805704668
+      },
+      {
+        "executionId": "7da6548b-4bc7-42f2-8bcd-63f93c8af93c",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794806350337
       }
     ],
     "9.2 Implement `testing/fixtures.py` and YAML fixture files": [
@@ -267,6 +301,126 @@
         "executionId": "278ebe3e-fcbf-43a7-a734-d4d43fc971a0",
         "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
         "timestamp": 1794800849196
+      },
+      {
+        "executionId": "7da6548b-4bc7-42f2-8bcd-63f93c8af93c",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794805705054
+      },
+      {
+        "executionId": "7da6548b-4bc7-42f2-8bcd-63f93c8af93c",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794806350788
+      }
+    ],
+    "8.3 Write property test for `pf`/`pa` `ValueError` boundary (Property 7)": [
+      {
+        "executionId": "c1b5450a-46ec-4530-920c-73f7a8552d33",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794801238030
+      },
+      {
+        "executionId": "c1b5450a-46ec-4530-920c-73f7a8552d33",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794803708940
+      }
+    ],
+    "8.4 Write property test for wait timeout substitution (Property 8)": [
+      {
+        "executionId": "c1b5450a-46ec-4530-920c-73f7a8552d33",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794801238219
+      },
+      {
+        "executionId": "c1b5450a-46ec-4530-920c-73f7a8552d33",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794803709511
+      }
+    ],
+    "8.5 Write property test for `text_at` correctness (Property 6)": [
+      {
+        "executionId": "c1b5450a-46ec-4530-920c-73f7a8552d33",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794801238369
+      },
+      {
+        "executionId": "c1b5450a-46ec-4530-920c-73f7a8552d33",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794803710048
+      }
+    ],
+    "10.1 Write unit tests for `ConnectorConfig` and `exceptions.py`": [
+      {
+        "executionId": "c1b5450a-46ec-4530-920c-73f7a8552d33",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794801238490
+      },
+      {
+        "executionId": "c1b5450a-46ec-4530-920c-73f7a8552d33",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794803710655
+      }
+    ],
+    "10.2 Write unit tests for `Connector` lifecycle and `send` via `FakeS3270`": [
+      {
+        "executionId": "c1b5450a-46ec-4530-920c-73f7a8552d33",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794801238615
+      },
+      {
+        "executionId": "c1b5450a-46ec-4530-920c-73f7a8552d33",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794803711342
+      }
+    ],
+    "10.3 Write unit tests for `ScreenParser`": [
+      {
+        "executionId": "c1b5450a-46ec-4530-920c-73f7a8552d33",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794801735841
+      },
+      {
+        "executionId": "c1b5450a-46ec-4530-920c-73f7a8552d33",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794803711971
+      }
+    ],
+    "10.4 Write unit tests for `Screen` methods and `ScreenRenderer`": [
+      {
+        "executionId": "c1b5450a-46ec-4530-920c-73f7a8552d33",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794801735991
+      },
+      {
+        "executionId": "c1b5450a-46ec-4530-920c-73f7a8552d33",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794803712663
+      }
+    ],
+    "10.5 Write unit tests for `FakeS3270`": [
+      {
+        "executionId": "c1b5450a-46ec-4530-920c-73f7a8552d33",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794801736120
+      },
+      {
+        "executionId": "c1b5450a-46ec-4530-920c-73f7a8552d33",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794803712944
+      }
+    ],
+    "8. Implement `Connector`": [
+      {
+        "executionId": "c1b5450a-46ec-4530-920c-73f7a8552d33",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794803710201
+      }
+    ],
+    "10. Write unit tests": [
+      {
+        "executionId": "c1b5450a-46ec-4530-920c-73f7a8552d33",
+        "chatSessionId": "sess_616ae0f5-916f-4150-a588-44fbfe37d3f7",
+        "timestamp": 1794803713158
       }
     ]
   }

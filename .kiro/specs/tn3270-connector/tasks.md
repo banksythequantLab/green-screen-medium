@@ -86,6 +86,7 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
   - [x] 5.3 Write property test for render-is-left-inverse-of-parse (Property 2)
     - **Property 2: Render is left inverse of parse**
     - Generate arbitrary valid `ReadBuffer(Ascii)` line lists (rows 1–24, cols 10–80, mix of hex tokens and `SF(c0=xx)` tokens); assert `ScreenRenderer().render(ScreenParser().parse_readbuffer(response)) == raw_lines`; also run explicitly on the data from every file in the `captures/` directory at the repo root
+    - The capture-file cases must not be able to collect zero cases: assert that at least 2 captures were found and checked
     - Use `@settings(max_examples=200)`
     - **Validates: Requirements 9.2, 5.1**
 
@@ -95,6 +96,7 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
 - [x] 7. Implement s3270 string escaping helpers and `ConnectorConfig`
   - [x] 7.1 Implement `config.py` with `ConnectorConfig`
     - Implement `ConnectorConfig` dataclass with `binary`, `host`, `port`, `model`, `default_timeout` fields and `__post_init__` applying env-var fallbacks (`GS_S3270_BINARY`, `GS_HOST`, `GS_PORT`) and `_validate()` raising `ConfigurationError` with `.parameter_name` on missing or out-of-range values
+    - The "port not set" sentinel is `None` (use `GS_PORT` if set, else 23); any explicit value outside 1..65535 (including 0 and -1) or of a non-int type raises `ConfigurationError(parameter_name="port")`
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
   - [x] 7.2 Write property test for s3270 string escaping round-trip (Property 4)
@@ -103,7 +105,7 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
     - Use `@settings(max_examples=500)`
     - **Validates: Requirements 9.6, 3.6**
 
-- [ ] 8. Implement `Connector`
+- [x] 8. Implement `Connector`
   - [x] 8.1 Implement `connector.py` — subprocess lifecycle (`open` / `close`)
     - Implement `Connector.__init__` storing config, initialising `_proc = None`, `_reader = None`, `_closed = False`
     - Implement `open()`: build command line `[config.binary, "-model", config.model]`; `subprocess.Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)`; wrap `proc.stdout` in `PipeReader`; start daemon thread to drain and discard `proc.stderr`; send `Connect(host:port)` as first command; on error response terminate subprocess and raise `ConnectorError`; raise `ConnectorError` if already open
@@ -121,22 +123,24 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
     - Implement `string(text)` calling `_escape_s3270_string`, raising `ValueError` if `len(text) > 3000`
     - Implement `move_cursor(row, col)` raising `ValueError` for negative coordinates
     - Implement `wait_for_output`, `wait_for_field`, `wait_for_unlock` using `_resolve_timeout` and `_send_with_deadline` with `WAIT_GRACE_SECONDS = 5.0` added to deadline
+    - Wait timeouts are valid from 0.001 to 3600 seconds (ValueError for below 0.001, above 3600, NaN, infinity) and are sent in fixed-point notation with at most 3 decimals and trailing zeros stripped (30.0 → `Wait(30,Output)`, 1.5 → `Wait(1.5,Output)`)
+    - Implement `wait_for_text(text, timeout=None, poll_interval=0.25) -> Screen`: polls `read_screen()` until `text` is in the visible text, never matches cells of hidden fields, raises `ConnectorTimeoutError` (operation `wait_for_text`) without screen contents in the message
     - Implement `snap_save()`
     - Implement `read_screen() -> Screen` (sends only `ReadBuffer(Ascii)`, passes response to `ScreenParser().parse_readbuffer`)
     - Implement `ascii() -> Response` (sends `Ascii()`)
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 5.1, 7.6, 7.7, 7.8_
 
-  - [ ] 8.3 Write property test for `pf`/`pa` `ValueError` boundary (Property 7)
+  - [x] 8.3 Write property test for `pf`/`pa` `ValueError` boundary (Property 7)
     - **Property 7: `pf`/`pa` raises `ValueError` iff `n` is out of `[1, 24]`**
     - Use `FakeS3270` stub; generate arbitrary integers; assert `ValueError` raised iff `n < 1` or `n > 24` for both `pf` and `pa`
     - **Validates: Requirements 3.5**
 
-  - [ ] 8.4 Write property test for wait timeout substitution (Property 8)
+  - [x] 8.4 Write property test for wait timeout substitution (Property 8)
     - **Property 8: Wait timeout substitution**
     - Generate `default_timeout` and optional `timeout` values in `(0.0, 3600.0]`; use `FakeS3270` to capture the command string; assert `Wait(N,...)` contains the exact numeric value passed (or `default_timeout` when `timeout=None`)
     - **Validates: Requirements 4.1, 4.2, 4.3**
 
-  - [ ] 8.5 Write property test for `text_at` correctness (Property 6)
+  - [x] 8.5 Write property test for `text_at` correctness (Property 6)
     - **Property 6: `text_at` extracts the correct substring**
     - Generate arbitrary `Screen` objects with valid `(row, col, length)` triples; assert `screen.text_at(row, col, length) == screen.text_grid[row][col:col+length]`
     - **Validates: Requirements 5.6**
@@ -145,6 +149,7 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
   - [x] 9.1 Implement `testing/fake.py` with `FakeS3270`
     - Define `ScriptedResponse` dataclass with `command_pattern: str`, `response_lines: list[str]`, `status_line: str`, `result: str`
     - Implement `FakeS3270.__init__` accepting `list[ScriptedResponse]`; expose `stdin`, `stdout`, `stderr`, `wait(timeout)`, `terminate()`, `kill()`, and `poll()` attributes so that `FakeS3270` satisfies the same interface that `Connector` expects from `subprocess.Popen` and can be passed directly as the `process_factory` argument
+    - On mismatch or exhaustion, `FakeS3270` stores the `AssertionError` on `fake.failure`, closes its stdout write end so readers get EOF immediately, and exposes `raise_if_failed()`; a conftest fixture re-raises `fake.failure` at teardown
     - Implement `_handle_command(command)`: match against current `ScriptedResponse.command_pattern` with `re.fullmatch`; raise `AssertionError` on mismatch or exhaustion; write `data: {line}\n`, status line, and result to stdout pipe
     - _Requirements: 8.1, 8.2, 8.5_
 
@@ -158,8 +163,8 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
     - Add a unit test that calls `load_fixture` using a path resolved via `importlib.resources` (or `importlib.resources.files`) from the installed `greenscreen.connector.testing` package, and asserts the two bundled frames load without error; this test must pass both when running from source and from an installed package
     - _Requirements: 8.3, 8.4_
 
-- [ ] 10. Write unit tests
-  - [ ] 10.1 Write unit tests for `ConnectorConfig` and `exceptions.py`
+- [x] 10. Write unit tests
+  - [x] 10.1 Write unit tests for `ConnectorConfig` and `exceptions.py`
     - Test construction with all fields explicit
     - Test env-var fallback for `GS_S3270_BINARY`, `GS_HOST`, `GS_PORT`
     - Test `ConfigurationError` raised (with `.parameter_name`) when required fields are missing
@@ -167,7 +172,7 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
     - Test `default_timeout` out-of-range raises `ConfigurationError`
     - _Requirements: 1.1, 1.2, 1.3, 7.2_
 
-  - [ ] 10.2 Write unit tests for `Connector` lifecycle and `send` via `FakeS3270`
+  - [x] 10.2 Write unit tests for `Connector` lifecycle and `send` via `FakeS3270`
     - Test `open()` and `close()` happy path using `FakeS3270`
     - Test context-manager `__enter__`/`__exit__` calls `open`/`close`; verify exception propagates
     - Test `send()` success path returns `Response` with `success=True`
@@ -181,7 +186,7 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
     - Test calling any method after `close()` raises `SessionClosedError`
     - _Requirements: 2.1, 2.4, 2.5, 2.6, 2.9, 3.1, 3.2, 3.3, 3.5, 3.6, 3.7, 4.1, 4.2, 4.3, 4.6, 7.3, 7.6_
 
-  - [ ] 10.3 Write unit tests for `ScreenParser`
+  - [x] 10.3 Write unit tests for `ScreenParser`
     - Test `parse_status_line` with valid 12-token input
     - Test `parse_status_line` raises `ParseError` for 11 and 13 tokens
     - Test `parse_status_line` raises `ParseError` when rows/cols/cursor fields are non-integer
@@ -192,7 +197,7 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
     - **SA cell-occupancy regression test**: count non-SA tokens per row in `tk5-logon.yaml` fixture and assert each row has exactly 80 non-SA tokens; this is a regression check confirming the settled fact (from the steering doc) that SA tokens do not occupy cells — every row in both ReadBuffer captures has exactly 80 non-SA tokens, including the 13 logon rows that carry up to 8 SA tokens each
     - _Requirements: 5.4, 5.5, 5.9, 5.10, 5.11, 6.1, 6.6, 6.7_
 
-  - [ ] 10.4 Write unit tests for `Screen` methods and `ScreenRenderer`
+  - [x] 10.4 Write unit tests for `Screen` methods and `ScreenRenderer`
     - Test `Screen.text_at` valid range extracts correct substring
     - Test `Screen.text_at` raises `ValueError` for row out-of-range, col out-of-range, length < 1, range exceeding row boundary
     - Test `Screen.find_field` returns correct `Field` for a position inside a field
@@ -203,7 +208,7 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
     - **Logon `===>`  field wrap test**: using `tk5-logon.yaml`, verify that the `Logon ===>` input field (`SF c0=c8` at its known position) wraps to end-of-screen, and `find_field` returns the correct `Field` for a cell inside that span
     - _Requirements: 5.2, 5.3, 5.6, 5.7, 5.8, 8.3, 8.4_
 
-  - [ ] 10.5 Write unit tests for `FakeS3270`
+  - [x] 10.5 Write unit tests for `FakeS3270`
     - Test that a matching command emits the scripted response lines, status line, and `ok`
     - Test that a non-matching command raises `AssertionError` identifying expected pattern and actual command
     - Test that an extra command after all scripted responses are exhausted raises `AssertionError` with the unexpected command text
@@ -215,17 +220,22 @@ Implement the `greenscreen.connector` Python 3.11+ library that drives an `s3270
 - [ ] 12. Write integration tests
   - [ ] 12.1 Write integration test: logo then logon screen
     - Mark with `@pytest.mark.integration`; guard with `host_reachable` session fixture (auto-skip on no TCP connection)
-    - Connect using `GS_HOST`/`GS_PORT`/`GS_S3270_BINARY`; call `read_screen()` to get logo screen; send `enter()`; call `wait_for_output(timeout=8)`; call `read_screen()` again; assert `"Logon ===>"` appears in the text grid
-    - _Requirements: 10.1, 10.2, 10.3, 10.4_
+    - Follow the corrected GOTCHA in the steering doc (TSO logon flow): after Connect the host sometimes shows the logon screen by itself within a second and sometimes leaves the Hercules logo up until Enter is pressed, so never press Enter blindly
+    - Connect using `GS_HOST`/`GS_PORT`/`GS_S3270_BINARY`; call `wait_for_text("Logon ===>", timeout=5)`
+    - ONLY if that raises `ConnectorTimeoutError` (the logo is still showing): check that the Hercules logo text is on screen, call `enter()`, then `wait_for_text("Logon ===>", timeout=8)`
+    - Assert that `"Logon ===>"` appears in the final screen's text grid and that the screen contains an unprotected field (the `c8` field) whose start is right after `Logon ===>`
+    - Do not assert that an Enter was or was not needed (the host does either)
+    - Never type credentials in this test; it must not skip when `TK5_USERNAME` or `TK5_PASSWORD` is unset
+    - _Requirements: 4.8, 10.1, 10.2, 10.3, 10.4_
 
   - [ ] 12.2 Write integration test: Wait timeout format acceptance (s3270 4.3 / ws3270 4.5)
     - Mark with `@pytest.mark.integration`; guard with `host_reachable`
-    - After connecting and reaching an idle (no-output) state, send `Wait(1,Output)` (integer seconds) via `send()` and inspect the result:
-      - If `ok` or `S3270Error` is raised with error text that is NOT a syntax/parse rejection (e.g. contains 'Timed out'), the integer format is accepted — record as passing
-      - If `S3270Error` is raised with error text indicating a syntax error (e.g. 'Unknown' or 'Invalid'), the integer format is rejected — record as failing
-    - Repeat with `Wait(1.0,Output)` (decimal seconds) applying the same accept/reject logic
-    - Assert that at least one format is accepted by the binary under test; fail the test with a clear message if both formats are rejected (indicating a protocol error unrelated to notation)
-    - Document the accepted format(s) in a comment so the `_resolve_timeout` implementation can emit the correct notation
+    - After connecting and reaching an idle screen, send `Wait(1,Output)` and `Wait(1.5,Output)` through `send()` (not `wait_for_text`)
+    - A format is accepted when the call returns `ok` or raises `S3270Error` whose text contains "timed out" (case-insensitive; ws3270 4.5 reports `Wait(output): Timed out` on an idle screen)
+    - A format is rejected when `S3270Error` carries a syntax or unknown-parameter error instead
+    - Assert that both formats are accepted; fail with a clear message naming the rejected format. Steering doc: ws3270 4.5 accepts both; s3270 4.3 on Linux is still to be checked by this test
+    - Record the s3270/ws3270 version of the binary under test in the test output (a `-v`-style version check is optional)
+    - Document the accepted format(s) in a comment so `Connector._format_seconds` can be changed in one place if a binary rejects a form
     - _Requirements: 10.1 (timeout format verification)_
 
 - [ ] 13. Wire up public exports and final checkpoint
