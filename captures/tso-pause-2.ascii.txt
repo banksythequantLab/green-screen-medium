@@ -1,0 +1,26 @@
+data:                                                                                 
+data:                                                                                 
+data:                 |l      _,,,---,,_                                              
+data:           ZZZzz /,`.-'`'    -.  ;-;;,                                           
+data:                |,4-  ) )-,_. ,( (  `'-'                                         
+data:               '---''(_/--'  :-')_)                                              
+data:                                                                                 
+data:  COBOL PROGRAMMERS do it with bugs                                              
+data:                                                                                 
+data:  Another bit of wisdom from the fortune cookie jar                              
+data:                                                                                 
+data:  ***                                                                            
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+U F U C(192.168.68.72) I 2 24 80 11 5 0x0 0.001
+ok

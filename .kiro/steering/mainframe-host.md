@@ -81,7 +81,7 @@ code depends on them.
   Never press Enter blindly. Poll for `Logon ===>` first; press Enter only if
   the logo is still showing after a few seconds. An Enter with nothing typed on
   the logon screen produces a screen containing only `INPUT NOT RECOGNIZED`.
-  How to get from that screen back to the logon screen is NOT yet verified.
+  Recovery (verified): send Clear(); the logon screen returns.
 - A logon abandoned midway can also leave `IKJ56700A ENTER USERID -` showing
   on the next connection; typing the userid there continues the logon.
 - Disconnecting while logged on ends the TSO session on this host (the log
@@ -100,3 +100,23 @@ code depends on them.
 - `Wait(N,Output)` only blocks if the screen has been READ (Ascii, ReadBuffer)
   since the last host output. With no read in between it returns `ok` at once.
   This is why a bare Enter-then-Wait can return before the new screen exists.
+
+## Verified 2026-11-16: more logon-path screens (captures: tso-input-not-recognized, tso-pause-2, tso-ready)
+- `INPUT NOT RECOGNIZED`: the text is on row 3 col 0, cursor at (0,0), 2
+  fields, everything else blank. `Clear()` returns to the logon screen.
+- SECURITY: after the password is typed and Enter pressed, the NEXT screen
+  (first `***` pause) still holds the typed password in the cells of the
+  hidden field. `ReadBuffer(Ascii)` and `Screen.cell_grid` contain it, and
+  `Screen.text_grid` does NOT blank hidden fields. Anything that stores or
+  prints a Screen (fixtures, recordings, logs, error messages, signatures)
+  must blank hidden-field cells first. That screen was deliberately not
+  captured for this reason; never add a capture of it.
+- `***` pause screens are TSO line mode: the content above varies (broadcast
+  text, a random fortune) and the `***` row varies (row 10, then row 11). The
+  stable facts are that ` ***` is the last non-blank row and the cursor sits
+  on that row just after it (col 5). Press Enter to continue.
+- `READY`: ` READY` on row 0, cursor at (1,0), fields at (0,0) c8, (0,7) c0,
+  (23,79) c0. Reached from ISPF with X then Enter.
+- Line-mode screens cannot be identified by fixed row positions alone; a
+  signature needs a way to say "the last non-blank row is X" or "the text just
+  before the cursor is X".
