@@ -846,6 +846,11 @@
         "executionId": "94e066cf-3e7c-4524-87e3-91157c064a65",
         "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
         "timestamp": 1794938488455
+      },
+      {
+        "executionId": "94e066cf-3e7c-4524-87e3-91157c064a65",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794938699166
       }
     ],
     "10.13 Write unit tests for loading the bundled flows (`tests/unit/test_flow_bundled.py`)": [
@@ -877,6 +882,212 @@
         "executionId": "94e066cf-3e7c-4524-87e3-91157c064a65",
         "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
         "timestamp": 1794938488795
+      },
+      {
+        "executionId": "94e066cf-3e7c-4524-87e3-91157c064a65",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794938698333
+      }
+    ],
+    "21. Release caller inputs on every run_flow exit (Requirement 14.7)": [
+      {
+        "executionId": "94e066cf-3e7c-4524-87e3-91157c064a65",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794938698586
+      }
+    ],
+    "10.15 Write the scripted `tk5-system-info` tests against the captures (`tests/unit/test_flow_system_info_script.py`)": [
+      {
+        "executionId": "94e066cf-3e7c-4524-87e3-91157c064a65",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794938703498
+      },
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794939716478
+      }
+    ],
+    "10.16 Write the capture facts tests for the flow package (`tests/unit/test_flow_captures.py`)": [
+      {
+        "executionId": "94e066cf-3e7c-4524-87e3-91157c064a65",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794938703754
+      },
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794939716769
+      }
+    ],
+    "11.2 Write property test for Property 2": [
+      {
+        "executionId": "94e066cf-3e7c-4524-87e3-91157c064a65",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794938704058
+      },
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794939717748
+      },
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794940166843
+      }
+    ],
+    "11.3 Write property test for Property 3": [
+      {
+        "executionId": "94e066cf-3e7c-4524-87e3-91157c064a65",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794938704317
+      },
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794939717050
+      }
+    ],
+    "11.4 Write property test for Property 4": [
+      {
+        "executionId": "94e066cf-3e7c-4524-87e3-91157c064a65",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794938704605
+      },
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794939717382
+      }
+    ],
+    "11.5 Write property test for Property 5": [
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794939721543
+      },
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794940167167
+      }
+    ],
+    "11.6 Write property test for Property 6": [
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794939721804
+      },
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794940167430
+      }
+    ],
+    "11.8 Write property test for Property 8": [
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794939722108
+      },
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794940167872
+      }
+    ],
+    "10.18 Write the packaging tests (`tests/unit/test_flow_packaging.py`)": [
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794940172526
+      },
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794940309035
+      }
+    ],
+    "10.19 Write the public API test (`tests/unit/test_flow_public_api.py`)": [
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794940172993
+      },
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794940309622
+      }
+    ],
+    "10.20 Write the static rule tests (`tests/unit/test_flow_static.py`)": [
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794940173577
+      },
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794940310381
+      }
+    ],
+    "12.1 Write `tests/integration/test_flow_live_system_info.py`": [
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794940173853
+      },
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794940311291
+      }
+    ],
+    "10. Write the flow unit tests": [
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794940310603
+      }
+    ],
+    "12. Write the live integration test": [
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794940311527
+      }
+    ],
+    "11.9 Measure the property suite time": [
+      {
+        "executionId": "72f0205c-f46b-40f8-aa92-a2531b0fb525",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794940311868
+      },
+      {
+        "executionId": "cc86112e-7d5b-49d7-9894-bfd8a70d87d9",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794943904924
+      }
+    ],
+    "11. Write the flow-runtime property tests": [
+      {
+        "executionId": "cc86112e-7d5b-49d7-9894-bfd8a70d87d9",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794943905227
+      }
+    ],
+    "13. Final checkpoint - whole suite and property timing": [
+      {
+        "executionId": "cc86112e-7d5b-49d7-9894-bfd8a70d87d9",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794943908922
+      },
+      {
+        "executionId": "cc86112e-7d5b-49d7-9894-bfd8a70d87d9",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794946876789
       }
     ]
   }

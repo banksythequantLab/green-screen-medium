@@ -414,7 +414,7 @@ class ChainScript:
 _CHAIN_KEYS = (("enter",), ("enter",), ("enter",), ("clear",), ("pf", 3), ("pa", 2))
 
 
-def _chain_flow(steps: tuple[ChainStep, ...]) -> Flow:
+def _chain_flow(steps: tuple[ChainStep, ...], step_timeout: float | None = None) -> Flow:
     flow_steps: list = []
     for i, step in enumerate(steps):
         flow_steps.append(ExpectStep((step.name,)))
@@ -429,13 +429,19 @@ def _chain_flow(steps: tuple[ChainStep, ...]) -> Flow:
     outputs = ()
     if last != "tso-password-prompt":
         outputs = (OutputSpec("TEXT", "str", last, 0, 0, 8),)
-    return Flow(name="chain", steps=tuple(flow_steps), outputs=outputs)
+    timeouts = Timeouts() if step_timeout is None else Timeouts(step=step_timeout)
+    return Flow(name="chain", steps=tuple(flow_steps), outputs=outputs, timeouts=timeouts)
 
 
 @st.composite
-def chain_scripts(draw) -> ChainScript:
-    """A chain of 2 to 6 screens (adjacent names differ), the matching Flow and the script variations."""
-    n = draw(st.integers(2, 6))
+def chain_scripts(
+    draw, max_screens: int = 6, max_stale: int = 5, step_timeout: float | None = None
+) -> ChainScript:
+    """A chain of 2 to 6 screens (adjacent names differ), the matching Flow and the script variations.
+
+    ``step_timeout`` (seconds) overrides the Flow's default step timeout; None keeps it.
+    """
+    n = draw(st.integers(2, max_screens))
     count = len(SIGNATURE_NAMES)
     idx = draw(st.integers(0, count - 1))
     steps: list[ChainStep] = []
@@ -452,12 +458,12 @@ def chain_scripts(draw) -> ChainScript:
                 name=name,
                 literal=literal,
                 key=draw(st.sampled_from(_CHAIN_KEYS)),
-                stale_reads=draw(st.integers(0, 5)),
+                stale_reads=draw(st.integers(0, max_stale)),
                 repaints=tuple(draw(st.lists(st.integers(0, 3), max_size=3))),
             )
         )
     frozen = tuple(steps)
-    return ChainScript(frozen, _chain_flow(frozen))
+    return ChainScript(frozen, _chain_flow(frozen, step_timeout))
 
 
 # --------------------------------------------------------------------------
