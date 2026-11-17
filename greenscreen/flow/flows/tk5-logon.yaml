@@ -1,0 +1,62 @@
+version: 1
+name: tk5-logon
+description: Log on to TSO on the TK5 demo host and stop at the ISPF primary option menu.
+inputs:
+- name: userid
+  type: str
+  required: true
+  max_length: 8
+  secret: false
+  regex: '[A-Za-z0-9@#$]{1,8}'
+  description: TSO user id.
+- name: password
+  type: str
+  required: true
+  max_length: 8
+  secret: true
+  description: TSO password.
+outputs: []
+timeouts:
+  step: 10.0
+  run: 120.0
+  finally: 30.0
+steps:
+- kind: handle
+  signature: tk5-logo
+  max_count: 1
+  settle: 3.0
+  steps:
+  - kind: key
+    key: enter
+- kind: handle
+  signature: tso-input-not-recognized
+  max_count: 1
+  settle: 0.0
+  steps:
+  - kind: key
+    key: clear
+- kind: expect
+  signatures:
+  - tk5-logon
+- kind: type
+  input: userid
+- kind: key
+  key: enter
+- kind: expect
+  signatures:
+  - tso-password-prompt
+- kind: type
+  input: password
+- kind: key
+  key: enter
+- kind: handle
+  signature: tso-pause
+  max_count: 5
+  settle: 0.0
+  steps:
+  - kind: key
+    key: enter
+- kind: expect
+  signatures:
+  - ispf-primary-menu
+finally: []

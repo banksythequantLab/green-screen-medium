@@ -29,6 +29,7 @@ graph TD
         IO["PipeReader\n(_io.py)"]
         Parser["ScreenParser\n(parser.py)"]
         Renderer["ScreenRenderer\n(renderer.py)"]
+        Redact["redact_action\n(_redact.py)"]
         Models["Models\n(models.py)\nResponse · StatusLine\nScreen · Field"]
         Exceptions["Exceptions\n(exceptions.py)"]
     end
@@ -48,6 +49,7 @@ graph TD
     Connector --> IO
     Connector --> Parser
     Connector --> Renderer
+    Connector --> Redact
     Connector --> Models
     Connector --> Exceptions
     IO --> S3270
@@ -100,6 +102,7 @@ greenscreen/
     ├── models.py            # Response, StatusLine, Screen, Field
     ├── parser.py            # ScreenParser
     ├── renderer.py          # ScreenRenderer
+    ├── _redact.py           # redact_action (Requirement 12)
     ├── exceptions.py        # Exception hierarchy
     ├── _io.py               # PipeReader (cross-platform thread+queue)
     └── testing/
@@ -667,7 +670,8 @@ for row_index, row_tokens in enumerate(data_lines):
             # SA tokens do NOT advance col_index (verified: every row has exactly 80 non-SA tokens)
 
         else:
-            raise ParseError(raw=token)
+            # message: row index, token index, token length; raw="" (Requirement 12.35)
+            raise ParseError(raw="")
 
 # After processing all rows, the Field list is derived from all_sf_positions:
 # Each field spans from its SF linear position to the linear position
@@ -762,6 +766,322 @@ def _unescape_s3270_string(escaped: str) -> str:
 ```
 
 The key ordering invariant: backslashes must be escaped before double-quotes. If the order were reversed, a literal `\"` in the input would become `\\"` (backslash escape applied first to the already-escaped quote), breaking the round-trip.
+
+---
+
+### Action Redaction (Requirement 12)
+
+**Purpose.** `Connector.string(text)` sends `String("<text>")` through `send()`, and the text can be a host password. Before Requirement 12 the full Action text reached DEBUG log records, exception messages, `S3270Error.action`, `ConnectorTimeoutError.operation` and the `ValueError` for an invalid Action. This section defines one pure helper that turns an Action into the text that may leave the Connector, and lists every place that uses it. For a String_Action this section takes precedence over the "action string" wording in Requirements 3.3, 3.4, 7.3 and 7.8. The terms String_Action, Well_Formed_String_Action, Decoded_Length, Redacted_Action and Outside_Rendering are used as defined in the requirements glossary.
+
+**Second leak, response data (criteria 29 to 45).** A live logon showed that the typed password also stays in the hidden cells of the next screens, and the old Received_Record logged every response line, so `ReadBuffer(Ascii)` wrote those cells to the log as hex. The Connector therefore also keeps Response_Data out of every log record and exception message, by omission and not by scrubbing. The Received_Record carries only counts and the result (see "Received record and status-line guard"), `_wait` stops copying data lines into messages, and the `ParseError` for a bad ReadBuffer token no longer carries the token. Criteria 29 to 45 take precedence over Requirements 4.7 and 7.8 and over criteria 3, 16 and 17 of this requirement wherever those say that response text appears in a log record or in an exception message.
+
+**No other connector behaviour changes.** Everything that is not covered above stays as it is: the wire protocol, timeouts, `Response` content, exception classes and their public attributes, `Response.data_lines`, `S3270Error.data_lines`, the rendering of every non-String Action, and the signatures of all public methods. Every existing test must keep passing, except the five listed in "Existing tests that change" below, which assert the old received-record format, the old `_wait` messages or the old `ParseError.raw` (Requirement 12.18 and the Scope list).
+
+#### The redaction helper
+
+| Item | Value |
+|---|---|
+| Name | `redact_action` |
+| Module | `greenscreen/connector/_redact.py` (new, private, not exported from `__init__.py`) |
+| Signature | `def redact_action(action: str) -> str` |
+| Behaviour | Returns `action` unchanged when it is not a String_Action; otherwise returns the Redacted_Action. Pure: no logging, no state, no I/O. |
+| Imports | `re`, and `_unescape_s3270_string` from `greenscreen/connector/parser.py` |
+
+```python
+import re
+
+from greenscreen.connector.parser import _unescape_s3270_string
+
+# "String" in any ASCII letter case, optional whitespace, "(".
+# Explicit [Ss][Tt]... classes are used instead of re.IGNORECASE because
+# IGNORECASE on a str pattern also folds U+017F ("long s") and U+212A
+# ("Kelvin sign") onto ASCII letters, and the glossary says ASCII letter case.
+# \s on a str pattern is Unicode whitespace, which is the str.isspace() set.
+_STRING_NAME = re.compile(r"\s*[Ss][Tt][Rr][Ii][Nn][Gg]\s*\(")
+
+# Whole-Action shape of a Well_Formed_String_Action. Group 1 is the body.
+# [^"\\] also matches newline and carriage return; DOTALL lets "\." match a
+# backslash followed by a newline. Nothing is allowed after ")" (fullmatch).
+_WELL_FORMED = re.compile(
+    r'\s*[Ss][Tt][Rr][Ii][Nn][Gg]\s*\(\s*"((?:[^"\\]|\\.)*)"\s*\)',
+    re.DOTALL,
+)
+
+def redact_action(action: str) -> str:
+    if _STRING_NAME.match(action) is None:
+        return action                                  # not a String_Action
+    m = _WELL_FORMED.fullmatch(action)
+    if m is None:
+        return "String(<? chars>)"                     # malformed: never guess
+    n = len(_unescape_s3270_string(m.group(1)))        # Decoded_Length
+    return f"String(<{n} chars>)"
+```
+
+**The String-name regex.** `_STRING_NAME` is applied with `match()`, so it is anchored at the start of the Action. After optional leading whitespace it needs the letters `S t r i n g` in any ASCII case, optional whitespace, then `(`. `Strings("x")` and `StringX(1)` fail because the character after `String` is neither whitespace nor `(`. `String (`, `  String(`, `STRING(`, `sTrInG(` and `string(` all match. The unit tests include a check that `re.fullmatch(r"\s", chr(c)) is not None` equals `chr(c).isspace()` for every code point up to `sys.maxunicode`, so the glossary definition ("characters for which `str.isspace()` is true") and the regex cannot drift on a different Python build.
+
+**How N is counted.** The Decoded_Length is the number of units in the body, where a unit is one character other than `"` and `\`, or a backslash followed by exactly one character. `_unescape_s3270_string` scans left to right and turns a backslash plus the next character into that one character and copies every other character. On a Well_Formed body, which by definition has no unescaped `"`, no lone backslash and no trailing backslash, this scan pairs characters exactly as the units are defined, so `len(_unescape_s3270_string(body))` is the unit count. For `Connector.string(text)` the body is `_escape_s3270_string(text)`, which doubles every `\` and prefixes every `"`; the unescape of that body returns `text` (Property 4), so `N == len(text)` for every text, including non-ASCII text. `\"` and `\\` each count as one character. A newline or carriage return in the body is an ordinary character for counting, so `string("a\nb")` is rendered `String(<3 chars>)` even though `send()` then rejects it. The helper reuses the existing unescape function instead of a second counter so the count and the escape rules cannot diverge. The implementation task updates the docstring of `_unescape_s3270_string`, which now says "For testing only", to say it is also used by `_redact.py`.
+
+**Malformed handling.** If the Action is a String_Action but `_WELL_FORMED` does not match the whole Action, the result is the literal `String(<? chars>)`. This covers an unterminated body, a trailing lone backslash, a second argument, an unquoted argument, and any text after the closing `)`. No length is guessed and no character of the argument is copied. The pattern has no nested quantifiers and its two alternatives start with different characters, so matching is linear in the length of the Action; there is no backtracking blow-up on hostile input.
+
+**Properties of the output.** The result is built only from the literal characters `String(<`, the decimal digits of `N` (no leading zeros, `0` for an empty body), the literal ` chars>)`, or the literal `String(<? chars>)`. It therefore matches `^String\(<(0|[1-9][0-9]*|\?) chars>\)$` (Requirement 12.10) and contains no character taken from the argument (12.13).
+
+**`redact_action` is not idempotent.** `redact_action("String(<5 chars>)")` returns `String(<? chars>)`, because the argument is unquoted. Every call site therefore calls `redact_action` on the original Action, never on an already rendered value.
+
+#### Call sites that render an Action
+
+Each site calls `redact_action(action)` on the original Action text. For a non-String Action the call returns the input, so the rendering is character-for-character what it is today (Requirement 12.14). In the tables below, `shown` means the value of `redact_action(action)`; `shown!r` is its `repr`, which for a non-String Action equals today's `action!r`.
+
+Sites that change, all in `greenscreen/connector/connector.py` except site 9, which is in `greenscreen/connector/parser.py`:
+
+| # | Method | Today | After |
+|---|---|---|---|
+| 1 | `_send_with_deadline`, the guard `if not action or "\n" in action or "\r" in action` | `ValueError(f"Invalid action string: {action!r}")` | `ValueError(f"Invalid action string: {shown!r}")`. The guard still runs before anything is written (12.8). |
+| 2 | `_send_with_deadline`, `except ConnectorTimeoutError` | message `f"Timed out waiting for response to {action!r}: {exc}"` and `operation=action` | message with `{shown!r}` and `operation=shown`. `deadline=exc.deadline` is unchanged. The inner `exc` is the `PipeReader` timeout, which carries only the literals `Pipe read timed out after Ns` and `readline`. (12.7) |
+| 3 | `_write`, the line `logger.debug("direction=sent action=%s raw=%s", action, action)` | both `%s` arguments are the Action | both arguments are `shown`. The format string is unchanged. (12.2) |
+| 4 | `_write`, `except OSError` (includes `BrokenPipeError`) | `S3270Error(f"s3270 subprocess is not accepting input for {action!r}", action=action, exit_code=...)` | message with `{shown!r}` and `action=shown`. `exit_code` is unchanged. (12.5) |
+| 5 | `_read_response`, `except S3270Error` when `exc.exit_code is None` | `S3270Error(f"s3270 subprocess exited during {action!r}", action=action, exit_code=self._exit_code())` | message with `{shown!r}` and `action=shown`. `exit_code` is unchanged. (12.6) |
+| 6 | `_read_response`, the line `logger.debug("direction=received action=%s raw=%s", shown, ...)` | action argument is `shown`; `raw` joins every response line, with exact copies of the Action replaced by `shown` | Replaced by the Received_Record `direction=received action=%s lines=%d status=%s result=%s` with args `(shown, len(data_lines), _status_for_log(status_raw), line)`. No response line is logged, so the `element.replace(action, shown)` step is deleted. (12.29 to 12.33; 12.3 is superseded) |
+| 7 | `_read_response`, the final `raise S3270Error(f"s3270 returned error for {action!r}", action=action, data_lines=..., status_line=...)` | Action in message and `action` | message with `{shown!r}` and `action=shown`. `data_lines` and `status_line` are passed through unchanged. (12.4) |
+| 8 | `_wait`, `except S3270Error as exc` (see "Exception messages built from response data") | builds `text = " ".join(exc.data_lines)` and puts it in a `ConnectorTimeoutError` message and in a re-raised `S3270Error` message | `text` is used only to classify the error. Neither message contains it. (12.34) |
+| 9 | `parser.py` `_tokenize`, the `else: raise ParseError(...)` branch | `f"Unrecognised ReadBuffer token: {token!r}"`, `raw=token` | message with row index, token index and token length; `raw=""`. (12.35) |
+
+Sites that were audited and do not change:
+
+| Place | Why it is unchanged |
+|---|---|
+| `connector.py` `open()` | Renders `Connect(host:port)` and `{exc}` of an `S3270Error` for that Connect. Never a String_Action. |
+| `connector.py` `close()` | Sends `Disconnect()` and `Quit()` and swallows `ConnectorError`/`OSError`. The warning text is a fixed literal. |
+| `connector.py` `string()` | The `ValueError` for text over 3000 characters names only `len(text)`. It never prints the text. |
+| `connector.py` `pf`, `pa`, `move_cursor`, `_check_key_number` | Messages carry only integers. |
+| `connector.py` `wait_for_text()` | Puts the searched `text` in its `ConnectorTimeoutError`. This is by design (Requirement 4.8, callers must not pass secrets) and is out of scope for Requirement 12. |
+| `connector.py` `_terminate_proc()`, `_exit_code()` | Fixed literal warning text; no Action. |
+| `_io.py` `PipeReader.readline()` | Raises `S3270Error(action="<pipe read>")` and `ConnectorTimeoutError(operation="readline")`. Both are fixed literals; `PipeReader` never receives the Action. Sites 2 and 5 replace what the Connector derives from these errors. |
+| `_io.py` `start_stderr_drain()` | Discards stderr. |
+| `parser.py` `parse_status_line` | Its two `ParseError`s keep the raw Status Line in message and `raw` (Requirements 6.6 and 6.7). The Status Line is excluded from Response_Data by the glossary (12.35). The `ParseError` of a bad ReadBuffer token does change, see site 9. |
+| `parser.py` `parse_readbuffer` | Reads `response.data_lines` only to build the `Screen`; logs nothing and raises only through `_tokenize` and `parse_status_line`. |
+| `connector.py` `open()` lines 59 to 90 | `ConnectorError` messages hold host, port, binary path and `{exc}` of the Connect `S3270Error`, whose message holds no data line after site 7. Grep for `data_lines` in `greenscreen/connector/*.py` finds only `_wait`, `_read_response`, `parse_readbuffer`/`_tokenize`, `models.py`, and `exceptions.py` (attribute storage), so no other message is built from response data. |
+
+`greenscreen/connector/_io.py` therefore needs no edit. Exceptions that are chained with `from exc` (sites 2 and 5) link to `PipeReader` errors that contain no Action text, and a `BrokenPipeError` raised by the pipe carries only the OS error text, so the `__cause__` and `__context__` chains are clean without extra work. The tests check this rather than assume it.
+
+#### Data flow: what is real and what is redacted
+
+The real Action text is written to s3270 stdin exactly as today. Only the strings that leave the Connector are rendered through `redact_action`.
+
+```mermaid
+sequenceDiagram
+    participant C as Caller
+    participant K as Connector
+    participant R as redact_action
+    participant P as s3270 stdin
+    participant L as logging / exceptions
+
+    C->>K: string(text)
+    K->>K: action = 'String("' + escape(text) + '")'
+    K->>K: send(action) validates action
+    alt action empty, or contains newline or CR
+        K->>R: redact_action(action)
+        R-->>K: String(N chars)
+        K->>L: ValueError(Invalid action string: shown)
+    else valid
+        K->>R: redact_action(action)
+        R-->>K: shown
+        K->>L: DEBUG sent, action=shown raw=shown
+        K->>P: write(action + newline), real text, unmodified
+        P-->>K: data lines, status line, ok or error
+        K->>L: DEBUG received, action=shown lines=N status=guarded result, no response line
+        K-->>C: Response (unchanged) or S3270Error/ConnectorTimeoutError using shown
+    end
+```
+
+`redact_action` runs in the Connector's own call frames and returns a new string. The `action` variable, the `bytes` written to stdin, and the `Response` returned to the caller are not touched by it. Tracebacks and frame locals still hold the real Action; they are in-process state and are outside the definition of Outside_Rendering.
+
+#### Received record and status-line guard (criteria 29 to 33, 45)
+
+**The record.** `_read_response` emits exactly one DEBUG record per response, on every path that reaches the end of the read loop (`ok` and `error`). The old `raw` argument and the `element.replace(action, shown)` step are deleted.
+
+```python
+# connector.py, module level, private
+_INT = re.compile(r"[0-9]+")
+
+def _status_for_log(line: str) -> str:
+    """Status text for the Received_Record. Never copies a character of an
+    unexpected line (criterion 33)."""
+    tokens = line.split()
+    if len(tokens) == 12 and all(_INT.fullmatch(tokens[i]) for i in (6, 7, 8, 9)):
+        return line                       # criterion 32: log as received
+    return f"<unparsed status, {len(line)} chars>"
+```
+
+```python
+# connector.py, _read_response, replaces the old logger.debug("... raw=%s") call
+status_raw = lines[-1] if lines else ""
+logger.debug(
+    "direction=received action=%s lines=%d status=%s result=%s",
+    shown,
+    len(data_lines),            # data lines only: not the status line, not ok/error (31)
+    _status_for_log(status_raw),
+    line,                       # "ok" or "error"
+)
+status = ScreenParser().parse_status_line(status_raw)   # unchanged, after the record
+```
+
+Decisions behind this code:
+
+- The record is logged before `parse_status_line`, as today, so a response with a bad Status Line still leaves one record, with `<unparsed status, N chars>`, and then raises the `ParseError` of 6.6 or 6.7 as today.
+- `status_raw` stays the last line that is neither a `data: ` line nor `ok`/`error`, as today. Any extra lines before it are Response_Data: they are not counted in `lines` (31) and not logged (30).
+- The guard accepts a token in fields 7 to 10 only if it matches ASCII `[0-9]+`. `parse_status_line` uses `int()`, which also accepts a sign, underscores and non-ASCII digits. The guard is deliberately stricter so a line that `int()` accepts but that is not plain digits is logged as `<unparsed status, N chars>`. Such a line never occurs in `/captures`. This stays inside criterion 32, which says "decimal integers".
+- `N` is `len(line)`, the character count after UTF-8 decoding with `errors="replace"`. The line `U F U C(192.168.68.72) I 2 24 80 22 11 0x0 0.000` passes the guard and is logged as received; it holds the host address of the Config, mode letters and numbers (criterion 32 basis).
+- Criterion 45: no other `logger.*` call in `greenscreen/connector/` takes response content. `_write` logs the Redacted_Action only, `close()` and `_terminate_proc` log fixed literals. A unit test (below) scans every record of a full session, so a later log statement that adds response text fails it.
+
+#### Exception messages built from response data (criteria 34 to 37, 39)
+
+Grep of `greenscreen/connector/*.py` for `data_lines`, `_wait`, `ParseError`, `raw=`, and `S3270Error(`/`ConnectorError(` shows these places that build a message from response data. Nothing else does.
+
+| Place | Today | After |
+|---|---|---|
+| `_wait`, timeout branch | `ConnectorTimeoutError(f"Wait({wait_type}) timed out after {N}s: {text}", operation=..., deadline=t)` with `text = " ".join(exc.data_lines)` | `ConnectorTimeoutError(f"Wait({wait_type}) timed out after {N}s", operation=f"Wait({wait_type})", deadline=t) from exc`. Classification is unchanged: case-insensitive `"timed out"` or `"timeout"` in the joined data lines. |
+| `_wait`, non-timeout branch | re-raises `S3270Error(f"{exc}: {text}", action=..., data_lines=..., status_line=..., exit_code=...)` | the branch is deleted; a bare `raise` re-raises the `S3270Error` of `_read_response`, whose message is `s3270 returned error for 'Wait(N,type)'` (12.34). |
+| `parser._tokenize` | `ParseError(f"Unrecognised ReadBuffer token: {token!r}", raw=token)` | `ParseError(f"Unrecognised ReadBuffer token at row {row_i}, index {tok_i}, length {len(token)}", raw="")` where `tok_i` is the zero-origin position of the token among the whitespace-separated tokens of the row (12.35). |
+| `wait_for_text` timeout | carries the caller's `text` and the timeout | unchanged (12.39). |
+| `parse_status_line` errors | raw Status Line in message and `raw` | unchanged (12.35: the Status Line is not Response_Data). |
+
+```python
+# connector.py, _wait after the change
+try:
+    return self._send_with_deadline(action, t + self.WAIT_GRACE_SECONDS)
+except S3270Error as exc:
+    lowered = " ".join(exc.data_lines).lower()      # classify only; never copied
+    if "timed out" in lowered or "timeout" in lowered:
+        raise ConnectorTimeoutError(
+            f"Wait({wait_type}) timed out after {self._format_seconds(t)}s",
+            operation=f"Wait({wait_type})",
+            deadline=t,
+        ) from exc
+    raise
+```
+
+**What stays, by design (12.36, Scope).** `S3270Error.data_lines` keeps the response lines, unchanged and uncopied, so `exc.data_lines` is the documented place to read the error text. The new `ConnectorTimeoutError` is still chained `from exc`, so `__cause__.data_lines` holds them too. A subprocess-exit or pipe-timeout `S3270Error` carries empty `data_lines`. The Connector never logs `vars(exc)`, `exc.data_lines` or `__cause__`. `exceptions.py` needs no edit: both classes already pass only the message to `Exception.__init__`, so `str()`, `repr()` and `args` hold the message and nothing else (12.37). Response.data_lines of an `ok` `ReadBuffer(Ascii)` response holds the hidden cells and is returned unchanged (12.38).
+
+**Hidden cells in `read_screen()` (12.38).** No `Screen`, `Field.text` or cell value is passed to a logger or exception. The `Screen` returned by `read_screen()` is built exactly as before, so criterion 38 needs no code beyond the omissions above; Property 11 and the unit tests prove it.
+
+#### Resolved item: does s3270 echo a `String(...)` action in error responses?
+
+Checked on 2026-11-16 on the live host (`tests/integration/test_live_string_echo.py`, ws3270 4.5, non-secret sentinel `echo-probe-7q`). State used: logon screen, cursor moved to row 0 col 0 (a protected field) with `MoveCursor(0,0)`, then `String("echo-probe-7q")`. s3270 returned `error` with the data lines `Keyboard locked` and `Operator error`. Neither the sentinel nor the Action text appears in a data line or the status line. Manual checks by the user (no connection, protected field, unknown action, syntax error) found that neither s3270 4.3 nor ws3270 4.5 echoes the String argument.
+
+Since criterion 30 no response line is logged, so a possible echo cannot reach a log record whatever s3270 prints; `data_lines` is never edited (12.17). The finding stays useful as evidence that error responses do not echo the argument. The result is not yet copied to the steering document.
+
+#### Test design for Requirement 12
+
+Test files. The Property 10 and Requirement 12.1 to 12.28 files exist; the files marked "extended" or "new" are the work of criteria 29 to 45:
+
+| File | Content |
+|---|---|
+| `tests/connector_support.py` (extended) | Shared helpers: `ScriptedProc`, `BrokenPipeProc`, `RecordingFake`, `LogCapture`, `collect_exception_text(exc, exclude_attrs=frozenset())`, `collect_record_text(record)`, plus the new hidden-cell helpers `hidden_runs`, `forms_of_run`, `forbidden_forms` (see "Hidden-cell helpers"). `exclude_attrs` defaults to empty, so every existing caller behaves as before. |
+| `tests/unit/test_redact_action.py` | Unit tests of `redact_action` alone (Requirement 12.10 to 12.14, 12.22). Unchanged. |
+| `tests/unit/test_connector_redaction.py` (extended) | Unit tests through the Connector (12.19 to 12.21, 12.23, 12.15, 12.17), plus the response-redaction tests of 12.40 and 12.41 (new tests appended; two existing tests change, see "Existing tests that change"). |
+| `tests/property/test_string_redaction.py` | Property 10 (12.24 to 12.28); only `_FIXED_STRINGS` changes. |
+| `tests/property/test_response_redaction.py` (new) | Property 11 (12.42, 12.43). |
+| `tests/integration/test_live_logon_redaction.py` (new) | Live logon with log capture (12.44). |
+
+**Test doubles.** The unit tests reuse the two doubles that `tests/unit/test_connector.py` already defines, copied into `tests/connector_support.py` so the property test can import them (the existing file stays as it is):
+
+- `RecordingFake(FakeS3270)` records every command, so a test can assert that the unmodified Action reached the fake host. When its script is exhausted it stays silent, which simulates a hung process. This produces the timeout without a real wait: the test sets `conn._config.default_timeout` to `0.05` after `open()`, the same trick as the existing `fast()` helper (the `1` to `3600` range check runs only at `ConnectorConfig` construction). For the `wait_for_*` tests the grace period is shortened the same way: `conn.WAIT_GRACE_SECONDS = 0.05` on the instance, so the pipe deadline is `t + 0.05` instead of `t + 5`. No example waits one second or more.
+- `ScriptedProc` is a Popen-like object over `io.BytesIO` pipes. Its `stdout` holds the bytes for the Connect response and then ends, so the next read sees EOF at once. Its `wait()` returns the configured exit code immediately. The subprocess-exit test uses it with `wait_value=7`. The real `Connector._exit_code()` calls `proc.wait(timeout=1)`, which would block up to one second on a live process; the double returns at once, so no real second passes.
+- `BrokenPipeProc(ScriptedProc)` is new. Its `stdin.write` succeeds for the first write (the `Connect` Action) and raises `BrokenPipeError(32, "Broken pipe")` on every later write, after appending the attempted bytes to `attempted`. The error carries no Action text. `wait()` returns at once. This produces the broken pipe case without a real process.
+
+**Unit tests for the places in Requirement 12.19 and 12.20.** For each place, a test calls `Connector.string(sentinel)` where `sentinel` contains characters that must not appear anywhere else, for example `'pw"\\x-unlikely'` extended with non-ASCII letters, and asserts the sentinel appears nowhere in the output of that place and that `String(<len(sentinel) chars>)` appears in it. The exception tests pass the exception to `collect_exception_text`, which returns `str(exc)`, `repr(exc)`, `str(a)` and `repr(a)` for every `a` in `exc.args`, `repr` and `str` of every value in `vars(exc)` (covering `action`, `operation`, `data_lines`, `status_line`, `exit_code`, `deadline`), and the same for every exception reached through `__cause__` and `__context__`, with a visited set so cycles end.
+
+| Place | Double | Check |
+|---|---|---|
+| DEBUG record for the sent Action | `RecordingFake` | `collect_record_text(record)` returns `msg`, each element of `args`, and `getMessage()`. |
+| DEBUG record for the received response | `RecordingFake` | Same, and the record's `args[0]` is `String(<N chars>)`. Also a variant whose scripted response line is an exact copy of the Action: no record text contains that line (12.30) and `Response.data_lines` still holds the copy (12.17). |
+| `S3270Error` for an error response | `RecordingFake` with an `error` entry | Also asserts `exc.action == "String(<N chars>)"`. |
+| `S3270Error` for a broken pipe | `BrokenPipeProc` | Also asserts `exc.action` and the `exit_code`. |
+| `S3270Error` for a subprocess exit | `ScriptedProc` | Also asserts `exit_code == 7`, unchanged (12.6). |
+| `ConnectorTimeoutError` for a send timeout | `RecordingFake`, silent | Asserts `exc.operation == "String(<N chars>)"`, `exc.deadline` unchanged. |
+| `ValueError` for an invalid Action containing a newline | `RecordingFake` | The text contains `\n`; also a CR variant. Asserts nothing was recorded after the Connect command. |
+
+**Unit tests for 12.21.** Parametrized over `string(`, `STRING(`, `sTrInG(`, `  String(` and `String (`, each with a quoted argument that contains a sentinel. The test calls `send()` directly, once with an `ok` response and once with an `error` response. It asserts the Redacted_Action in the log records and in the `S3270Error`, and that `RecordingFake.commands[-1]` equals the original text.
+
+**Unit tests for 12.22** (`test_redact_action.py`): a body with `\"` and `\\` counts each pair as one; an empty body gives `String(<0 chars>)`; an unterminated body, a trailing lone backslash, two arguments, an unquoted argument, and text after the closing `)` give `String(<? chars>)`; `Strings("x")`, `StringX(1)` and `Enter()` come back unchanged; every non-String Action listed in 12.14 comes back unchanged; the `isspace` equivalence check from the String-name regex above; `\u017fTRING("x")` and a Kelvin-sign variant are not String_Actions (they fail the ASCII-letter name match and are returned unchanged). Every result for a String_Action is matched against `^String\(<(0|[1-9][0-9]*|\?) chars>\)$`.
+
+**Unit tests for 12.23.** For each of `wait_for_output`, `wait_for_field`, `wait_for_unlock`: call `string(sentinel)` successfully, then call the wait method once against an `error` entry and once against a silent fake (pipe timeout). Assert that the raised `S3270Error` or `ConnectorTimeoutError` has exactly the message, `action` and `operation` it has without the earlier `string()` call, and that the sentinel is absent. The expected values are the ones the existing wait tests in `test_connector.py` already assert.
+
+#### Hidden-cell helpers (`tests/connector_support.py`)
+
+The helpers compute the Hidden_Cells from the drawn `Screen.cell_grid` by their own linear scan, independent of `Screen.fields` and `Field.hidden`, so a bug in the code under test cannot hide a leak by changing the oracle.
+
+```python
+def hidden_runs(screen: Screen) -> list[tuple[list[int], list[list[int]]]]:
+    """For every SFToken whose c0 has (c0 & 0x0C) == 0x0C, return
+    (whole_run, per_row_runs). Linear position p = row * columns + col.
+    The cells of the field are p+1, p+2, ... up to, excluding, the next
+    SFToken position, wrapping modulo rows*columns; the SF cell itself and
+    SA tokens are never included; a 0x00 cell is included as the value 0.
+    per_row_runs splits whole_run at row boundaries, in screen order."""
+
+def forms_of_run(run: list[int]) -> set[str]:
+    """Plain_Form: "".join(chr(b) for b in run if b != 0), omitted when empty.
+    Hex_Forms: for case in (lower, upper), for sep in ("", " "):
+    sep.join(f"{b:02x}" or f"{b:02X}" for b in run). Up to 5 strings."""
+
+def forbidden_forms(screen: Screen, min_len: int = 4) -> set[str]:
+    """Union of forms_of_run over every whole_run and every per_row_run whose
+    length is at least min_len. Runs shorter than min_len are skipped."""
+```
+
+The 4-byte floor on a per-row piece is a design decision: a field that wraps can leave 1 to 3 bytes at the end of a row, and a 1-byte hex form such as `41` is indistinguishable from fixed text. The whole run of the planted field is always at least 4 bytes (12.43), so the whole-run forms are always checked. Criterion 42 says "each run within one row"; this design applies it to row runs of 4 bytes or more. Plain_Form is built after dropping nulls, so a run of bytes whose non-null part is shorter than 4 characters is still checked when the run itself has 4 or more bytes; the `assume` filter below removes the coincidental cases.
+
+#### Unit tests for criteria 29 to 41
+
+New tests in `tests/unit/test_connector_redaction.py`, using `RecordingFake`, `ScriptedProc` and `LogCapture` at level `DEBUG` attached to the `greenscreen.connector` logger with the logger level set to `DEBUG` and restored afterwards (so records of every level from every Connector logger statement are captured; the handler is also attached with `NOTSET` so nothing is filtered).
+
+| Test | Setup | Assertions (exact) |
+|---|---|---|
+| Received_Record shape, `ok` | `Enter()` answered with two data lines `x1`, `x2`, `STATUS`, `ok` | exactly one record whose `msg == "direction=received action=%s lines=%d status=%s result=%s"` and `args == ("Enter()", 2, STATUS, "ok")`; `getMessage()` equals `"direction=received action=Enter() lines=2 status=<STATUS> result=ok"`; the text of `x1` and `x2` is in no record text (12.29, 12.30, 12.31) |
+| Received_Record shape, `error` | `Enter()` answered with one data line, `error` | `args == ("Enter()", 1, STATUS, "error")`; `S3270Error` raised; the line is absent from record text |
+| Echo of the Action | scripted data line equal to `String("<sentinel>")` | `args[0] == "String(<N chars>)"`, line absent from record text, `Response.data_lines == [that line]` (12.17, 12.30) |
+| Unparseable status | the status line is `Keyboard locked` followed by `ok` | the record has `args[2] == "<unparsed status, 15 chars>"`; `Keyboard locked` appears in no record text; `ParseError` is raised afterwards (6.6) |
+| Status guard variants (parametrized) | 11 tokens; 13 tokens; 12 tokens with field 7 `ab`; field 9 `-1`; empty status (no line before `ok`) | each logs `<unparsed status, N chars>` with `N == len(line)` (0 for the empty case) and copies no character of the line |
+| Hidden cells, `ok` (12.40) | `ScreenRenderer` output of a screen with one hidden field holding a fixed run of at least 4 bytes (for example `b"s3Cr3t!x"`), scripted as the `ReadBuffer(Ascii)` response | `read_screen()` returns a `Screen` equal to the rendered one; `forbidden_forms(screen)` strings are found in no `collect_record_text` of any record; the run's whole Plain_Form and its four Hex_Forms are named explicitly in the test so a helper bug shows |
+| Hidden cells, `error` (12.41) | same lines, result `error` | `S3270Error` raised; `collect_exception_text(exc, exclude_attrs={"data_lines"})` and the same for `__cause__` and `__context__` hold none of the forms; `exc.data_lines == scripted lines`; no record holds them |
+| `_wait` error (12.34) | `Wait(5,Output)`, data line `Not connected`, `error` | `str(exc) == "s3270 returned error for 'Wait(5,Output)'"`; `"Not connected"` not in `str`, `repr`, `args`; `exc.data_lines == ["Not connected"]` |
+| `_wait` timeout response (12.34) | `Wait(5,Output)`, data line `Timed out waiting`, `error` | `ConnectorTimeoutError`; `str(exc) == "Wait(Output) timed out after 5s"`; `exc.operation == "Wait(Output)"`; `exc.deadline == 5`; `"Timed out waiting"` not in `str`, `repr`, `args`; `exc.__cause__.data_lines == ["Timed out waiting"]` |
+| ReadBuffer token (12.35) | `ScreenParser` on `["41 zz 42"]`, 1 row 3 cols (via `read_screen()` with a scripted response and via the parser) | `str(exc) == "Unrecognised ReadBuffer token at row 0, index 1, length 2"`; `exc.raw == ""`; `"zz"` not in `str`, `repr`, `args` |
+| No other log statement (12.45) | a session of `open()`, `string()`, `enter()`, `read_screen()` with a hidden field, `wait_for_text`, `close()` | every record's `collect_record_text` holds no Hidden_Bytes form and no scripted data line; guards against a later `logger.*` call that adds response text |
+| Exception chain (12.37) | the `error` cases above | `str()`, `repr()` and every `args` element of the exception and of its chain hold no data line and no form |
+
+These tests read the exception through `collect_exception_text(exc, exclude_attrs={"data_lines"})` where the criterion excludes `data_lines`, and through the plain `collect_exception_text(exc)` for the String_Action tests of 12.20, which have no response data.
+
+#### Existing tests that change (Scope list)
+
+Five existing tests assert the old behaviour and are edited in the implementation task. All other existing tests must pass unchanged, including `tests/unit/test_connector.py::test_debug_logging_records_sent_and_received` and `tests/integration/test_live_wait_format.py`.
+
+| Test | Old assertion | New assertion |
+|---|---|---|
+| `tests/unit/test_connector.py::test_wait_other_error_raises_s3270error_with_text` (line 383). Rename to `test_wait_other_error_raises_s3270error_without_response_text` | `assert "Not connected" in str(ei.value)` | `assert str(ei.value) == "s3270 returned error for 'Wait(5,Output)'"`; `assert "Not connected" not in str(ei.value) and "Not connected" not in repr(ei.value)`; `assert ei.value.data_lines == ["Not connected"]`; `assert ei.value.action == "Wait(5,Output)"` |
+| `tests/unit/test_connector_redaction.py::test_wait_error_response_after_string_is_unchanged` (line 283) | `assert str(exc) == f"s3270 returned error for {wait!r}: Not connected"` | `assert str(exc) == f"s3270 returned error for {wait!r}"`; add `assert "Not connected" not in str(exc) and "Not connected" not in repr(exc)`. `exc.action == wait`, `exc.data_lines == ["Not connected"]` and the leak checks stay. Rename to `..._has_no_response_text` |
+| `tests/unit/test_connector_redaction.py::test_received_record_replaces_echo_of_action_but_data_lines_keep_it` (line 148). Rename to `test_received_record_has_no_response_line_but_data_lines_keep_echo` | asserts the logged raw line holds `String(<N chars>)` in place of the echo | keep the `Response.data_lines` assertion; replace the logged-line assertion with `assert rec.args == ("String(<N chars>)", 1, STATUS, "ok")` for the one `direction=received` record, and `assert echo_line not in text` for every string of `collect_record_text` of every record (12.30) |
+| `tests/unit/test_parser.py::test_readbuffer_bad_token_raises` (line 141) | `assert exc.value.raw == bad` | `assert exc.value.raw == ""`; `assert str(exc.value) == f"Unrecognised ReadBuffer token at row 0, index 1, length {len(bad)}"` (the message holds no character of `bad`, since the token is at index 1 of row 0) |
+| `tests/property/test_string_redaction.py` `_FIXED_STRINGS` (line 43) | contains `"direction=received action=%s raw=%s"` | replace that element with `"direction=received action=%s lines=%d status=%s result=%s"`; keep `"direction=sent action=%s raw=%s"`. The Greek marker alphabet stays disjoint from the new format string (it has no Greek letter), and the import-time precondition loop covers it |
+
+#### Integration test (Requirement 12.44)
+
+File `tests/integration/test_live_logon_redaction.py`, marked `@pytest.mark.integration`, using the existing `host_reachable` fixture and the skip rules of Requirement 10.4: skip with a message naming `TK5_USERNAME` or `TK5_PASSWORD` when either is unset, and skip with `"password too short for a meaningful absence check"` when `len(password) < 4`.
+
+1. Attach `LogCapture(logging.DEBUG)` to the `greenscreen.connector` logger and set its level to `DEBUG`; remove both in a `finally`.
+2. Run the logon of the steering document through the Connector: `wait_for_text("Logon ===>")`, `string(user)` and `enter()`, `wait_for_text("ENTER CURRENT PASSWORD")`, `string(password)` and `enter()`, then `wait_for_text("***")` and `enter()` for each of the two pauses, `wait_for_text("ISPF Primary Option Menu")`, `string("X")` and `enter()`, `wait_for_text("READY")`, `string("LOGOFF")` and `enter()`. The `wait_for_text` calls read the screens that still hold the typed password in the hidden cells, which is the leak this test guards.
+3. The flow is inside `try/except BaseException as exc`: the exception texts of any raised exception (`collect_exception_text(exc)` with its chain) are added to the haystack, the absence assertions run, and the exception is re-raised so a failed logon is not hidden.
+4. Forbidden strings: for `pw` in `{password, password.upper(), password.lower()}`, the Plain_Form `pw` and the four Hex_Forms of `pw.encode("ascii")` bytes (`forms_of_run(list(pw.encode("ascii")))`). The haystack is every `collect_record_text` of every captured record and every exception text. Assert none of the forbidden strings occurs in any haystack string. The test never prints the password: the assertion message names the form index and record index only.
+5. The flow-runtime spec may add its own end-to-end version; this test records the connector-side expectation.
+
+Expected result on the live host: no forbidden string in any record or exception. The test is the check that criterion 30 and 38 hold on real data, where the earlier run found the password three times.
+
+#### Timing
+
+All new unit tests use in-memory doubles and the `0.05`-second timeout trick above; none waits one second or more. The Received_Record is cheaper than before (a count and a short status text, instead of joining up to 1920 hex tokens per `ReadBuffer(Ascii)` response). Property 11 runs 100 examples, each building a screen of up to 24 by 80 cells, rendering it, running one fake host with a reader thread and one `read_screen()`; the budget is a few seconds, well inside the 60 seconds of Requirement 9.5. The live logon takes under 10 seconds (the steering document measured under 6 seconds for logon to logoff), plus the polling interval of `wait_for_text`.
+
+**Regression.** The full existing suite (`pytest -m "not integration"`) runs, with the five edits above as the only changes to existing tests. In particular `test_send_hung_process_times_out_terminates_and_closes_session` (asserts `"Enter()" in str(ei.value)`), `test_send_error_raises_s3270error_with_context` and `test_debug_logging_records_sent_and_received` keep passing because non-String Actions render as before and the Received_Record still holds the action, the direction and the result.
 
 ---
 
@@ -905,6 +1225,24 @@ Twelve named attributes corresponding to the 12 space-separated fields that s327
 
 ---
 
+### Property 10: String text never leaves the Connector
+
+*For any* text of 0 to 3000 characters (a marker followed by a body) and *for any* failure mode in {success, error response, timeout, subprocess exit, broken pipe}, running `Connector.string(text)` against the test double SHALL leave the text, the marker, every marker-alphabet character that occurs in the text, and the `ascii()` escaped form of the marker absent from every log record (`msg`, every element of `args`, and `getMessage()`, at every level) and from every exception the Connector raises (`str()`, `repr()`, `args`, every attribute, and the `__cause__` and `__context__` chain); the Redacted_Action `String(<len(text) chars>)` SHALL appear in the sent-Action log record; the unmodified Action text SHALL have been written (attempted, for the broken pipe mode) to the host double; and in the success mode the returned `Response` SHALL equal the scripted response.
+
+**Validates: Requirements 12.1, 12.2, 12.4, 12.5, 12.6, 12.7, 12.10, 12.11, 12.13, 12.15, 12.24, 12.25, 12.26, 12.27, 12.28**
+
+(Requirement 12.3, formerly validated here, is superseded by 12.29 and 12.30; the received-record side is now Property 11 and the unit tests.)
+
+---
+
+### Property 11: Hidden cell data never leaves the Connector
+
+*For any* `Screen` whose field layout contains at least one hidden field (`c0` with `(c0 & 0x0C) == 0x0C`) holding 4 to 32 Hidden_Bytes, and *for any* result mode in {ok, error}, when the screen is rendered with `ScreenRenderer` and scripted as the response to `ReadBuffer(Ascii)` and `read_screen()` is called, the Plain_Form and the four Hex_Forms of every whole Hidden_Bytes run and of every run of 4 or more bytes within one row SHALL occur in no log record (`msg`, every element of `args`, and `getMessage()`, at every level) and in no `str()`, `repr()` or element of `args` of any exception raised by `read_screen()` (including the `S3270Error` built from the `error` response, and its `__cause__` and `__context__` chain); in the `ok` mode the returned `Screen` SHALL equal the drawn `Screen`, and in the `error` mode `S3270Error.data_lines` SHALL equal the scripted lines.
+
+**Validates: Requirements 12.29, 12.30, 12.34, 12.37, 12.38, 12.42, 12.43**
+
+---
+
 ## Error Handling
 
 ### Decision Table
@@ -918,9 +1256,26 @@ Twelve named attributes corresponding to the 12 space-separated fields that s327
 | s3270 binary not found | `ConnectorError` | message includes `.binary` path |
 | `open()` called on already-open session | `ConnectorError` | message indicates already open |
 | `Connect()` returns error | `ConnectorError` | includes host:port |
-| Status line missing or malformed | `ParseError` | `.raw` |
-| `SF` token hex value invalid | `ParseError` | `.raw` (the offending token) |
+| Status line missing or malformed | `ParseError` | `.raw` (the raw Status Line) |
+| Unrecognised ReadBuffer token (including an `SF` with invalid hex) | `ParseError` | `.raw == ""`; message has row index, token index and length, never the token |
 | Method called after `close()` | `SessionClosedError` | — |
+
+### Redaction in Exceptions
+
+Wherever the table above says an exception carries the action (`S3270Error.action`, `ConnectorTimeoutError.operation`, and the messages of both, plus the `ValueError` for an invalid action string), a String_Action appears as its Redacted_Action, for example `String(<8 chars>)` or `String(<? chars>)`. All other Actions appear as before. `exit_code`, `deadline`, `data_lines` and `status_line` are unchanged. See "Action Redaction (Requirement 12)".
+
+### Redaction of Response Data in Exceptions
+
+No exception message holds a data line or other Response_Data (Requirement 12.34 to 12.37):
+
+| Exception | Message after the change |
+|---|---|
+| `S3270Error` for an `error` response (also for a wait, no suffix) | `s3270 returned error for '<action>'`; error text only in `.data_lines` |
+| `ConnectorTimeoutError` from `_wait` | `Wait(<type>) timed out after <N>s` |
+| `ParseError` for a bad ReadBuffer token | `Unrecognised ReadBuffer token at row <r>, index <i>, length <n>`, `raw=""` |
+| `ParseError` for a bad Status Line | unchanged, raw Status Line in message and `raw` (Requirements 6.6, 6.7) |
+
+`S3270Error.data_lines` is the structured place for the error text. Residual paths by design: a caller that logs `exc.data_lines` or `vars(exc)`, or walks `__cause__` of the wait timeout error to the `S3270Error`, writes the lines itself; the Connector does not.
 
 ### Subprocess Exit During Active Session
 
@@ -937,10 +1292,9 @@ When `ConnectorTimeoutError` is raised from `_read_response()`:
 
 ### Logging
 
-All log output goes to logger `greenscreen.connector` at DEBUG level. Each record includes:
-- `action`: the s3270 command string
-- `direction`: `"sent"` or `"received"`
-- `raw`: the full raw s3270 response string
+All log output goes to logger `greenscreen.connector` at DEBUG level. There are two record shapes, both with the `action` field (for a String_Action, its Redacted_Action; see "Action Redaction"):
+- Sent record: `direction=sent action=%s raw=%s`, where `raw` is the same rendering of the action.
+- Received record: `direction=received action=%s lines=%d status=%s result=%s`. `lines` is the number of data lines, `status` is the Status Line when it has 12 tokens and integer fields 7 to 10 and otherwise `<unparsed status, N chars>`, and `result` is `ok` or `error`. No response line is logged, because the cells of hidden fields appear in `ReadBuffer(Ascii)` data lines (Requirement 12.30). This replaces the earlier `raw` field that held the full response, and changes the wording of Requirement 7.8, which asked for "the full raw s3270 response string".
 
 No log records are emitted at INFO or above during normal operation. Warnings are emitted only when `close()` has to forcibly terminate the subprocess.
 
@@ -969,6 +1323,8 @@ Coverage targets:
 - `FakeS3270`: pattern mismatch raises `AssertionError`, exhaustion raises `AssertionError`.
 - `load_fixture()`: parses `tk5-logo.yaml` and `tk5-logon.yaml` without error.
 - `SA(42=xx)` cell-occupancy regression test: count non-SA tokens per row in logon fixture and assert each row has exactly 80 non-SA tokens (confirmed settled fact, steering doc 2026-11-15).
+- Action redaction (Requirement 12): `redact_action` rules, the seven places of 12.19 with the exception inspection of 12.20, direct `send()` String variants, and `wait_for_*` after `string()`, in `tests/unit/test_redact_action.py` and `tests/unit/test_connector_redaction.py`. Test doubles and cases are described in "Test design for Requirement 12" above.
+- Response redaction (Requirement 12.29 to 12.45): Received_Record shape, status-line guard variants, hidden cells in `ok` and `error` responses, `_wait` and `ParseError` messages, a whole-session record scan, and the five edited existing tests, all listed in "Unit tests for criteria 29 to 41" and "Existing tests that change".
 - `Logon ===>` field wrap test: using the logon screen fixture from `captures/`, verify that the `Logon ===>` input field (`SF c0=c8` at its known position) spans to the end of the screen (wrapping past the last row of the visible area), and that `find_field` returns the correct `Field` for a cell position inside that span.
 
 ### Property Tests (`tests/property/`) — Hypothesis
@@ -1029,6 +1385,69 @@ def test_escape_roundtrip(text: str) -> None:
     assert _unescape_s3270_string(_escape_s3270_string(text)) == text
 ```
 
+```python
+# Property 10: String text never leaves the Connector
+# File: tests/property/test_string_redaction.py
+MARKER_ALPHABET = ("ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ"      # Greek capitals
+                   "αβγδεζηθικλμνξοπρστυφχψω")    # Greek small letters
+MODES = ["success", "error", "timeout", "exit", "broken_pipe"]
+
+@st.composite
+def secret_text(draw) -> str:
+    marker = draw(st.text(alphabet=MARKER_ALPHABET, min_size=8, max_size=16))
+    body = draw(st.text(
+        alphabet=st.one_of(
+            st.characters(min_codepoint=0x20, max_codepoint=0x7E),   # includes " and \
+            st.characters(min_codepoint=0xA1, max_codepoint=0x2FFF,
+                          blacklist_categories=("Cs", "Cc", "Cn", "Co", "Zs")),
+        ),
+        max_size=3000 - len(marker),                                 # 0 to 2984
+    ))
+    return marker + body
+
+@given(text=secret_text(), mode=st.sampled_from(MODES))
+@settings(max_examples=100, deadline=None)
+def test_string_text_never_leaves_connector(text: str, mode: str) -> None:
+    # Feature: tn3270-connector, Property 10: String text never leaves the Connector
+    ...
+```
+
+**Strategy for Property 10.**
+
+- **Marker alphabet.** The 48 Greek letters listed in `MARKER_ALPHABET` (24 capitals, 24 small letters without final sigma). All are non-ASCII printable characters, so none occurs in a log format string, an exception message, an Action name, a decimal digit, a word of the Redacted_Action, the configured binary path (`s3270`) or host (`host.example`), or in `"`, `'` and `\`. The test asserts this precondition once at import time against the fixed strings it knows about, so a later wording change that adds a Greek letter fails loudly instead of causing a false pass.
+- **Text.** `marker` has 8 to 16 characters; `body` has 0 to `3000 - len(marker)` characters, which is at most 2984. The body mixes printable ASCII (U+0020 to U+007E, including `"` and `\`, so the escape rules are exercised) with non-ASCII printable characters. Control characters, including newline and carriage return, are not generated; those are the unit tests for 12.8. The total length is at most 3000, the limit `string()` enforces.
+- **Failure modes and doubles.** `success`: `RecordingFake` with a script of the Connect entry and an `ok` entry for `String\(.*\)` with one data line that does not echo the text. `error`: same with an `error` entry and the data line `Keyboard locked`. `timeout`: `RecordingFake` with only the Connect entry, and `default_timeout` set to `0.05` after `open()`. `exit`: `ScriptedProc` holding only the Connect response, so the next read sees EOF, with `wait_value=7`. `broken_pipe`: `BrokenPipeProc`. No mode waits one second or more, so 100 examples finish well inside the 60 seconds of Requirement 9.5.
+- **Setup per example.** Each example builds its own double and Connector inside the test body, and closes the double in a `finally`. The test does not use pytest fixtures (a function-scoped fixture under `@given` triggers a Hypothesis health check) and does not use `caplog`; it attaches a list-collecting `logging.Handler` at level `DEBUG` to the `greenscreen.connector` logger and removes it, and restores the logger level, in the `finally`.
+- **Oracle.** The forbidden strings are: `text`, `marker`, each distinct character of `text` that is in `MARKER_ALPHABET`, and `ascii(marker)[1:-1]`. The haystack is every string returned by `collect_record_text` for every captured record (any level) plus every string returned by `collect_exception_text` for every exception the Connector raised (`str`, `repr`, `args`, every attribute, `__cause__` and `__context__` chain). A forbidden string found in any haystack string fails the example. Checking the single characters means a leak of part of the marker is caught, and checking the whole text and marker first means a coincidental ASCII substring of a fixed word cannot fail the test.
+- **Presence checks.** The sent-Action DEBUG record contains `String(<len(text) chars>)`, and in the four failing modes the raised exception message does too. The double recorded `'String("' + _escape_s3270_string(text) + '")'` as the last command written (for `broken_pipe`, as the last attempted write). In the `success` mode the returned `Response` equals `Response(True, [<scripted line>], StatusLine(...))`. In the failing modes `pytest.raises` confirms the expected exception class: `S3270Error` for `error`, `exit` and `broken_pipe`, `ConnectorTimeoutError` for `timeout`.
+
+```python
+# Property 11: Hidden cell data never leaves the Connector
+# File: tests/property/test_response_redaction.py
+PRINTABLE = st.integers(0x20, 0x7E)        # alphabet 1: printable ASCII
+ANY_BYTE = st.integers(0x01, 0xFF)         # alphabet 2: arbitrary non-null bytes
+
+@st.composite
+def screen_with_hidden_field(draw) -> Screen:
+    ...
+
+@given(screen=screen_with_hidden_field(), mode=st.sampled_from(["ok", "error"]))
+@settings(max_examples=100, deadline=None)
+def test_hidden_cells_never_leave_connector(screen: Screen, mode: str) -> None:
+    # Feature: tn3270-connector, Property 11: Hidden cell data never leaves the Connector
+    ...
+```
+
+**Strategy for Property 11.**
+
+- **Screen.** `rows` 2 to 24 and `columns` 10 to 80 as in the existing `arbitrary_screen`. A set of 1 to 6 distinct SF positions (linear, sorted) gets `c0` from `st.integers(0x00, 0xFF)`, so other fields, hidden or not, appear at random. All other cells are drawn from `0x00..0xFF`. SA tokens are drawn as in `arbitrary_screen`. The cursor is drawn inside the grid. The strategy builds the cell grid and does not draw `fields` or `text_grid`.
+- **Planted hidden field.** After the layout is drawn, the strategy picks one SF position `p` and forces its `c0` to a value with `(c0 & 0x0C) == 0x0C`, drawn from the 64 values `c0 = (x & ~0x0C) | 0x0C` (so protected, numeric and modified bits vary). It then draws `n` Hidden_Bytes with `4 <= n <= 32`, from one of the two alphabets chosen per example (`PRINTABLE`, or `ANY_BYTE`, drawn with `st.one_of`), and writes them into the cells `p+1 .. p+n` (wrapping), inserting a new SF at `p+n+1` when no SF lies within `n+1` cells, so the planted field is at least `n` cells long. `n` and `p` are drawn so the run is allowed to cross a row boundary (`p`'s column is drawn near the row end in a share of examples), which gives per-row runs of 4 bytes or more in some cases and short fragments in others. Cells of other hidden fields are left as drawn.
+- **Oracle.** The forbidden strings are `forbidden_forms(screen, min_len=4)`: the Plain_Form and the four Hex_Forms of the whole Hidden_Bytes run and of each per-row run of at least 4 bytes, for every hidden field of the drawn screen (not only the planted one), computed by the helper's own linear scan.
+- **Assume filters (12.43).** Hidden_Bytes are at least 4 bytes, so a Hex_Form has at least 8 hex digits. `fixed_text` is the concatenation of the fixed strings of the run: `"direction=received action=%s lines=%d status=%s result=%s"`, `"direction=sent action=%s raw=%s"`, `"ReadBuffer(Ascii)"`, `"Connect(host.example:3270)"`, `STATUS` (built from the drawn screen: `rows`, `columns`, cursor), `"ok"`, `"error"`, `"s3270"`, `"host.example"`, `"s3270 returned error for 'ReadBuffer(Ascii)'"`, `"S3270Error"`, the decimal rendering of the line count and the logger name. `hypothesis.assume(not any(form in fixed_text for form in forms))` discards a drawn value whose Plain_Form or any Hex_Form occurs there, so a coincidence such as `read` or `0000` cannot cause a false failure. The test does not use `assume` to shrink the byte alphabets; it only discards matches. If the discard rate rises, the health check `filter_too_much` fails loudly instead of hiding a weak strategy.
+- **Run.** Each example builds its own `RecordingFake` with the script `Connect` (ok) and an entry for `ReadBuffer\(Ascii\)` whose lines are `ScreenRenderer().render(screen)`, status `StatusLine.serialize()` built from the screen, and result `ok` or `error` by mode. It opens a `Connector` with `LogCapture` at `DEBUG` on the `greenscreen.connector` logger (level restored in a `finally`), calls `read_screen()` (inside `pytest.raises(S3270Error)` in the `error` mode), and closes. As in Property 10, there are no pytest fixtures under `@given`, no `caplog`, and no real wait.
+- **Assertions.** (1) For every captured record and every string of `collect_record_text(record)`, no forbidden form occurs. (2) For every exception that escaped (and, in the `error` mode, the `S3270Error`), no forbidden form occurs in any string of `collect_exception_text(exc, exclude_attrs={"data_lines"})` over the exception and its `__cause__` and `__context__` chain. (3) In `ok` mode, `read_screen() == screen`. (4) In `error` mode, `exc.data_lines == ScreenRenderer().render(screen)`. (5) Exactly one `direction=received` record exists and its `args[1]` equals `screen.rows` (one data line per row), so the omission path, not an accidental absence, is what the test sees.
+- **Where it can still miss.** Runs of 1 to 3 bytes inside a row (skipped by the 4-byte floor), and hidden text that a later change would log in a transformed form other than the five forms (for example reversed). The unit tests and the integration test cover the second case with a real password.
+
 **Hypothesis strategy sketches:**
 
 ```python
@@ -1064,6 +1483,7 @@ All property tests:
 - Minimum 200 iterations for parser/renderer properties, 500 for pure functions.
 - Complete under 60 seconds on a dual-core 2 GHz machine.
 - Each test carries a tag comment identifying the design property: `# Feature: tn3270-connector, Property N: ...`
+- Property 10 and Property 11 run at `max_examples=100` with `deadline=None` and their doubles never wait a real second per example (see their strategies above).
 
 ### Integration Tests (`tests/integration/`)
 
@@ -1099,6 +1519,7 @@ Integration tests:
 - Excluded from default run with `-m "not integration"`.
 - Auto-skip via `host_reachable` fixture (5-second TCP probe).
 - Tests that submit credentials skip separately when `TK5_USERNAME` or `TK5_PASSWORD` is unset.
+- `test_live_logon_redaction.py` (Requirement 12.44) runs the full TSO logon with DEBUG log capture and asserts the password, its upper and lower case, in Plain_Form and the four Hex_Forms, appears in no record and no exception text; it skips for a password under 4 characters. See "Integration test (Requirement 12.44)".
 
 ```python
 @pytest.mark.integration
@@ -1232,6 +1653,10 @@ Verified on the real TK5 host: when s3270 receives the host on the command line,
 ### Why `ReadBuffer(Ascii)` for the round-trip, not `Ascii()`?
 
 `Ascii()` discards field metadata (protection flags, modified flags, field boundaries). `ReadBuffer(Ascii)` preserves all of this structure. The round-trip guarantee is therefore only achievable on the `ReadBuffer(Ascii)` representation; `Ascii()` output is only used to populate `text_grid` on the `Screen` object.
+
+### Why does the Received_Record log counts instead of scrubbing the response?
+
+A scrubber must know which text is secret. The hidden cells are known only after parsing, and the unparsed lines are unknown by definition, so any scrub can miss a form (hex, plain, reversed) and a later log statement can bypass it. Logging only the count, the guarded status text and the result removes the leak by omission, and a single record shape (criterion 45) makes the absence testable. The cost is that DEBUG logs no longer show screen content; the recorder and call log, not the connector log, are where screens are kept, and they must blank hidden cells themselves.
 
 ### Why `frozen=True` on `StatusLine` and `Field`?
 

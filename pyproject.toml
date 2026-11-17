@@ -26,10 +26,12 @@ include = ["greenscreen*"]
 [tool.setuptools.package-data]
 "greenscreen.connector.testing" = ["fixtures/*.yaml"]
 "greenscreen.recognizer.signatures" = ["*.yaml"]
+"greenscreen.flow.flows" = ["*.yaml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra -q"
 markers = [
     "integration: marks tests as requiring a live TN3270 host (deselect with -m 'not integration')",
+    "perf: timing assertion that a slow machine can deselect with -m 'not perf'",
 ]

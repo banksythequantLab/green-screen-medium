@@ -1,0 +1,132 @@
+version: 1
+name: tk5-system-info
+description: Log on, read the user id, terminal, release and system id from the ISPF menu, log off.
+inputs:
+- name: userid
+  type: str
+  required: true
+  max_length: 8
+  secret: false
+  regex: '[A-Za-z0-9@#$]{1,8}'
+  description: TSO user id.
+- name: password
+  type: str
+  required: true
+  max_length: 8
+  secret: true
+  description: TSO password.
+outputs:
+- name: USERID
+  type: str
+  signature: ispf-primary-menu
+  row: 2
+  col: 71
+  length: 8
+- name: SYSTEMID
+  type: str
+  signature: ispf-primary-menu
+  row: 12
+  col: 71
+  length: 8
+- name: RELEASE
+  type: str
+  signature: ispf-primary-menu
+  row: 10
+  col: 71
+  length: 8
+- name: TERMINAL
+  type: str
+  signature: ispf-primary-menu
+  row: 4
+  col: 71
+  length: 8
+timeouts:
+  step: 10.0
+  run: 120.0
+  finally: 30.0
+steps:
+- kind: handle
+  signature: tk5-logo
+  max_count: 1
+  settle: 3.0
+  steps:
+  - kind: key
+    key: enter
+- kind: handle
+  signature: tso-input-not-recognized
+  max_count: 1
+  settle: 0.0
+  steps:
+  - kind: key
+    key: clear
+- kind: expect
+  signatures:
+  - tk5-logon
+- kind: type
+  input: userid
+- kind: key
+  key: enter
+- kind: expect
+  signatures:
+  - tso-password-prompt
+- kind: type
+  input: password
+- kind: key
+  key: enter
+- kind: handle
+  signature: tso-pause
+  max_count: 5
+  settle: 0.0
+  steps:
+  - kind: key
+    key: enter
+- kind: expect
+  signatures:
+  - ispf-primary-menu
+- kind: extract
+  output: USERID
+- kind: extract
+  output: TERMINAL
+- kind: extract
+  output: RELEASE
+- kind: extract
+  output: SYSTEMID
+- kind: expect
+  signatures:
+  - ispf-primary-menu
+- kind: type
+  text: X
+- kind: key
+  key: enter
+- kind: expect
+  signatures:
+  - tso-ready
+- kind: type
+  text: LOGOFF
+- kind: key
+  key: enter
+- kind: expect
+  signatures:
+  - tk5-logon
+finally:
+- kind: handle
+  signature: ispf-primary-menu
+  max_count: 1
+  settle: 0.0
+  steps:
+  - kind: type
+    text: X
+  - kind: key
+    key: enter
+- kind: handle
+  signature: tso-ready
+  max_count: 1
+  settle: 0.0
+  steps:
+  - kind: type
+    text: LOGOFF
+  - kind: key
+    key: enter
+- kind: expect
+  signatures:
+  - tk5-logon

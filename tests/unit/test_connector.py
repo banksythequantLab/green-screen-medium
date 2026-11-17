@@ -380,11 +380,14 @@ def test_wait_timeout_error_maps_to_connector_timeout(make_connector):
     assert ei.value.deadline == 5
 
 
-def test_wait_other_error_raises_s3270error_with_text(make_connector):
+def test_wait_other_error_raises_s3270error_without_response_text(make_connector):
     conn, _ = opened(make_connector, [entry("Wait(5,Output)", ["Not connected"], "error")])
     with pytest.raises(S3270Error) as ei:
         conn.wait_for_output(5)
-    assert "Not connected" in str(ei.value)
+    assert str(ei.value) == "s3270 returned error for 'Wait(5,Output)'"
+    assert "Not connected" not in str(ei.value) and "Not connected" not in repr(ei.value)
+    assert ei.value.data_lines == ["Not connected"]
+    assert ei.value.action == "Wait(5,Output)"
 
 
 # ── screen capture ───────────────────────────────────────────────────────

@@ -1,0 +1,883 @@
+{
+  "pbtResults": {
+    "14.5 Write property test for Property 11 in `tests/property/test_response_redaction.py`": {
+      "status": "passed",
+      "lastRunTimestamp": 1794880471917
+    }
+  },
+  "executionHistory": {
+    "1.1 Create `greenscreen/connector/_redact.py` and update the `_unescape_s3270_string` docstring": [
+      {
+        "executionId": "1f4567a3-3c02-4394-90fc-3835c0dbb3e1",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794874663438
+      },
+      {
+        "executionId": "1f4567a3-3c02-4394-90fc-3835c0dbb3e1",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794874669158
+      },
+      {
+        "executionId": "1f4567a3-3c02-4394-90fc-3835c0dbb3e1",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794874930772
+      }
+    ],
+    "1.2 Apply `redact_action` at the seven call sites in `greenscreen/connector/connector.py`": [
+      {
+        "executionId": "1f4567a3-3c02-4394-90fc-3835c0dbb3e1",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794874664743
+      },
+      {
+        "executionId": "1f4567a3-3c02-4394-90fc-3835c0dbb3e1",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794874933093
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794875014875
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794875086015
+      }
+    ],
+    "1.3 Create `tests/connector_support.py`": [
+      {
+        "executionId": "1f4567a3-3c02-4394-90fc-3835c0dbb3e1",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794874664985
+      },
+      {
+        "executionId": "1f4567a3-3c02-4394-90fc-3835c0dbb3e1",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794874669622
+      },
+      {
+        "executionId": "1f4567a3-3c02-4394-90fc-3835c0dbb3e1",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794874931204
+      }
+    ],
+    "1.4 Write unit tests for `redact_action`": [
+      {
+        "executionId": "1f4567a3-3c02-4394-90fc-3835c0dbb3e1",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794874665238
+      },
+      {
+        "executionId": "1f4567a3-3c02-4394-90fc-3835c0dbb3e1",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794874933547
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794875014654
+      }
+    ],
+    "1.5 Write unit tests for redaction through the Connector": [
+      {
+        "executionId": "1f4567a3-3c02-4394-90fc-3835c0dbb3e1",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794874665435
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794875089160
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794875194050
+      }
+    ],
+    "1.6 Write property test for Property 10 (connector)": [
+      {
+        "executionId": "1f4567a3-3c02-4394-90fc-3835c0dbb3e1",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794874665972
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794875089353
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794875194599
+      }
+    ],
+    "1.7 Run the one-time live check of s3270 echo for `String(...)` errors and record the result": [
+      {
+        "executionId": "1f4567a3-3c02-4394-90fc-3835c0dbb3e1",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794874666487
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794875089583
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794875195146
+      }
+    ],
+    "2. Checkpoint - connector redaction complete, all existing tests pass": [
+      {
+        "executionId": "1f4567a3-3c02-4394-90fc-3835c0dbb3e1",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794874667030
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794875204241
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794875707853
+      }
+    ],
+    "1. Connector action redaction (prerequisite, tn3270-connector Requirement 12)": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794875195283
+      }
+    ],
+    "3.1 Create `greenscreen/flow/` with `errors.py`, `clock.py` and the `flows` data package": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794875718364
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794875761199
+      }
+    ],
+    "3. Create the flow package skeleton and errors": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794875761301
+      }
+    ],
+    "4.1 Implement `greenscreen/flow/model.py`": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794875764546
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794875945760
+      }
+    ],
+    "6.1 Create `tests/flow_support.py`": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794875764818
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794875946111
+      }
+    ],
+    "4.2 Implement `greenscreen/flow/validate.py` (Flow_Validator)": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794875949393
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876116936
+      }
+    ],
+    "6.3 Write self-tests for `ScriptedSession` and `FakeClock`": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794875949705
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876117524
+      }
+    ],
+    "7.2 Implement `greenscreen/flow/screens.py`": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794875950090
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876118100
+      }
+    ],
+    "4. Implement the data model and the Flow_Validator": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876117152
+      }
+    ],
+    "5.1 Implement `greenscreen/flow/yamlio.py`": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876121330
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876220679
+      }
+    ],
+    "7.1 Implement `greenscreen/flow/inputs.py`": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876121562
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876220269
+      }
+    ],
+    "5. Implement YAML serialization and loading": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876220787
+      }
+    ],
+    "7.3 Implement the `run_flow` entry, run state, Session access and polling in `greenscreen/flow/runner.py`": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876229574
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876576644
+      }
+    ],
+    "6.2 Create `tests/property/_flow_strategies.py`": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876229879
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876576979
+      }
+    ],
+    "8.1 Create the bundled flows, `bundled.py` and the package-data entry": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876236312
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876577313
+      }
+    ],
+    "6. Build the flow test support": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876577090
+      }
+    ],
+    "7.4 Implement the Type_Step and the Key_Step with the pre-key check": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876581592
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876662211
+      }
+    ],
+    "8.2 Populate `greenscreen/flow/__init__.py`": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876581828
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876663014
+      }
+    ],
+    "8. Ship the three flows and wire the public API": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876663161
+      }
+    ],
+    "7.5 Implement the Extract_Step and the Handle_Step": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876665308
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876786602
+      }
+    ],
+    "7.6 Implement the finally phase, audit trail and result in `greenscreen/flow/runner.py`": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876786932
+      },
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876979734
+      }
+    ],
+    "7. Implement the runner core": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876979904
+      }
+    ],
+    "9. Checkpoint - package, runner and shipped flows complete": [
+      {
+        "executionId": "4834bbf2-fe53-48f1-af29-af4576e8edbd",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794876981997
+      },
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794879415578
+      },
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794890607632
+      }
+    ],
+    "14.1 Redact response data in `greenscreen/connector/connector.py` and test `_status_for_log`": [
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794879415859
+      },
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794879868378
+      }
+    ],
+    "14.2 Extend `tests/connector_support.py` with the hidden-cell helpers and test them": [
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794879416111
+      },
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794879868743
+      }
+    ],
+    "14.3 Update the five existing tests (the only allowed edit of pre-existing test files in this group)": [
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794879870913
+      },
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794879979548
+      }
+    ],
+    "14.4 Write unit tests for criteria 29 to 39 and 40 to 41 in `tests/unit/test_connector_redaction.py`": [
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794879984016
+      },
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794880784974
+      }
+    ],
+    "14.5 Write property test for Property 11 in `tests/property/test_response_redaction.py`": [
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794879984315
+      },
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794880785249
+      }
+    ],
+    "14.6 Write the live logon redaction test and the flow integration assertion text": [
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794879984585
+      },
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794880785553
+      }
+    ],
+    "14. Connector response-data redaction (checkpoint-9 review, group A, tn3270-connector Requirement 12 criteria 29 to 45 and 7.8)": [
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794880785663
+      }
+    ],
+    "15. Checkpoint - connector response redaction complete": [
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794880794938
+      },
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794882690124
+      }
+    ],
+    "18.1 Trim `flows()` in `tests/property/_flow_strategies.py`": [
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794880795230
+      },
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794882690630
+      }
+    ],
+    "16.1 Record skipped body Steps of unmatched Handle_Steps": [
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794882693062
+      },
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794884182700
+      }
+    ],
+    "18.2 Write `tests/unit/test_flow_strategy_cost.py` and register the `perf` marker": [
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794882693628
+      },
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794884182991
+      }
+    ],
+    "18. Trim the `flows()` strategy (checkpoint-9 review, group D)": [
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794884183111
+      }
+    ],
+    "16.2 Convert every `Exception` of a Session call to `session_error`": [
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794884185053
+      },
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794888214089
+      }
+    ],
+    "16.3 Return outputs in declaration order": [
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794888214622
+      },
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794888528831
+      }
+    ],
+    "16.4 Make the Extract_Step mismatch carry `expected` and the Redacted_Summary": [
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794888529368
+      },
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794888803116
+      }
+    ],
+    "16.5 Skip Finally_Steps after a definition error and locate the typing target through `containing_field`": [
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794888803773
+      },
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794888918966
+      }
+    ],
+    "16. Runner fixes in `greenscreen/flow/runner.py` (checkpoint-9 review, group B)": [
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794888919094
+      }
+    ],
+    "17.1 Write a short consistency test for the review items": [
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794888919433
+      },
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794889262311
+      }
+    ],
+    "17. Check that requirements, design and code agree (checkpoint-9 review, group C)": [
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794889262451
+      }
+    ],
+    "19.1 Run the checkpoint-9 checks and report counts": [
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794889262822
+      },
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794890434804
+      }
+    ],
+    "19.2 Measure property and flow module timings": [
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794890435111
+      },
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794890607305
+      }
+    ],
+    "19. Re-run of checkpoint 9 (checkpoint-9 review, group E)": [
+      {
+        "executionId": "7b91d6b4-9eb9-4cc0-825c-79202eac3a77",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794890607439
+      }
+    ],
+    "10.1 Write unit tests for the model (`tests/unit/test_flow_model.py`)": [
+      {
+        "executionId": "9c3db193-ccdd-4620-b2a7-0f1da942dd56",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794926014540
+      },
+      {
+        "executionId": "9c3db193-ccdd-4620-b2a7-0f1da942dd56",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794926113467
+      }
+    ],
+    "10.3 Write unit tests for the validator (`tests/unit/test_flow_validate.py`)": [
+      {
+        "executionId": "9c3db193-ccdd-4620-b2a7-0f1da942dd56",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794926014712
+      },
+      {
+        "executionId": "9c3db193-ccdd-4620-b2a7-0f1da942dd56",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794926113650
+      }
+    ],
+    "10.2 Write unit tests for Inputs (`tests/unit/test_flow_inputs.py`)": [
+      {
+        "executionId": "9c3db193-ccdd-4620-b2a7-0f1da942dd56",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794926116051
+      },
+      {
+        "executionId": "9c3db193-ccdd-4620-b2a7-0f1da942dd56",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794926183019
+      }
+    ],
+    "10.4 Write unit tests for the YAML loader (`tests/unit/test_flow_yaml.py`)": [
+      {
+        "executionId": "9c3db193-ccdd-4620-b2a7-0f1da942dd56",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794926116639
+      },
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794934600030
+      },
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794934774211
+      }
+    ],
+    "20.1 Fix yamlio whitespace handling": [
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794934600220
+      },
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794934654350
+      }
+    ],
+    "20.2 Name an unknown step kind in the Flow constructor error": [
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794934654746
+      },
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794934773638
+      }
+    ],
+    "20. Fixes found while writing the group 10 tests": [
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794934773869
+      }
+    ],
+    "10.17 Write the flow-sync test (`tests/unit/test_flow_sync.py`)": [
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794934778808
+      },
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794934849891
+      }
+    ],
+    "11.1 Write property test for Property 1": [
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794934779029
+      },
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794934850385
+      }
+    ],
+    "11.7 Write property test for Property 7": [
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794934779196
+      },
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794934850864
+      }
+    ],
+    "10.5 Write unit tests for the Expect_Step and polling (`tests/unit/test_flow_runner_expect.py`)": [
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794934855083
+      },
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794935987358
+      }
+    ],
+    "10.6 Write unit tests for each typed screen of the shipped flows (`tests/unit/test_flow_runner_typed_screens.py`)": [
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794934855291
+      },
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794935987803
+      }
+    ],
+    "10.7 Write unit tests for the MDT bit, changed geometry and the full-field case (`tests/unit/test_flow_runner_typed_fields.py`)": [
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794934855493
+      },
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794935988553
+      }
+    ],
+    "10.8 Write unit tests for typing and key rules (`tests/unit/test_flow_runner_type_key.py`)": [
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794934856301
+      },
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794935989351
+      }
+    ],
+    "10.9 Write unit tests for the Handle_Step (`tests/unit/test_flow_runner_handle.py`)": [
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794934856684
+      },
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794935990022
+      }
+    ],
+    "10.10 Write unit tests for the Extract_Step (`tests/unit/test_flow_runner_extract.py`)": [
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794935992378
+      },
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794938152386
+      }
+    ],
+    "10.11 Write unit tests for the finally rules (`tests/unit/test_flow_runner_finally.py`)": [
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794935993189
+      },
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794938151667
+      }
+    ],
+    "10.12 Write unit tests for every Reason_Code (`tests/unit/test_flow_runner_errors.py`)": [
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794935994068
+      },
+      {
+        "executionId": "94e066cf-3e7c-4524-87e3-91157c064a65",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794938488455
+      }
+    ],
+    "10.13 Write unit tests for loading the bundled flows (`tests/unit/test_flow_bundled.py`)": [
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794935994562
+      },
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794938152670
+      }
+    ],
+    "10.14 Write the scripted `tk5-logon` sequence tests (`tests/unit/test_flow_logon_script.py`)": [
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794935995299
+      },
+      {
+        "executionId": "d474de96-49e6-4e2b-a662-277cb4964086",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794938152030
+      }
+    ],
+    "21.1 Release inputs and values on the input_invalid, definition and poll_interval exits": [
+      {
+        "executionId": "94e066cf-3e7c-4524-87e3-91157c064a65",
+        "chatSessionId": "sess_14f61749-4374-4f92-800f-4eef29b2263a",
+        "timestamp": 1794938488795
+      }
+    ]
+  }
+}

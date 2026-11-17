@@ -44,7 +44,9 @@ def _escape_s3270_string(text: str) -> str:
 
 
 def _unescape_s3270_string(escaped: str) -> str:
-    """Inverse of _escape_s3270_string. For testing only.
+    """Inverse of _escape_s3270_string.
+
+    Also used by _redact.py to count the Decoded_Length of a String Action.
 
     Processes escape sequences left-to-right; \\X → X for any X.
     """
@@ -155,7 +157,7 @@ class ScreenParser:
                 else raw_line
             )
             col_index = 0
-            for token in line.split():
+            for tok_i, token in enumerate(line.split()):
                 m_sf = _SF_TOKEN.match(token)
                 m_sa = _SA_TOKEN.match(token)
                 if _HEX_CELL.match(token):
@@ -173,8 +175,9 @@ class ScreenParser:
                     # SA does NOT advance col_index
                 else:
                     raise ParseError(
-                        f"Unrecognised ReadBuffer token: {token!r}",
-                        raw=token,
+                        f"Unrecognised ReadBuffer token at row {row_i}, "
+                        f"index {tok_i}, length {len(token)}",
+                        raw="",
                     )
             # col_index is local to the loop body; resets automatically each row
 

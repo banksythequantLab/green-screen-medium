@@ -120,3 +120,30 @@ code depends on them.
 - Line-mode screens cannot be identified by fixed row positions alone; a
   signature needs a way to say "the last non-blank row is X" or "the text just
   before the cursor is X".
+
+
+## Verified 2026-11-16/17: typing, echo, and what must never be logged
+
+- Typing into an unprotected field sets its modified bit: the `tk5-logon` input field
+  goes from `SF(c0=c8)` to `SF(c0=c9)` after `String(...)`, and `EraseInput()` returns
+  it to `c8`. A screen that has been typed into is therefore not cell-identical to its
+  capture; compare geometry, not the attribute byte's low bit.
+- s3270 does not echo the `String(...)` argument in its error replies (4.3 on Linux,
+  4.5 on Windows): no connection gives `Canceled`, a protected field gives
+  `Keyboard locked` / `Operator error`. Unknown actions and syntax errors do not echo
+  it either.
+- `ReadBuffer(Ascii)` replies contain hidden-field cells as hex. On 2026-11-16 a live
+  logon with DEBUG logging wrote the password to the connector log three times (the
+  password screen after typing and both `***` pause screens). Fixed in the connector
+  (Requirement 12): the `received` log record carries only the redacted action, a
+  data-line count, the status line and `ok`/`error`. Re-verified live on 2026-11-16:
+  34 received records, no cell data, password absent in plain and hex form.
+
+### Rules that follow
+
+- Never log, print, or put into an exception message any s3270 response data line.
+- `S3270Error.data_lines` still holds response text as a structured attribute. Nothing
+  may log it, return it to a caller outside the process, or serialise it. The publisher
+  (MCP + REST) must not include it in any tool result or HTTP body.
+- A traceback's frame locals count as output: no frame inside `greenscreen.flow` may
+  hold an input mapping, a supplied value or a `Screen` when an error leaves `run_flow`.

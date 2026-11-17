@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import math
+import re
 import subprocess
 import time
 from types import TracebackType
@@ -17,9 +18,20 @@ from greenscreen.connector.exceptions import (
     SessionClosedError,
 )
 from greenscreen.connector.models import Response, Screen
+from greenscreen.connector._redact import redact_action
 from greenscreen.connector.parser import ScreenParser, _escape_s3270_string
 
 logger = logging.getLogger("greenscreen.connector")
+
+_INT = re.compile(r"[0-9]+")
+
+
+def _status_for_log(line: str) -> str:
+    """Status text for the received record; never copies an unexpected line."""
+    tokens = line.split()
+    if len(tokens) == 12 and all(_INT.fullmatch(tokens[i]) for i in (6, 7, 8, 9)):
+        return line
+    return f"<unparsed status, {len(line)} chars>"
 
 
 class Connector:
@@ -123,8 +135,9 @@ class Connector:
         action, checks the session is open, and tears the session down on a
         pipe-level timeout.
         """
+        shown = redact_action(action)
         if not action or "\n" in action or "\r" in action:
-            raise ValueError(f"Invalid action string: {action!r}")
+            raise ValueError(f"Invalid action string: {shown!r}")
         if self._closed or not self._opened or self._proc is None:
             raise SessionClosedError("Session is not open")
         self._write(action)
@@ -134,8 +147,8 @@ class Connector:
             self._terminate_proc()
             self._closed = True
             raise ConnectorTimeoutError(
-                f"Timed out waiting for response to {action!r}: {exc}",
-                operation=action,
+                f"Timed out waiting for response to {shown!r}: {exc}",
+                operation=shown,
                 deadline=exc.deadline,
             ) from exc
 
@@ -228,21 +241,12 @@ class Connector:
         try:
             return self._send_with_deadline(action, t + self.WAIT_GRACE_SECONDS)
         except S3270Error as exc:
-            text = " ".join(exc.data_lines)
-            lowered = text.lower()
+            lowered = " ".join(exc.data_lines).lower()  # classify only
             if "timed out" in lowered or "timeout" in lowered:
                 raise ConnectorTimeoutError(
-                    f"Wait({wait_type}) timed out after {self._format_seconds(t)}s: {text}",
+                    f"Wait({wait_type}) timed out after {self._format_seconds(t)}s",
                     operation=f"Wait({wait_type})",
                     deadline=t,
-                ) from exc
-            if text and text not in str(exc):
-                raise S3270Error(
-                    f"{exc}: {text}",
-                    action=exc.action,
-                    data_lines=exc.data_lines,
-                    status_line=exc.status_line,
-                    exit_code=exc.exit_code,
                 ) from exc
             raise
 
@@ -318,20 +322,22 @@ class Connector:
             time.sleep(min(poll_interval, remaining))
 
     def _write(self, action: str) -> None:
-        logger.debug("direction=sent action=%s raw=%s", action, action)
+        shown = redact_action(action)
+        logger.debug("direction=sent action=%s raw=%s", shown, shown)
         try:
             self._proc.stdin.write((action + "\n").encode("utf-8"))
             self._proc.stdin.flush()
         except OSError as exc:  # includes BrokenPipeError
             raise S3270Error(
-                f"s3270 subprocess is not accepting input for {action!r}",
-                action=action,
+                f"s3270 subprocess is not accepting input for {shown!r}",
+                action=shown,
                 exit_code=self._exit_code(),
             ) from exc
 
     def _read_response(self, action: str, timeout: float) -> Response:
         reader = self._reader
         assert reader is not None
+        shown = redact_action(action)
         data_lines: list[str] = []
         lines: list[str] = []
         while True:
@@ -340,8 +346,8 @@ class Connector:
             except S3270Error as exc:
                 if exc.exit_code is None:
                     raise S3270Error(
-                        f"s3270 subprocess exited during {action!r}",
-                        action=action,
+                        f"s3270 subprocess exited during {shown!r}",
+                        action=shown,
                         exit_code=self._exit_code(),
                     ) from exc
                 raise
@@ -358,16 +364,18 @@ class Connector:
 
         status_raw = lines[-1] if lines else ""
         logger.debug(
-            "direction=received action=%s raw=%s",
-            action,
-            "\n".join(data_lines + lines + [line]),
+            "direction=received action=%s lines=%d status=%s result=%s",
+            shown,
+            len(data_lines),
+            _status_for_log(status_raw),
+            line,
         )
         status = ScreenParser().parse_status_line(status_raw)
         if line == "ok":
             return Response(success=True, data_lines=data_lines, status=status)
         raise S3270Error(
-            f"s3270 returned error for {action!r}",
-            action=action,
+            f"s3270 returned error for {shown!r}",
+            action=shown,
             data_lines=data_lines,
             status_line=status,
         )

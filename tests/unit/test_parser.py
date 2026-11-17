@@ -138,7 +138,8 @@ def test_readbuffer_sa_token_position_and_no_cell():
 def test_readbuffer_bad_token_raises(bad):
     with pytest.raises(ParseError) as exc:
         _parse(["41 " + bad + " 42"], 1, 3)
-    assert exc.value.raw == bad
+    assert exc.value.raw == ""
+    assert str(exc.value) == f"Unrecognised ReadBuffer token at row 0, index 1, length {len(bad)}"
 
 
 # ---------------------------------------------------------------------------
