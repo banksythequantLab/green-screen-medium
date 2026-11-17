@@ -14,7 +14,7 @@ Every task is required, including every property test. Tests are Python with pyt
 Rules that apply to every task below:
 
 - Screens come only from `captures/*.readbuffer.txt` through `load_capture_screen` and `make_screen` in `tests/screen_support.py`. No fake s3270 and no subprocess in unit or property tests (the packaging wheel test in task 10.18 is the one stated exception).
-- No host credential appears in any file: not in code, YAML, fixtures, tests or logs. `TK5_USERNAME` and `TK5_PASSWORD` are read only from the environment, and only by the integration test (task 12.1).
+- The TK5 password appears in no file (tracked, untracked or ignored), test output or log; the stock TK5 user id appears in screen captures and in the tests and specs that quote them, by design. `TK5_USERNAME` and `TK5_PASSWORD` are read only from the environment, and only by the integration test (task 12.1).
 - No capture of the screen that holds the typed password is ever written. The residual-password screen exists only in memory, built by `sentinel_password_screen` from a sentinel that occurs in no file under `captures/`.
 - Each property test is exactly one `@given` test with `@settings(max_examples=100, deadline=None)` or more, and its first line is the comment `# Feature: flow-runtime, Property N: <title>` (for the connector property: `# Feature: tn3270-connector, Property 10: String text never leaves the Connector`).
 - Every runner test uses the fake Clock. No test sleeps for real.
@@ -293,7 +293,7 @@ Rules that apply to every task below:
   - [x] 19.1 Run the checkpoint-9 checks and report counts
     - Run `pytest -m "not integration"` and `pytest tests/unit -k flow` and require zero failures; report the number of tests passed, failed, skipped and deselected for each command
     - Run the checks that task 9 lists: every task of groups 3 to 8 behaves as described and no pre-existing test fails; the only edits of pre-existing test files are the five of task 14.3
-    - Confirm `pyproject.toml` `dependencies` and `optional-dependencies` are unchanged and that a search for the demo credentials finds no occurrence in any tracked file
+    - Confirm `pyproject.toml` `dependencies` and `optional-dependencies` are unchanged and that the TK5 password is absent everywhere (every tracked, untracked and ignored file, test output and logs); the stock TK5 user id appears in screen captures and in the tests and specs that quote them, by design
     - Task 9 itself is not edited and its status is not changed by this task
     - _Requirements: 19.8, 21.2; tn3270-connector 12.18_
 
@@ -493,7 +493,7 @@ Rules that apply to every task below:
 - [x] 13. Final checkpoint - whole suite and property timing
   - Run the entire suite with `pytest -m "not integration"` and require zero failures, including every pre-existing test and every new connector, recognizer and flow test
   - Run `pytest tests/property --durations=0` and confirm the whole `tests/property` suite finishes in under 90 seconds and the eight flow property modules finish in under 35 seconds; if either limit is missed, fix the generators as in task 11.9 and rerun
-  - Confirm `pyproject.toml` `dependencies` and `optional-dependencies` are unchanged and that `grep` for the demo credentials finds no occurrence in any tracked file
+  - Confirm `pyproject.toml` `dependencies` and `optional-dependencies` are unchanged and that the TK5 password is absent everywhere (every tracked, untracked and ignored file, test output and logs); the stock TK5 user id appears in screen captures and in the tests and specs that quote them, by design
   - Ensure all tests pass, ask the user if questions arise.
   - _Requirements: 19.8, 19.9, 19.10, 21.2_
 
@@ -515,7 +515,7 @@ Rules that apply to every task below:
 - Numbering of group 20: tasks 10 to 13 keep their numbers and groups 14 to 19 follow the last number then in use, so the fixes found while writing the group 10 tests take the next free top-level number, 20. Like groups 14 to 19 they are written in the file before task 10 because they execute before the remaining group 10 work. Execution order: 20.1, then 20.2 (separate waves because 20.2 may touch `yamlio.py`), then the group 10 tasks, 11 and 12. Task 10.1 is already completed and task 20.2 strengthens its test in `tests/unit/test_flow_model.py`; task 10.4 is in progress and is finished after task 20.1 so that its YAML tests see the whitespace fix.
 - Numbering of group 21: the next free top-level number after 20 is 21, so the input-release fix (Requirement 14.7) is task 21.1. It is written before task 10 because it executes before the remaining group 10 work. In the Task Dependency Graph it sits alone in wave 27, directly after 20.2, so it runs before the incomplete group 10 tasks (10.12, which is in progress and finishes after 21.1, 10.15, 10.16, 10.18 to 10.20) and before groups 11, 12 and 13. The waves that followed (old 27 to 31) are now 28 to 32 with the same task lists. Task 21.1 is the only task that edits `greenscreen/flow/runner.py` and `greenscreen/flow/inputs.py` after group 16, and `test_no_screen_is_reachable_from_the_error[input_invalid]` in task 10.12's file is expected to go green because of it.
 - Task 10.12 correction: any `Exception` raised by a Session call is converted to `session_error` (Requirement 7.6), not only `ConnectorError` and `OSError`; the task's test list says so.
-- Timing limit change: the limit for the eight flow property modules together is 35 seconds (was 25), in Requirement 19.9, the design budget table and tasks 11.9, 13 and 19.2. Measured on a loaded machine, best of three: flow modules 28.2 s wall (runs 29.5, 28.2, 31.5), whole `tests/property` 84.5 s (runs 84.5, 97.0, 84.8; 123 tests). The 90 s limit for `tests/property` stays and its margin is thin. No test was trimmed, `max_examples` was not lowered and no `addopts` was added; the `perf` test stays in the default run.
+- Timing limit change: the limit for the eight flow property modules together is 35 seconds (was 25), in Requirement 19.9, the design budget table and tasks 11.9, 13 and 19.2. Measured on a loaded machine, best of three: flow modules 28.2 s wall (runs 29.5, 28.2, 31.5), whole `tests/property` 84.5 s (runs 84.5, 97.0, 84.8; 123 tests). The 90 s limit for `tests/property` stays and its margin is thin. No test was trimmed, `max_examples` was not lowered and no `addopts` was added; the `perf` test (passed 3 of 4 runs, one failed under load; 1.5 s limit unchanged) is now opt-in and is skipped unless `GS_RUN_PERF=1` is set.
 
 ## Task Dependency Graph
 

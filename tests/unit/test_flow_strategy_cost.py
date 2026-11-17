@@ -11,6 +11,7 @@ machine can deselect it with ``-m 'not perf'``.
 """
 from __future__ import annotations
 
+import os
 import time
 
 import pytest
@@ -48,6 +49,10 @@ def test_drawn_flows_are_valid_and_round_trip(flow: Flow) -> None:
 
 
 @pytest.mark.perf
+@pytest.mark.skipif(
+    os.environ.get("GS_RUN_PERF") != "1",
+    reason="perf test is opt-in: set GS_RUN_PERF=1 to run it",
+)
 def test_100_draws_with_round_trip_under_budget() -> None:
     elapsed: list[float] = []
 
