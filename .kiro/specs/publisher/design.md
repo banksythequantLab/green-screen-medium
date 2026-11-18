@@ -31,6 +31,8 @@
 
 Checked on 2026-11-17. All local checks ran in a throwaway venv under the system temp directory with `mcp==2.3.0`, `fastapi==0.163.2`, `starlette==1.10.0`, `uvicorn==0.54.0`, `pydantic==2.14.3`, `anyio==4.16.0`, `httpx2==2.16.2` (pip resolved these from `mcp>=2.3,<3` and `fastapi>=0.163,<1`), Python 3.11.9 on Windows. The venv and the scripts were deleted afterwards. Nothing was installed into the project environment and `pyproject.toml` was not touched. SDK source of the pinned version was read where the docs are silent.
 
+**Installed versions (added 2026-11-17).** The project environment holds starlette 1.6.0 and uvicorn 0.38.0, older than the versions checked above (starlette 1.10.0, uvicorn 0.54.0). The behaviour recorded in Claims 5 and "Also recorded" (replaced validation handler, the re-raise of `ServerErrorMiddleware`, the streaming body read, graceful shutdown) was observed on the newer versions only. The re-check in task 5.2 decides whether minimum version pins are needed; until then the design relies on the newer versions' behaviour.
+
 **Summary of what differs from the assumptions in the requirements (flagged for the user)**
 
 | # | Requirement assumption | Evidence | Effect on the design |
@@ -359,11 +361,13 @@ class CallOutcome:
     session_clean: bool | None = None    # False or None; never True (Requirement 23.6)
 
 class CallService:
-    def __init__(self, registry, bound, signatures, limiter, session_factory, *, call_timeout,
-                 shutdown_grace, clock=None, poll_interval=0.1)   # signatures: Startup_Signatures
+    def __init__(self, registry, bound, signatures, limiter, session_factory, *,
+                 clock=None, poll_interval=0.1)   # signatures: Startup_Signatures
     closing: bool
-    def precheck(self, name: str) -> PublishedFlow | CallOutcome   # unknown_flow, shutting_down
+    def precheck(self, name: str, transport: str = "rest") -> PublishedFlow | CallOutcome
+                                                                   # unknown_flow, shutting_down; logs its own record
     async def execute(self, published: PublishedFlow, box: SecretBox, transport: str) -> CallOutcome
+    def log_rejection(self, flow: str | None, transport: str, code: str, started: float) -> None
     def begin_shutdown(self) -> None
     async def drain(self, grace: float) -> None
 ```
@@ -380,6 +384,8 @@ class CallService:
 8. Read the result slot, release the Slot (in `finally`), write the Call_Log_Record (the one writer, also on cancellation), return the outcome. A `BaseException` stored by the worker is re-raised here after the Slot is released (Requirement 6.8).
 
 **Call_Log_Record and `session_clean` (Requirements 8.2, 23).** `execute` has one `finally` that writes the record, after the Slot is released and for every path that got a Slot or opened a session; calls rejected before the Slot (`shutting_down`, `input_invalid`, `busy`, `unknown_flow`) write the record too, without `session_clean`. The record is written by `logger.info(...)` with `extra`, which is synchronous and has no `await`, so it also runs while a cancellation is propagating. `session_clean` is computed in one function from the final `outcome code` and `run.abort_reason`: it is `False` when the code is `unknown_screen` (in the steps or in the `finally` phase, the code is the same), when the code is `call_timeout`, or when `abort_reason` is `"cancel"` or `"shutdown"`; for every other outcome the key is omitted (no claim). The key is never written with `True`. The record holds no value, no screen text and no Host_Data.
+
+**One record per Call, also for a rejection** (Requirement 8.9, 8.10). The one writer is the private `CallService._write_log(record, started)`; every record is built as a `_Record` that holds no value. Two public entry points feed it: `precheck(name, transport)` writes the record of an `unknown_flow` or `shutting_down` rejection itself (so a front end must not log it again), and `log_rejection(flow, transport, code, started)` writes the record of a rejection that happens in the front end before `execute` is reached. `flow` is the name from the URL; `log_rejection` looks it up in the registry and writes `unknown` when it is not published, so a caller cannot probe for an unpublished Flow through the log either. `started` is a `time.monotonic()` value taken when the request arrived, and `code` must be an Error_Code (else `ValueError`). The record has `call_id`, `flow`, `transport`, `outcome` and `duration_ms` and nothing else. `rest.py` calls `log_rejection` for every rejection before `execute`: wrong media type, malformed JSON, duplicate key, non-finite number, non-object body, oversize body (declared or streamed) and every other `request_invalid` or `request_too_large` raised in the route. The replaced framework handlers (unknown path, wrong method) answer a path that is not a Flow route and write no record (Requirement 8.10). Rejections by `AuthMiddleware` write no record: they are not Calls. MCP argument-validation failures need no hook: `on_call_tool` goes through `precheck` and `execute`, and `execute` writes the record for `input_invalid`, `busy` and `shutting_down`. A `BaseException` that the worker stored is re-raised by `execute` after teardown and its record has `outcome` `internal_error` (Requirement 8.11).
 
 **Log outcome of a call without a response** (Requirements 8.2, 8.8, 23.3, 23.4). A call torn down by `drain`, or cancelled while `closing` is true, logs `outcome = shutting_down`. A call cancelled while `closing` is false (the client disconnected) logs `outcome = cancelled`. Both set `session_clean=false`. `execute` reads `closing` once, at the moment it catches the cancellation, and passes the result to the single log writer as a `LogOutcome`. `cancelled` is a log-only value, not an Error_Code.
 
@@ -501,7 +507,7 @@ class AuthMiddleware:   # pure ASGI; wraps the whole FastAPI app including /mcp,
 
 `build_rest(service, registry, settings, mcp_asgi) -> FastAPI` creates `FastAPI(docs_url=None, redoc_url=None, openapi_url=None, lifespan=...)` and registers:
 
-- `POST /flows/{name}` taking `request: Request`. Order: `service.precheck(name)` (unknown flow, shutting down), media type check (`application/json` with optional parameters; else `request_invalid`), `read_json(request, limit) -> SecretBox | CallOutcome`, `service.execute(...)`, `JSONResponse(outcome.body, status_code=HTTP_STATUS[outcome.code], headers=...)`.
+- `POST /flows/{name}` taking `request: Request`. Order: `started = time.monotonic()`, `service.precheck(name, "rest")` (unknown flow, shutting down; writes its own record), media type check (`application/json` with optional parameters; else `request_invalid`), `read_json(request, limit) -> SecretBox | CallOutcome`, `service.execute(...)`, `JSONResponse(outcome.body, status_code=HTTP_STATUS[outcome.code], headers=...)`. Each rejection of the media type check and of `read_json` calls `service.log_rejection(name, "rest", outcome.code, started)` once before the response is returned (Requirement 8.9). `build_rest` takes an optional keyword `lifespan`, which `build_app` uses to enter the MCP session manager.
 - `GET /health` returning `{"status": "ok", "flows": N}` with `N = len(registry)`, which counts Published_Flows only.
 - `GET /openapi.json` returning the prebuilt document, and `GET /docs` only when `enable_docs` (Swagger UI from `get_swagger_ui_html`, which loads its assets from a CDN in the browser; a browser cannot send the key header on navigation, so the page is for `curl`-style clients or a header-injecting extension. It is off by default).
 - `Route("/mcp", StreamableHTTPASGIApp(manager))` appended to `app.router.routes`.
@@ -520,7 +526,8 @@ On `/mcp`, a body over `GS_MAX_BODY_BYTES` is answered by the SDK transport (`ma
 ```python
 def build_mcp_server(service: CallService, registry: Registry) -> Server
 def build_manager(server: Server, settings: Settings) -> StreamableHTTPSessionManager
-async def run_stdio(server: Server, service: CallService) -> None
+async def run_stdio(server: Server, service: CallService, *, stdin=None, stdout=None,
+                    grace: float) -> None   # stdin/stdout: the duplicated streams of task 6.1
 ```
 
 `Server("greenscreen-publisher", version=__version__, on_list_tools=..., on_call_tool=...)` and nothing else (no resources, no prompts: capabilities follow the handlers, Requirement 14.8). `on_list_tools` returns a result prebuilt at startup from the registry (`Tool(name, description=summary, input_schema, output_schema)`). `on_call_tool` is wrapped in one `try/except Exception` that returns an `internal_error` result, so nothing reaches the SDK error path:
@@ -807,6 +814,7 @@ PBT applies: the schema generator, `extract_key`, the validator comparison, `par
 | `session_clean` (Requirement 19.8, 23) | example-based, with `caplog` at INFO on `greenscreen.publisher`: `unknown_screen` in the steps and in the `finally` phase, `call_timeout`, a call cancelled while not shutting down (outcome `cancelled`, and the string `cancelled` is absent from every response, OpenAPI and `tools/list`), a call torn down by `drain` and a call cancelled while `closing` (both outcome `shutting_down`) each give `session_clean` false; `CallOutcome("cancelled", ...)` raises `ValueError`; a success, `unexpected_screen`, `timeout` and `host_unavailable` give no `session_clean` key; every record holds no value and no screen text |
 | `abort()` (Requirement 19.9) | `abort()` while a Fake_Host call is blocked: the blocked call raises, no later Session call succeeds, a second `abort()` has the effect of one, `close()` after `abort()` returns |
 | startup signatures | `load_bundled_signatures` is called once at `prepare` and never during a call; a failing loader gives exit code 2 with `signatures: load_failed`, no port bound |
+| rejection log records (Requirement 19.11) | one test per rejection kind (wrong media type, malformed JSON, duplicate key, `NaN`, array body, oversize with `Content-Length`, oversize chunked, unknown Flow, `input_invalid` over REST and MCP, `busy`, `shutting_down`): `caplog` at INFO holds exactly one `greenscreen.publisher` record with only `call_id`, `flow`, `transport`, `outcome`, `duration_ms`, `flow` equal to `unknown` for an unpublished Flow, and no submitted value; an Auth_Guard rejection, `/health` and an unknown path write none |
 | `/mcp` oversize | a body over `GS_MAX_BODY_BYTES` gets the plain-text 413 from the SDK, contains no part of the body, factory called zero times |
 | perf (`@pytest.mark.perf`) | Requirement 17.4: median `recognize` under 5 ms on four captures |
 | packaging smoke | `greenscreen.flow`, `connector`, `recognizer` import without `mcp`, `fastapi`, `starlette`, `uvicorn` (subprocess `sys.modules` check); missing-extra message; `pyproject.toml` has the dependencies only under `publish` (checked in the tasks phase) |
@@ -816,6 +824,28 @@ PBT applies: the schema generator, `extract_key`, the validator comparison, `par
 Builds the app with the default Session_Factory and calls `POST /flows/tk5-system-info` through the ASGI client. Skips naming each missing variable if `TK5_USERNAME` or `TK5_PASSWORD` is unset or empty (the test passes them as call values or as Binding_Variables of the app under test), and skips when the `host_reachable` fixture reports the host down. Asserts `USERID` equals the user id case-insensitively, `SYSTEMID` and `RELEASE` are non-blank, the password appears in no response and no DEBUG log record in plain, hex, base64 and URL-encoded form, and no `s3270` / `ws3270` process started by the test is still running. `GS_MAX_CONCURRENCY` stays at 1, and the test makes one call at a time so that the single user id is never logged on twice. A previous run that did not log off can lock the account and make this test stop with `unknown_screen`; the test does not recover it.
 
 ---
+
+## Implementation notes and accepted exceptions (2026-11-17)
+
+Recorded after the day-one checkpoint, which the user accepted. They describe the code as built.
+
+**Accepted exceptions**
+
+- The registry unit test that monkeypatches `load_bundled_signatures` does so only to simulate the `signatures: load_failed` startup failure. This is an accepted exception to the rule of Requirement 19.1 that tests do not patch the loader. No call path and no other test patches it.
+- The three older packaging guard tests (`tests/unit/test_flow_model.py`, `tests/unit/test_flow_packaging.py`, `tests/unit/test_recognizer_packaging.py`) were edited to accept the `publish` extra and the `greenscreen-connector[publish]` entry of the `dev` extra (Requirement 18.3). The rule that `dependencies` stays `pyyaml`-only is unchanged.
+
+**Seams and signatures added in code**
+
+- `CallService.precheck(name, transport="rest")` takes an optional `transport`. A rejection (`unknown_flow`, `shutting_down`) writes its own Call_Log_Record, so no caller logs it again.
+- `CallService.log_rejection(flow, transport, code, started)` is the public hook of the single log writer for rejections made before `execute` (section "Call_Log_Record and `session_clean`"; Requirement 8.9). It is added in task 5.2.
+- `build_rest(..., *, lifespan=None)` takes an optional `lifespan`.
+- `ConnectorSession(config, *, popen=subprocess.Popen)` takes a keyword-only `popen`. Tests substitute the process; the production default is `subprocess.Popen`.
+- `run_stdio(server, service, *, stdin=None, stdout=None, ...)` takes optional `stdin` and `stdout` streams. Task 6.1 passes the duplicated streams.
+- A `BaseException` stored by the worker is re-raised by `execute` after teardown, and its Call_Log_Record has `outcome` `internal_error`. `internal_error` is an Error_Code, so Requirement 8.2 already allows it; Requirement 8.11 states it.
+
+**Dead fields removed (task 5.2)**
+
+`CallService` is built with `call_timeout` and `shutdown_grace`, and nothing reads `call_timeout`. The per-Flow `PublishedFlow.deadline` already applies the `GS_CALL_TIMEOUT` cap (Requirement 10.2), so `call_timeout` on the service is redundant and is removed. `shutdown_grace` is also removed: `drain(grace)` takes the grace as an argument from its caller. `app.py` passes `settings.shutdown_grace` in the lifespan, and `cli.py` and `run_stdio` (new keyword `grace`) pass it on the stdio path. The service holds no grace field. The constructor callers to change are `app.py` (`build_app`), `mcp_server.py` (`run_stdio` currently reads `service.shutdown_grace`), and the tests `tests/unit/test_publisher_calls.py`, `test_publisher_mcp.py` and `test_publisher_rest.py`. `Settings.call_timeout` and `Settings.shutdown_grace` stay, since `build_registry` and the lifespan read them.
 
 ## Open items and requirement issues
 

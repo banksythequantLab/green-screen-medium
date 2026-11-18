@@ -27,6 +27,8 @@ USERID = "PRBU7Q2X"
 PASSWORD = "PRBP9Z4K"
 ARGS = {"userid": USERID, "password": PASSWORD}
 
+KEY = {"X-API-Key": "k" * 16}  # the Auth_Guard is in front since task 5.5
+
 ENV = {
     "GS_S3270_BINARY": "s3270",
     "GS_HOST": "host.invalid",
@@ -44,7 +46,7 @@ def make(env=None):
 async def rest_call(app, name="tk5-system-info", body=ARGS):
     async with app.lifespan():
         transport = httpx2.ASGITransport(app=app.asgi)
-        async with httpx2.AsyncClient(transport=transport, base_url="http://test") as client:
+        async with httpx2.AsyncClient(transport=transport, base_url="http://test", headers=KEY) as client:
             return await client.post(f"/flows/{name}", json=body)
 
 

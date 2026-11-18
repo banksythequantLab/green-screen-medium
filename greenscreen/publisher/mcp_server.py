@@ -98,7 +98,12 @@ def build_manager(server: Server, settings: Settings) -> StreamableHTTPSessionMa
 
 
 async def run_stdio(
-    server: Server, service: CallService, *, stdin: Any = None, stdout: Any = None
+    server: Server,
+    service: CallService,
+    *,
+    grace: float,
+    stdin: Any = None,
+    stdout: Any = None,
 ) -> None:
     """Serve over stdio until the input ends, then drain the service.
 
@@ -110,4 +115,4 @@ async def run_stdio(
             await server.run(read, write, server.create_initialization_options())
     finally:
         with anyio.CancelScope(shield=True):
-            await service.drain(service.shutdown_grace)
+            await service.drain(grace)

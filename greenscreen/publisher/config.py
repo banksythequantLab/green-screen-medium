@@ -5,17 +5,29 @@ value of any variable.  ``parse_bindings`` is added by a later task.
 """
 from __future__ import annotations
 
+import dataclasses
 import ipaddress
 import math
 import re
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
 from greenscreen.connector.config import ConnectorConfig
 from greenscreen.connector.exceptions import ConfigurationError
+from greenscreen.flow import Flow, FlowInputError
+from greenscreen.flow.inputs import prepare_inputs
+from greenscreen.flow.model import InputSpec
+from greenscreen.publisher.vault import BoundValues
 
-__all__ = ["StartupError", "Settings", "load_settings", "parse_publish_list", "is_loopback_host"]
+__all__ = [
+    "StartupError",
+    "Settings",
+    "load_settings",
+    "parse_publish_list",
+    "parse_bindings",
+    "is_loopback_host",
+]
 
 _INT_RE = re.compile(r"[0-9]+")
 _NUM_RE = re.compile(r"[0-9]+(?:\.[0-9]+)?")
@@ -188,3 +200,124 @@ def parse_publish_list(text: str | None) -> tuple[str, ...] | None:
             raise StartupError(f"GS_PUBLISH_FLOWS: duplicate_name ({item})")
         seen.add(item)
     return tuple(items)
+
+
+_BIND_PREFIX = "GS_BIND_"
+_INT_TEXT_RE = re.compile(r"-?[0-9]+")
+
+
+@dataclass(frozen=True, slots=True)
+class _OneInput:
+    """Stands in for a ``Flow`` in ``prepare_inputs``, which reads only ``inputs``."""
+
+    inputs: tuple[InputSpec, ...]
+
+
+def _norm(name: str) -> str:
+    return name.upper().replace("-", "_")
+
+
+def _store_value(
+    environ: Mapping[str, str],
+    variable: str,
+    spec: InputSpec,
+    store: dict[str, dict[str, str | int]],
+    flow_name: str,
+) -> str | None:
+    """Parse and validate one Bound_Value into ``store``. Returns an error text or ``None``.
+
+    The value is never put into the returned text or an exception.
+    """
+    text = environ[variable]
+    parsed: str | int
+    if spec.type == "int":
+        if _INT_TEXT_RE.fullmatch(text) is None or len(text) > spec.max_length:
+            return f"{variable}: value_invalid"
+        try:
+            parsed = int(text)
+        except ValueError:
+            return f"{variable}: value_invalid"
+    else:
+        parsed = text
+    rule: str | None = None
+    try:
+        prepare_inputs(
+            _OneInput((dataclasses.replace(spec, required=True),)),  # type: ignore[arg-type]
+            {spec.name: parsed},
+        )
+    except FlowInputError as exc:
+        rule = str(exc).rsplit(" violates ", 1)[-1]
+    if rule is not None:
+        return f"{variable}: {rule}"
+    store.setdefault(flow_name, {})[spec.name] = parsed
+    return None
+
+
+def _bind_error(
+    environ: Mapping[str, str],
+    loaded: Mapping[str, Flow],
+    published: Collection[str],
+    store: dict[str, dict[str, str | int]],
+) -> str | None:
+    names = sorted(n for n, v in environ.items() if n.startswith(_BIND_PREFIX) and v != "")
+    if not names:
+        return None
+
+    split: list[tuple[str, str, str]] = []
+    for name in names:
+        rest = name[len(_BIND_PREFIX):]
+        i = rest.find("__")
+        if i <= 0 or rest[i + 2:] == "":
+            return f"{name}: name_format"
+        split.append((name, rest[:i], rest[i + 2:]))
+
+    for flow_name in loaded:
+        if flow_name in published:
+            norm = _norm(flow_name)
+            if "__" in norm or norm.endswith("_"):
+                return f"{flow_name}: ambiguous_name"
+
+    bound: set[tuple[str, str]] = set()
+    for name, flow_part, input_part in split:
+        flows = [f for f in loaded.values() if _norm(f.name) == flow_part]
+        if not flows:
+            return f"{name}: unknown_flow"
+        if len(flows) > 1:
+            return f"{_BIND_PREFIX}{flow_part}__: ambiguous_name"
+        flow = flows[0]
+        if flow.name not in published:
+            return f"{name}: flow_not_published"
+        specs = [s for s in flow.inputs if _norm(s.name) == input_part]
+        if not specs:
+            return f"{name}: unknown_input"
+        if len(specs) > 1:
+            return f"{_BIND_PREFIX}{flow_part}__{input_part}: ambiguous_name"
+        spec = specs[0]
+        if (flow.name, spec.name) in bound:
+            return f"{name}: ambiguous_name"
+        bound.add((flow.name, spec.name))
+        error = _store_value(environ, name, spec, store, flow.name)
+        if error is not None:
+            return error
+    return None
+
+
+def parse_bindings(
+    environ: Mapping[str, str],
+    loaded: Mapping[str, Flow],
+    published: Collection[str],
+) -> BoundValues:
+    """Parse the ``GS_BIND_<flow>__<input>`` variables (Requirement 22).
+
+    ``loaded`` holds every Loaded_Flow, ``published`` the names the Publish_List
+    selected. Every ``StartupError`` names a variable, family or Flow and a rule,
+    never a value, and is raised with no value left in this frame.
+    """
+    store: dict[str, dict[str, str | int]] = {}
+    error = _bind_error(environ, loaded, published, store)
+    if error is not None:
+        for inner in store.values():
+            inner.clear()
+        store.clear()
+        raise StartupError(error) from None
+    return BoundValues(store)

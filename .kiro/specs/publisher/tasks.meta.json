@@ -177,6 +177,104 @@
         "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
         "timestamp": 1794962052665
       }
+    ],
+    "5.1 Implement `greenscreen/publisher/auth.py`": [
+      {
+        "executionId": "dc247dcb-de12-4dee-a1b9-49c68f6d63f1",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794964295727
+      },
+      {
+        "executionId": "dc247dcb-de12-4dee-a1b9-49c68f6d63f1",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794964706948
+      }
+    ],
+    "5.2 Add the crash guard and replaced framework handlers to `rest.py`": [
+      {
+        "executionId": "dc247dcb-de12-4dee-a1b9-49c68f6d63f1",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794964296031
+      },
+      {
+        "executionId": "dc247dcb-de12-4dee-a1b9-49c68f6d63f1",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794964707107
+      }
+    ],
+    "5.4 Implement `parse_bindings` in `greenscreen/publisher/config.py`": [
+      {
+        "executionId": "dc247dcb-de12-4dee-a1b9-49c68f6d63f1",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794964296191
+      },
+      {
+        "executionId": "dc247dcb-de12-4dee-a1b9-49c68f6d63f1",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794964707289
+      }
+    ],
+    "5.3 Add the OpenAPI builder and the docs page to `rest.py`": [
+      {
+        "executionId": "dc247dcb-de12-4dee-a1b9-49c68f6d63f1",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794964710391
+      },
+      {
+        "executionId": "dc247dcb-de12-4dee-a1b9-49c68f6d63f1",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794964879143
+      }
+    ],
+    "5.5 Wire auth, crash guard, OpenAPI and bindings into `app.py` and test the whole stack": [
+      {
+        "executionId": "dc247dcb-de12-4dee-a1b9-49c68f6d63f1",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794964879830
+      },
+      {
+        "executionId": "dc247dcb-de12-4dee-a1b9-49c68f6d63f1",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794965380320
+      }
+    ],
+    "5. Hardening: auth, crash guard, handlers, OpenAPI, bindings, wiring (about 3.5 h, day 2)": [
+      {
+        "executionId": "dc247dcb-de12-4dee-a1b9-49c68f6d63f1",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794965380499
+      }
+    ],
+    "6.1 Implement `greenscreen/publisher/cli.py` and `.env.example`": [
+      {
+        "executionId": "dc247dcb-de12-4dee-a1b9-49c68f6d63f1",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794965380812
+      },
+      {
+        "executionId": "dc247dcb-de12-4dee-a1b9-49c68f6d63f1",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794965738157
+      }
+    ],
+    "6.2 Write the startup, shutdown and stdio unit tests": [
+      {
+        "executionId": "dc247dcb-de12-4dee-a1b9-49c68f6d63f1",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794965738588
+      },
+      {
+        "executionId": "dc247dcb-de12-4dee-a1b9-49c68f6d63f1",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794966324248
+      }
+    ],
+    "6. CLI, stdio hygiene, shutdown, startup-failure tests (about 2.0 h, day 2)": [
+      {
+        "executionId": "dc247dcb-de12-4dee-a1b9-49c68f6d63f1",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794966324377
+      }
     ]
   }
 }

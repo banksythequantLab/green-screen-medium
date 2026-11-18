@@ -77,7 +77,7 @@ def make(host, flows=None, *, call_timeout=30.0, limiter=None, transport_clock=N
     registry = build_registry({n: (f, "test") for n, f in flows.items()}, BoundValues(), call_timeout)
     return CallService(
         registry, BoundValues(), SIGS, limiter or Limiter(1), host,
-        call_timeout=call_timeout, shutdown_grace=1.0, clock=transport_clock or FakeClock(),
+        clock=transport_clock or FakeClock(),
     )
 
 

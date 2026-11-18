@@ -32,7 +32,7 @@ MODES = ["legacy", "auto"]
 def make_service(host, registry):
     return CallService(
         registry, BoundValues(), SIGS, Limiter(1), host,
-        call_timeout=30.0, shutdown_grace=1.0, clock=FakeClock(),
+        clock=FakeClock(),
     )
 
 

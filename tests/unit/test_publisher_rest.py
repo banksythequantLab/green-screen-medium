@@ -53,7 +53,7 @@ def make_app(factory, flows=None):
     registry = build_registry({n: (f, "test") for n, f in flows.items()}, BoundValues(), 30.0)
     service = CallService(
         registry, BoundValues(), SIGS, Limiter(1), factory,
-        call_timeout=30.0, shutdown_grace=1.0, clock=FakeClock(),
+        clock=FakeClock(),
     )
     return build_rest(service, registry, load_settings(ENV), _dummy_mcp)
 
@@ -238,7 +238,7 @@ def test_mcp_route_is_the_given_asgi_app():
     registry = build_registry({"mini": (MINI, "test")}, BoundValues(), 30.0)
     service = CallService(
         registry, BoundValues(), SIGS, Limiter(1), _Boom(),
-        call_timeout=30.0, shutdown_grace=1.0, clock=FakeClock(),
+        clock=FakeClock(),
     )
     app = build_rest(service, registry, load_settings(ENV), mcp)
     resp = run(app, lambda c: c.post("/mcp", content=b"{}"))

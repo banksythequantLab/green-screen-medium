@@ -1,7 +1,6 @@
 """Application wiring: ``prepare`` (startup checks) and ``build_app`` (the ASGI stack).
 
-Day-one slice (task 3.3): no auth layer, crash guard, OpenAPI or bindings yet; those
-are added by tasks 5.1 to 5.5. No environment variable or option selects a session
+The ASGI stack is CrashGuard(AuthMiddleware(FastAPI)); stdio gets no auth layer. No environment variable or option selects a session
 factory: tests inject one through ``build_app(session_factory=...)`` (Requirement 19.1).
 """
 from __future__ import annotations
@@ -15,8 +14,15 @@ from typing import Any
 from mcp.server.lowlevel import Server
 from mcp.server.streamable_http_manager import StreamableHTTPASGIApp
 
+from greenscreen.publisher.auth import AuthMiddleware
 from greenscreen.publisher.calls import CallService, ConnectorSession, Limiter, SessionFactory
-from greenscreen.publisher.config import Settings, StartupError, load_settings, parse_publish_list
+from greenscreen.publisher.config import (
+    Settings,
+    StartupError,
+    load_settings,
+    parse_bindings,
+    parse_publish_list,
+)
 from greenscreen.publisher.mcp_server import build_manager, build_mcp_server
 from greenscreen.publisher.registry import (
     Registry,
@@ -25,7 +31,7 @@ from greenscreen.publisher.registry import (
     load_startup_signatures,
     select_published,
 )
-from greenscreen.publisher.rest import build_rest
+from greenscreen.publisher.rest import CrashGuard, build_rest
 from greenscreen.publisher.vault import BoundValues
 
 __all__ = [
@@ -68,7 +74,7 @@ def prepare(environ: Mapping[str, str]) -> Prepared:
     loaded = load_flows(settings.flows_dir)
     published = select_published(loaded, parse_publish_list(settings.publish_flows))
     signatures = load_startup_signatures()
-    bound = BoundValues()  # parse_bindings arrives with task 5.4
+    bound = parse_bindings(environ, {n: f for n, (f, _src) in loaded.items()}, published)
     registry = build_registry(published, bound, settings.call_timeout)
     return Prepared(settings, registry, bound, signatures, len(loaded))
 
@@ -97,8 +103,6 @@ def build_app(
         prepared.signatures,
         Limiter(settings.max_concurrency),
         factory,
-        call_timeout=settings.call_timeout,
-        shutdown_grace=settings.shutdown_grace,
         clock=clock,
         poll_interval=poll_interval,
     )
@@ -118,11 +122,15 @@ def build_app(
         async with lifespan():
             yield
 
-    asgi = build_rest(
+    rest = build_rest(
         service,
         prepared.registry,
         settings,
         StreamableHTTPASGIApp(manager),
         lifespan=app_lifespan,
     )
+    inner: Any = rest
+    if settings.transport != "stdio":
+        inner = AuthMiddleware(rest, api_key=settings.api_key, disabled=settings.auth_disabled)
+    asgi = CrashGuard(inner)
     return PublisherApp(asgi=asgi, service=service, server=server, _lifespan=lifespan)

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Implement the `greenscreen.publisher` Python 3.11+ package from `requirements.md` and `design.md` in this folder. One process loads every Flow and publishes each as an MCP tool and a REST endpoint. Both front ends call one `CallService`. The plan is sized for three working days (about 23.5 hours) and builds the cheapest vertical slice first: one Flow over REST and MCP on the Fake_Host by the end of day one.
+Implement the `greenscreen.publisher` Python 3.11+ package from `requirements.md` and `design.md` in this folder. One process loads every Flow and publishes each as an MCP tool and a REST endpoint. Both front ends call one `CallService`. The plan is sized for three working days (about 24 hours) and builds the cheapest vertical slice first: one Flow over REST and MCP on the Fake_Host by the end of day one.
 
 ### Estimates and order
 
@@ -12,20 +12,20 @@ Implement the `greenscreen.publisher` Python 3.11+ package from `requirements.md
 | 2 | Call service: limiter, error mapping, worker, timeout, `session_clean` | 3.0 | 1 |
 | 3 | Vertical slice: REST, MCP, app wiring, `tk5-system-info` over both | 2.5 | 1 |
 | 4 | Checkpoint, end of day one (demo slice) | 0.5 | 1 |
-| 5 | Hardening: auth, crash guard, handlers, OpenAPI, bindings, wiring | 3.5 | 2 |
+| 5 | Hardening: auth, crash guard, handlers, OpenAPI, bindings, wiring | 4.0 | 2 |
 | 6 | CLI, stdio hygiene, shutdown, startup-failure tests | 2.0 | 2 |
 | 7 | Property tests, group A: Properties 1, 2, 3, 4, 11, 12, 13, plus shared test helpers | 3.0 | 2 to 3 |
 | 8 | Property tests, group B: Properties 5, 6, 7, 8, 9, 10, 14 | 3.5 | 3 |
 | 9 | Checkpoint, end of the properties (timing and count) | 0.5 | 3 |
 | 10 | Perf test, live integration test, static rule tests | 2.0 | 3 |
-| | **Total** | **23.5** | |
+| | **Total** | **24.0** | |
 
 Day one is tasks 1 to 4 (9.0 hours, the slice). Day two is tasks 5 and 6, then the start of task 7. Day three is the rest of 7, then 8, 9 and 10.
 
 ### Rules for every task
 
 - The Fake_Host (`tests/publisher_support.py`, built on `ScriptedSession`, `FakeClock` and `tests/flow_support.py`) serves every test except the integration test of task 10.2. No unit or property test needs the live host, starts a real host session or opens a network connection (the stdio test of task 6.2 and the real-`uvicorn` Crash_Guard test of task 5.2 are the stated exceptions, and they use the Fake_Host only).
-- The Startup_Signatures are loaded once by `prepare` and passed to `run_flow`. No test patches `load_bundled_signatures` or any other loader (Requirements 1.8, 19.1).
+- The Startup_Signatures are loaded once by `prepare` and passed to `run_flow`. No test patches `load_bundled_signatures` or any other loader (Requirements 1.8, 19.1), except the one registry unit test that simulates the `signatures: load_failed` failure (accepted exception, design "Implementation notes").
 - Screens come only from `captures/` through `tests/flow_support.py` helpers. No task captures, writes or adds a screen that holds a typed password. No task writes a credential, an API key or a Probe_Value into any file. `TK5_USERNAME` and `TK5_PASSWORD` are read only by the integration test (task 10.2). `.kiro` is never git-ignored.
 - The Publisher does not recover a locked TSO user id and adds no `RECONNECT`, retry or reaper (Requirement 23.7). Nothing in this plan builds anything under "What this design deliberately does not build". The design does not call for a README section, so none is planned.
 - Every property test is exactly one `@given` test with `@settings(max_examples=100, deadline=None)` or more, and its first line is the comment `# Feature: publisher, Property N: <title>`. Every property test task is required.
@@ -109,40 +109,44 @@ Day one is tasks 1 to 4 (9.0 hours, the slice). Day two is tasks 5 and 6, then t
   - Run `pytest tests/unit -k publisher` and the full `pytest -m "not integration"`; require that the slice test of task 3.3 passes and no pre-existing test fails.
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 5. Hardening: auth, crash guard, handlers, OpenAPI, bindings, wiring (about 3.5 h, day 2)
-  - [ ] 5.1 Implement `greenscreen/publisher/auth.py`
+- [x] 5. Hardening: auth, crash guard, handlers, OpenAPI, bindings, wiring (about 3.5 h, day 2)
+  - [x] 5.1 Implement `greenscreen/publisher/auth.py`
     - `extract_key(headers)` on the raw ASGI header list (the rules of Requirement 13.11, including the empty `X-API-Key` next to a valid Bearer header) and the pure ASGI `AuthMiddleware` (constant-time comparison with `hmac.compare_digest` on UTF-8 bytes, one fixed `unauthorized` body for every cause, sent before any body is read, `GET /health` open, the loopback `Host` rule when auth is disabled; not installed for stdio). Wiring is task 5.5
     - Create `tests/unit/test_publisher_auth.py`: each rule of Requirement 13.11, either carrier and both, repeated headers, the disabled-auth Host cases, and the constant-time unit test of Requirement 19.4 (a key object whose `__eq__` raises, plus a spy that `hmac.compare_digest` is the comparison used)
     - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.7, 13.8, 13.10, 13.11, 13.12, 19.4_
 
-  - [ ] 5.2 Add the crash guard and replaced framework handlers to `rest.py`
+  - [x] 5.2 Add the crash guard and replaced framework handlers to `rest.py`
     - Replace the `RequestValidationError`, `StarletteHTTPException` and `Exception` handlers with Error_Body handlers (`request_invalid` 400 for validation, unknown paths and wrong methods; `internal_error` 500), and add `CrashGuard`, the outermost pure ASGI layer that catches every `Exception` for `http` scopes, writes one fixed-text log record with no exception text, traceback or `exc_info`, sends the `internal_error` body when the response has not started, and passes cancellation through
     - Create `tests/unit/test_publisher_crash_guard.py`: a 422 case that does not echo the value, unknown path and wrong method, and the real-`uvicorn` case with a route that raises `RuntimeError` holding a marker (`log_config=None`, `access_log=False`, loopback port, Fake_Host only): the client gets the `internal_error` body and no log record holds the marker or a traceback
-    - _Requirements: 6.4, 6.9, 6.10, 11.5, 11.6, 19.3_
+    - Rejection log records (Requirement 8.9, 8.10): add the public hook `CallService.log_rejection(flow, transport, code, started)` to `calls.py`, which writes one Call_Log_Record through the existing single writer (`_Record` and `_write_log`) with only `call_id`, `flow` (the Flow_Name when published, else `unknown`), `transport`, `outcome` and `duration_ms`; `rest.py` takes `started = time.monotonic()` at the top of the Flow route and calls the hook once for each rejection before `execute` (wrong media type, malformed JSON, duplicate key, non-finite number, non-object body, oversize by `Content-Length` or streamed, any other `request_invalid` or `request_too_large`). `precheck` and `execute` already log their own rejections (including MCP argument-validation failures), so MCP needs no hook. No record for an Auth_Guard rejection, `/health` or an unknown path
+    - Create `tests/unit/test_publisher_rejection_log.py` (Requirement 19.11): one test per rejection kind (wrong media type, malformed JSON, duplicate key, `NaN`, array body, oversize with `Content-Length`, oversize chunked, unknown Flow, `input_invalid` over REST and MCP, `busy`, `shutting_down`) asserting exactly one `greenscreen.publisher` record at INFO with only the allowed fields, `flow` equal to `unknown` for an unpublished Flow, and no submitted value; plus a test that an Auth_Guard rejection (once task 5.1 is in), `/health` and an unknown path write none. Update the existing `test_publisher_rest.py` cases that would now see an extra record only if they assert on the log
+    - Remove the dead fields `call_timeout` and `shutdown_grace` from `CallService` and its constructor (design, "Implementation notes"): `drain(grace)` keeps its argument, `run_stdio` gets the keyword `grace` instead of reading `service.shutdown_grace`, and the constructor callers are updated: `app.py` (`build_app`), `mcp_server.py` (`run_stdio`), and the tests `tests/unit/test_publisher_calls.py` (its `make` helper keeps `call_timeout` as a `build_registry` argument only), `tests/unit/test_publisher_mcp.py` and `tests/unit/test_publisher_rest.py`. `Settings.call_timeout` and `Settings.shutdown_grace` stay
+    - Re-run the leak checks (validation echo, unhandled-exception traceback, access log) on the installed starlette 1.6.0 and uvicorn 0.38.0 and report. If behaviour differs from the versions in the design's "Documentation checked" section (starlette 1.10.0, uvicorn 0.54.0), propose minimum version pins to the user for approval, and do NOT edit `pyproject.toml`
+    - _Requirements: 6.4, 6.9, 6.10, 8.9, 8.10, 8.11, 11.5, 11.6, 19.3, 19.11_
 
-  - [ ] 5.3 Add the OpenAPI builder and the docs page to `rest.py`
+  - [x] 5.3 Add the OpenAPI builder and the docs page to `rest.py`
     - `build_openapi(registry, version)` (OpenAPI 3.1.0, one path item per Flow with the registry schemas embedded unchanged, one response per HTTP status of the table listing its codes, the two security schemes as alternatives, `security: []` on `/health`, no value, default or example), `GET /openapi.json`, and `GET /docs` only when `GS_ENABLE_DOCS` is true
     - Create `tests/unit/test_publisher_openapi.py`: the document of the three bundled Flows passes `fastapi.openapi.models.OpenAPI.model_validate`, embedded schemas equal the generator output, the security entries, no `/docs` route by default, no path for a Loaded_Flow left out of the registry, and the text `cancelled` appears nowhere in the document
     - _Requirements: 1.15, 8.8, 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7, 6.5_
 
-  - [ ] 5.4 Implement `parse_bindings` in `greenscreen/publisher/config.py`
+  - [x] 5.4 Implement `parse_bindings` in `greenscreen/publisher/config.py`
     - Signature `parse_bindings(environ, loaded, published)`: the flow part is matched against ALL Loaded_Flows, and a match that is not in `published` raises `<variable>: flow_not_published` (checked before the Input match). Inputs are then matched on the published Flow only
     - The Requirement 22 algorithm in the order of the design: scan `GS_BIND_` names in ascending order, split at the first `__`, apply the Flow-name rule for names containing `__` or ending in `_`, match normalised names, report `ambiguous_name` for collisions, parse by type, apply the Input_Validator against the full `InputSpec`, and reject a second binding of one Input. Every `StartupError` is raised with `from None` after the local value dict is cleared and never holds a value
     - Create `tests/unit/test_publisher_bindings.py`: one example per rule (format error, empty value is unset, unknown Flow, a Loaded_Flow that `GS_PUBLISH_FLOWS` leaves out giving `flow_not_published`, unknown Input, ambiguous Flow name, ambiguous Input name, `int` text rules, `max_length`, printable ASCII, `regex`, duplicate binding), asserting the message names the variable or family and the rule and holds no value
     - _Requirements: 19.10, 22.3, 22.4, 22.5, 22.7, 22.8, 22.9, 22.10, 22.11, 22.12, 15.1_
 
-  - [ ] 5.5 Wire auth, crash guard, OpenAPI and bindings into `app.py` and test the whole stack
+  - [x] 5.5 Wire auth, crash guard, OpenAPI and bindings into `app.py` and test the whole stack
     - `prepare` calls `parse_bindings(environ, loaded, published)` after the allow-list; `build_app` builds the registry with the bound names, then returns `CrashGuard(AuthMiddleware(FastAPI))` (no auth layer for stdio); the Bound_Values are merged in `execute`
     - Create `tests/unit/test_publisher_stack.py`: every route and `/mcp` answer `unauthorized` without a key and open with either carrier, `GET /health` stays open, an MCP call over HTTP in both eras with the key, a body over `GS_MAX_BODY_BYTES` on `/mcp` gets the SDK plain-text 413 with no part of the body and zero factory calls (Requirement 4.5), bound Inputs are absent from schemas, `tools/list` and the OpenAPI document, a Call with a bound Input supplied by the caller gives `input_invalid`, and the Bound_Value reaches `run_flow`; with `GS_PUBLISH_FLOWS=tk5-system-info` (the demo setting) `tk5-logon` and `tk5-logoff` are absent from the OpenAPI document, `tools/list` and the `/health` count (1), and a call to either gives the same `unknown_flow` body as an unknown name over REST and over MCP, while an unset variable publishes all three
     - _Requirements: 1.9, 1.14, 1.15, 11.3, 11.4, 14.4, 19.10, 4.5, 6.10, 12.4, 13.2, 13.3, 13.12, 14.5, 22.1, 22.2, 22.6, 19.3_
 
-- [ ] 6. CLI, stdio hygiene, shutdown, startup-failure tests (about 2.0 h, day 2)
-  - [ ] 6.1 Implement `greenscreen/publisher/cli.py` and `.env.example`
-    - `main()`: check that `mcp`, `fastapi` and `uvicorn` import (message names the module and the extra `publish`, exit 2); `prepare(os.environ)` with `StartupError` printed to stderr only (exit 2, before any port or stdin use); remove `GS_API_KEY` and every Binding_Variable from `os.environ` afterwards; the stderr handler with the `StripTraceback` filter; `uvicorn.Server` subclass whose `handle_exit` calls `begin_shutdown()` (`log_config=None`, `access_log=False`, `timeout_graceful_shutdown=GS_SHUTDOWN_GRACE`); the stdio path that duplicates fds 0 and 1, points fd 1 and `sys.stdout` at stderr, passes explicit streams to `stdio_server`, turns SIGTERM into `KeyboardInterrupt`; a final `drain(0)` on every exit path
+- [x] 6. CLI, stdio hygiene, shutdown, startup-failure tests (about 2.0 h, day 2)
+  - [x] 6.1 Implement `greenscreen/publisher/cli.py` and `.env.example`
+    - `main()`: check that `mcp`, `fastapi` and `uvicorn` import (message names the module and the extra `publish`, exit 2); `prepare(os.environ)` with `StartupError` printed to stderr only (exit 2, before any port or stdin use); remove `GS_API_KEY` and every Binding_Variable from `os.environ` afterwards; the stderr handler with the `StripTraceback` filter; `uvicorn.Server` subclass whose `handle_exit` calls `begin_shutdown()` (`log_config=None`, `access_log=False`, `timeout_graceful_shutdown=GS_SHUTDOWN_GRACE`); the stdio path that duplicates fds 0 and 1, points fd 1 and `sys.stdout` at stderr, passes the duplicated streams to `run_stdio(..., stdin=, stdout=, grace=Settings.shutdown_grace)`, which hands them to `stdio_server`, turns SIGTERM into `KeyboardInterrupt`; a final `drain(0)` on every exit path
     - Create `.env.example` with variable names and comments only and no values, including `GS_PUBLISH_FLOWS=` with a comment that the demo sets it to `tk5-system-info` (the name `tk5-system-info` is a Flow name, not a secret) and that unset publishes every Loaded_Flow
     - _Requirements: 8.5, 8.6, 8.7, 14.9, 14.11, 15.4, 15.5, 15.7, 15.8, 16.1, 16.2, 16.3, 16.4, 16.5_
 
-  - [ ] 6.2 Write the startup, shutdown and stdio unit tests
+  - [x] 6.2 Write the startup, shutdown and stdio unit tests
     - Create `tests/unit/test_publisher_cli.py`: one test per startup failure of Requirements 1 (including `GS_PUBLISH_FLOWS` `empty_item`, `duplicate_name` and `unknown_flow`, and `flow_not_published` for a binding), 13, 15, 16 and 22 asserting exit code 2, the message, and that stdout and stderr hold no environment variable value (and no Leak_Form of a Bound_Value for Requirement 22); a failing signature load exits 2 before a port is bound; the missing-extra message (module import blocked in a subprocess); `GS_API_KEY` and `GS_BIND_*` removed from `os.environ` after `prepare`; the shutdown test of Requirement 19.7 (every opened session was closed after `drain`); the `StripTraceback` filter output; the stdio test in a subprocess against the Fake_Host seam through a test-only entry point that cannot select a factory from the environment, asserting every stdout line parses as JSON-RPC also when a handler prints and writes to descriptor 1 (Requirement 14.11)
     - _Requirements: 1.11, 1.12, 1.13, 8.7, 13.5, 13.6, 14.9, 14.11, 15.4, 15.5, 15.8, 16.1, 16.2, 16.3, 16.4, 16.5, 19.5, 19.7, 19.10, 22.7_
 
@@ -252,7 +256,7 @@ Day one is tasks 1 to 4 (9.0 hours, the slice). Day two is tasks 5 and 6, then t
 - `tasks.meta.json` is written by the property-test status tool when tests run, as in the sibling specs, so it is not authored here.
 - Requirement 17.2, 17.3 and 17.5 (the recorded decision and measurements) and Requirement 18.5 (the licence list) are documentation already in the design; no task is needed.
 - Account-lock recovery is not planned (Requirement 23.7). Task 2.2 marks the affected calls with `session_clean` only.
-- Hours: unchanged (23.5 total). The allow-list and the `cancelled` outcome fit inside the existing tasks as sub-bullets; no sub-task was added and the dependency graph is unchanged.
+- Hours: 24.0 total, up from 23.5. The allow-list and the `cancelled` outcome fit inside the existing tasks as sub-bullets. After the day-one checkpoint, task 5.2 gained sub-bullets (rejection log records and the hook `log_rejection`, removal of the dead `CallService` fields, the starlette and uvicorn re-check) and grew by 0.5 hour (3.5 to 4.0); no top-level task was added and the dependency graph is unchanged.
 - Hour estimates are tight for the amount of test code; task 7 and task 8 carry most of the risk. If day three runs short, the first lever in task 9 is to draw one front end per example in Properties 3, 5 and 6.
 
 ### Points for review

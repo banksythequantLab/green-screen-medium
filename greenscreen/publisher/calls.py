@@ -398,8 +398,6 @@ class CallService:
         limiter: Limiter,
         session_factory: SessionFactory,
         *,
-        call_timeout: float,
-        shutdown_grace: float,
         clock: Any = None,
         poll_interval: float = 0.1,
     ) -> None:
@@ -408,8 +406,6 @@ class CallService:
         self._signatures = signatures
         self._limiter = limiter
         self._factory = session_factory
-        self.call_timeout = call_timeout
-        self.shutdown_grace = shutdown_grace
         self._clock = clock
         self._poll = poll_interval
         self._runs: set[_Run] = set()
@@ -432,6 +428,17 @@ class CallService:
             rec.flow = published.flow.name
         self._write_log(rec, t0)
         return CallOutcome(code, error_body(code))
+
+    def log_rejection(self, flow: str, transport: str, code: str, started: float) -> None:
+        """One Call_Log_Record for a request rejected before ``execute`` (Requirement 8.9).
+
+        ``flow`` is the Flow_Name of a published Flow, otherwise ``unknown``. Only
+        ``call_id``, ``flow``, ``transport``, ``outcome`` and ``duration_ms`` are written.
+        """
+        if code not in ERROR_CODES:
+            raise ValueError("unknown error code")
+        rec = _Record(secrets.token_hex(8), flow, transport, outcome=code)
+        self._write_log(rec, started)
 
     async def execute(
         self, published: PublishedFlow, box: SecretBox, transport: str
