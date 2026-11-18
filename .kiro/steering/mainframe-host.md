@@ -187,8 +187,9 @@ connection each time. No capture holds the password (checked in plain and hex fo
    hidden field `SF(c0=cc)` at r3c0, cursor (3,1). This is the same prompt text as
    `tso-password-prompt` but two rows lower, so that signature does not match it.
 3. Password and Enter gives `tso-reconnect-ok`: row 0
-   ` IKT00300I LOGON RECONNECT SUCCESSFUL, SESSION ESTABLISHED`, cursor (1,0). The
-   hidden cells did not hold the password on this screen. The host waited: after 4 s
+   ` IKT00300I LOGON RECONNECT SUCCESSFUL, SESSION ESTABLISHED`, cursor (1,0). This
+   screen has no hidden field at all, so it cannot hold the password in hidden cells;
+   the capture was also searched for the password in plain and hex form (absent). The host waited: after 4 s
    nothing more arrived, and it needed one Enter.
 4. That Enter gives a `***` pause under the same message (recognized as `tso-pause`),
    one more Enter gives the ISPF menu (`ispf-primary-menu`), then `X` gives
@@ -200,3 +201,25 @@ connection each time. No capture holds the password (checked in plain and hex fo
 - The capture inventory tests pin exactly seven files in `/captures`, so the three new
   captures wait in `/captures/incoming` until a spec adds their signatures and updates
   those tests.
+
+
+## Verified 2026-11-18: the bundled logon recovers a locked account
+
+- The three captures moved from `/captures/incoming` to `/captures`; there are now ten
+  captures and ten bundled signatures.
+- `tk5-logon` and `tk5-system-info` handle the IN USE screen themselves: they type
+  `LOGON <id> RECONNECT`, give the password at the lower prompt, press Enter at the
+  reconnect message, and continue to the ISPF menu.
+- Live, with the account locked on purpose (logon, then the connection dropped):
+  the flow-level recovery test passed in 9.7 s, and a REST call to the real
+  `greenscreen-publish` server returned the four outputs with the recovery handle
+  bodies run. The next call took the normal path, so the account was left logged off.
+- This replaces the earlier rule that the publisher needs a recovery path before it is
+  exposed publicly. What still applies:
+  - Recovery is verified only for a session orphaned at the ISPF menu. An orphan left
+    at `READY`, in a sub-panel or mid-logon is not handled: the call stops and the log
+    shows `session_clean=false`. Manual recovery is the reconnect recipe above.
+  - One call at a time per user id (`GS_MAX_CONCURRENCY=1` with one demo account).
+  - The publisher logs `session_clean=false` for every stop that skips the logoff
+    steps: `unknown_screen`, `ambiguous_screen`, `timeout`, `run_timeout`,
+    `session_error`, a call timeout, a cancelled call and shutdown teardown.

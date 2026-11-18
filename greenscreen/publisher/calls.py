@@ -27,6 +27,7 @@ import anyio.to_thread
 from greenscreen.connector import Connector, SessionClosedError
 from greenscreen.flow import FlowInputError, run_flow
 from greenscreen.flow.errors import REASON_CODES, FlowError
+from greenscreen.flow.runner import FINALLY_SKIP_REASONS
 from greenscreen.publisher.registry import PublishedFlow, Registry, check_inputs
 from greenscreen.publisher.vault import BoundValues, SecretBox
 
@@ -96,6 +97,7 @@ _RESPONSE_CODES: frozenset[str] = ERROR_CODES | {"ok"}
 
 # Reason_Codes whose Error_Body carries the Flow-stop members (Requirement 6.2).
 _FLOW_STOP_CODES: frozenset[str] = frozenset(REASON_CODES) - {"input_invalid"}
+_FINALLY_SKIPPED_STOPS: frozenset[str] = FINALLY_SKIP_REASONS & _FLOW_STOP_CODES
 FLOW_STOP_MEMBERS: tuple[str, ...] = (
     "step_index",
     "kind",
@@ -404,7 +406,11 @@ def _worker(run: _Run) -> None:
 
 def _session_clean(code: str, abort_reason: str | None) -> bool | None:
     """False when the user id may still be logged on; None makes no claim."""
-    if code in ("unknown_screen", "call_timeout") or abort_reason in ("cancel", "shutdown"):
+    if (
+        code == "call_timeout"
+        or code in _FINALLY_SKIPPED_STOPS
+        or abort_reason in ("cancel", "shutdown")
+    ):
         return False
     return None
 

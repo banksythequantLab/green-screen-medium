@@ -1,6 +1,7 @@
 """Unit tests for the bundled screen signatures (Requirements 8, 10.3)."""
 from __future__ import annotations
 
+import os
 import re
 from importlib import resources
 from pathlib import Path
@@ -14,6 +15,8 @@ from greenscreen.recognizer.recognizer import recognize
 from greenscreen.recognizer.signature import (
     CursorFieldMatcher,
     FieldLayoutMatcher,
+    LastRowMatcher,
+    RegionRegexMatcher,
     TextAtMatcher,
 )
 from tests.screen_support import load_capture_screen
@@ -29,6 +32,9 @@ OWN_CAPTURES = {
     "tso-input-not-recognized": "tso-input-not-recognized",
     "tso-ready": "tso-ready",
     "tso-pause": "tso-pause-2",
+    "tso-userid-in-use": "tso-userid-in-use",
+    "tso-reconnect-password-prompt": "tso-reconnect-password-prompt",
+    "tso-reconnect-ok": "tso-reconnect-ok",
 }
 
 _DATE_TIME = re.compile(
@@ -44,11 +50,11 @@ def sigs():
     return {s.name: s for s in load_bundled_signatures()}
 
 
-def test_exactly_seven_signatures_bundled():
+def test_exactly_ten_signatures_bundled():
     loaded = load_bundled_signatures()
-    assert len(loaded) == 7
+    assert len(loaded) == 10
     assert {s.name for s in loaded} == set(OWN_CAPTURES)
-    assert len(list(SIGNATURES_DIR.glob("*.yaml"))) == 7
+    assert len(list(SIGNATURES_DIR.glob("*.yaml"))) == 10
 
 
 @pytest.mark.parametrize("name,capture", sorted(OWN_CAPTURES.items()))
@@ -85,6 +91,13 @@ def test_bundled_matchers_match_capture_cells(sigs):
                 assert not f.protected, name
                 assert (f.start_row, f.start_col) == (m.row, m.col), name
                 assert f.hidden is m.hidden, name
+            elif isinstance(m, RegionRegexMatcher):
+                region = grid[m.row][m.col : m.col + m.length]
+                assert len(region) == m.length, (name, m.row, m.col)
+                assert re.search(m.pattern, region), (name, m.row, m.col)
+            elif isinstance(m, LastRowMatcher):
+                non_blank = [r.rstrip(" ") for r in grid if r.strip(" ")]
+                assert non_blank[-1] == m.text, name
 
 
 def test_load_is_independent_of_working_directory(monkeypatch, tmp_path):
@@ -93,11 +106,28 @@ def test_load_is_independent_of_working_directory(monkeypatch, tmp_path):
     assert load_bundled_signatures() == expected
 
 
+NEW_SIGNATURES = ("tso-userid-in-use", "tso-reconnect-password-prompt", "tso-reconnect-ok")
+
+
 def test_no_bundled_yaml_contains_user_id():
     files = list(SIGNATURES_DIR.glob("*.yaml"))
     assert files
     for path in files:
-        assert "HERC01" not in path.read_text(encoding="utf-8"), path.name
+        assert "herc01" not in path.read_text(encoding="utf-8").lower(), path.name
+    assert {p.stem for p in files} >= set(NEW_SIGNATURES)
+
+
+def test_new_signature_files_hold_no_credentials_or_host():
+    values = {
+        name: os.environ.get(name, "") for name in ("TK5_USERNAME", "TK5_PASSWORD", "GS_HOST")
+    }
+    present = {n: v for n, v in values.items() if v}
+    if not present:
+        pytest.skip("unset or empty environment variable(s): " + ", ".join(values))
+    for stem in NEW_SIGNATURES:
+        text = (SIGNATURES_DIR / f"{stem}.yaml").read_text(encoding="utf-8").lower()
+        hits = [n for n, v in present.items() if v.lower() in text]
+        assert not hits, f"{stem}.yaml contains the value of {hits}"
 
 
 class _Node:
@@ -154,7 +184,7 @@ def test_missing_bundled_file_raises_naming_file(monkeypatch, name):
     ids=["malformed", "wrong-version", "empty", "bad-utf8"],
 )
 def test_invalid_bundled_file_raises_naming_file(monkeypatch, behaviour):
-    # The last manifest entry fails, so six files loaded before the error;
+    # Earlier manifest entries loaded before the error;
     # no partial list may be returned.
     _patch_file(monkeypatch, "tso-pause.yaml", behaviour)
     with pytest.raises(SignatureError, match=re.escape("tso-pause.yaml")):
@@ -173,4 +203,4 @@ def test_loader_keeps_no_state_after_failure(monkeypatch):
         _patch_file(mp, "tso-ready.yaml", _raise(FileNotFoundError()))
         with pytest.raises(SignatureError):
             load_bundled_signatures()
-    assert len(load_bundled_signatures()) == 7
+    assert len(load_bundled_signatures()) == 10

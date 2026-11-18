@@ -51,6 +51,8 @@ TYPEABLE: tuple[str, ...] = (
     "tso-password-prompt",
     "ispf-primary-menu",
     "tso-ready",
+    "tso-userid-in-use",
+    "tso-reconnect-password-prompt",
 )
 
 _LITERAL_ALPHABET = st.characters(
@@ -518,8 +520,8 @@ assert all(v >= 1 for v in _TYPED_MAX.values()), _TYPED_MAX
 
 
 @st.composite
-def typed_cases(draw) -> TypedCase:
-    name = draw(st.sampled_from(TYPEABLE))
+def typed_cases(draw, names: tuple[str, ...] = TYPEABLE) -> TypedCase:
+    name = draw(st.sampled_from(names))
     text = draw(
         st.text(
             alphabet=st.characters(min_codepoint=0x20, max_codepoint=0x7E),

@@ -561,7 +561,7 @@ def _stop_case(name):
         ("unknown_screen", "unknown_screen", False),
         ("unknown_screen_finally", "unknown_screen", False),
         ("unexpected_screen", "unexpected_screen", None),
-        ("timeout", "timeout", None),
+        ("timeout", "timeout", False),
     ],
 )
 def test_flow_stops_carry_the_flow_stop_members_and_session_clean(case, code, clean, caplog):

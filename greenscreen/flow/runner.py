@@ -71,6 +71,7 @@ _FINALLY_SKIP_REASONS = frozenset(
         "definition",
     }
 )
+FINALLY_SKIP_REASONS: frozenset[str] = _FINALLY_SKIP_REASONS
 _MIN_POLL = 0.01
 _MAX_POLL = 1.0
 

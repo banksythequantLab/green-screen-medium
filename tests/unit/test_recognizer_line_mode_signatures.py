@@ -6,7 +6,14 @@ import pytest
 from greenscreen.recognizer.bundled import load_bundled_signatures
 from greenscreen.recognizer.matching import signature_matches
 from greenscreen.recognizer.view import ScreenView
-from tests.screen_support import load_capture_screen, make_screen
+from greenscreen.recognizer.errors import UnknownScreenError
+from greenscreen.recognizer.recognizer import recognize
+from tests.screen_support import (
+    load_capture_screen,
+    make_screen,
+    reconnect_pause_screen,
+    second_in_use_screen,
+)
 
 _SIGS = {s.name: s for s in load_bundled_signatures()}
 
@@ -65,3 +72,21 @@ def test_input_not_recognized_and_ready_differ_on_their_captures():
     assert not _matches("tso-input-not-recognized", ready)
     assert _matches("tso-ready", ready)
     assert not _matches("tso-ready", inr)
+
+
+def _satisfied(screen) -> list[str]:
+    return sorted(n for n in _SIGS if _matches(n, screen))
+
+
+def test_reconnect_pause_is_recognized_as_tso_pause_only():
+    screen = reconnect_pause_screen()
+    assert recognize(screen, _SIGS.values()) == "tso-pause"
+    assert _satisfied(screen) == ["tso-pause"]
+    assert not _matches("tso-reconnect-ok", screen)
+
+
+def test_second_in_use_screen_matches_no_signature():
+    screen = second_in_use_screen()
+    with pytest.raises(UnknownScreenError):
+        recognize(screen, _SIGS.values())
+    assert _satisfied(screen) == []

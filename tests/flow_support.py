@@ -37,6 +37,9 @@ _SIGNATURE_CAPTURE: dict[str, str] = {
     "ispf-primary-menu": "ispf-primary-menu",
     "tso-ready": "tso-ready",
     "tso-pause": "tso-pause-2",
+    "tso-userid-in-use": "tso-userid-in-use",
+    "tso-reconnect-password-prompt": "tso-reconnect-password-prompt",
+    "tso-reconnect-ok": "tso-reconnect-ok",
 }
 _CAPTURE_SIGNATURE = {v: k for k, v in _SIGNATURE_CAPTURE.items()}
 

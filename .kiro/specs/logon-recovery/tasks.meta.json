@@ -1,0 +1,626 @@
+{
+  "pbtResults": {
+    "7.1 Add Property 1 in `tests/property/test_recognizer_userid_recognition.py` (new)": {
+      "status": "passed",
+      "lastRunTimestamp": 1795018228223
+    }
+  },
+  "executionHistory": {
+    "1.1 Record the lists from the unchanged flows as literals before any flow or signature change (uncommitted)": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017336039
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017342963
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017388709
+      }
+    ],
+    "2.1 Move the six capture files and update every pin and name list": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017336169
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017390759
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017452241
+      }
+    ],
+    "2.2 Add the password-free capture tests": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017336315
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017455997
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017503647
+      }
+    ],
+    "3.1 Add the three Signature files and the manifest entries": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017336421
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017456371
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017504400
+      }
+    ],
+    "3.2 Update the matrix, count pins and Signature content tests": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017336540
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017508966
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017588498
+      }
+    ],
+    "3.3 Add the capture-fact tests": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017336674
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017509314
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017589007
+      }
+    ],
+    "4.1 Add the synthetic screen builders to `tests/screen_support.py`": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017336836
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017509545
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017589505
+      }
+    ],
+    "4.2 Add the three identity entries to `_SIGNATURE_CAPTURE` in `tests/flow_support.py`": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017337116
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017509829
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017590133
+      }
+    ],
+    "4.3 Add the line-mode example tests": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017337221
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017592456
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017772983
+      }
+    ],
+    "5.1 Regenerate `tk5-logon.yaml` and `tk5-system-info.yaml`": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017337320
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017593125
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017772525
+      }
+    ],
+    "5.2 Update `tests/unit/test_flow_bundled.py`": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017337459
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017776988
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795018196289
+      }
+    ],
+    "5.3 Update `tests/unit/test_flow_runner_fixes_skipped.py`": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017337583
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017777300
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795018196606
+      }
+    ],
+    "6.1 Create `tests/unit/test_flow_logon_recovery.py` with the recovery and stop cases": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017337711
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017777511
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795018196963
+      }
+    ],
+    "6.2 Add the `secret_target` tests to the same file": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017337827
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795018203369
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795018255092
+      }
+    ],
+    "6.3 Add the `tk5-system-info` recovery run to `tests/unit/test_flow_system_info_script.py`": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017337931
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017777861
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795018197141
+      }
+    ],
+    "6.4 Expose the runtime's finally-skip set and mark every such stop in `_session_clean`, with unit tests": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017338037
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017778464
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795018197343
+      }
+    ],
+    "7.1 Add Property 1 in `tests/property/test_recognizer_userid_recognition.py` (new)": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017338148
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795018203563
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795018255608
+      }
+    ],
+    "7.2 Extend Property 8 to the two new typeable screens": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017338239
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795018203840
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795018256198
+      }
+    ],
+    "7.3 Run the full suite and fix test-only fallout": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017338336
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795018257928
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795019941895
+      }
+    ],
+    "8. Checkpoint - recovery implemented and tested without the host": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017338550
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795019946046
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795020020921
+      }
+    ],
+    "9.1 Create `tests/integration/test_flow_live_recovery.py`": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017338669
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795019945860
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795020020088
+      }
+    ],
+    "10.1 Amend `.kiro/specs/screen-recognizer/requirements.md`": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017338782
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795020023358
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795020080204
+      }
+    ],
+    "10.2 Amend `.kiro/specs/flow-runtime/requirements.md`": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017338895
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795020024664
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795020080727
+      }
+    ],
+    "10.3 Amend publisher Requirement 23 and the `session_clean` passages of the publisher design (describes shipped code, not conditional on the live result)": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017339020
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795020024863
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795020081471
+      }
+    ],
+    "11.1 Run the live recovery test once and record the result": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017339153
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795020085137
+      },
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795020105720
+      }
+    ],
+    "12.1 Edit `.kiro/specs/publisher/design.md`": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017339321
+      },
+      {
+        "executionId": "b2b45f77-9586-4bc1-bf1f-db7feafbe884",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795021455231
+      },
+      {
+        "executionId": "b2b45f77-9586-4bc1-bf1f-db7feafbe884",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795021549622
+      }
+    ],
+    "12.2 Edit `.kiro/specs/publisher/requirements.md`": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017339493
+      },
+      {
+        "executionId": "b2b45f77-9586-4bc1-bf1f-db7feafbe884",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795021455931
+      },
+      {
+        "executionId": "b2b45f77-9586-4bc1-bf1f-db7feafbe884",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795021549802
+      }
+    ],
+    "12.3 Edit the flow-runtime and screen-recognizer designs": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017339592
+      },
+      {
+        "executionId": "b2b45f77-9586-4bc1-bf1f-db7feafbe884",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795021456383
+      },
+      {
+        "executionId": "b2b45f77-9586-4bc1-bf1f-db7feafbe884",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795021549990
+      }
+    ],
+    "13. Final checkpoint - everything consistent": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017339700
+      }
+    ],
+    "1. Record the golden normal-path call lists FIRST, on the unchanged code (about 0.5 h)": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017388959
+      }
+    ],
+    "2. Promote the captures and update the inventory pins (about 0.5 h)": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017503861
+      }
+    ],
+    "3. Signatures, manifest, matrix and facts tests (about 0.75 h)": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017589095
+      }
+    ],
+    "4. Test support entries and line-mode examples (about 0.75 h)": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795017773268
+      }
+    ],
+    "5. Flow change and the hard-coded flow tests (about 0.75 h)": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795018196736
+      }
+    ],
+    "6. Scripted tests of the recovery paths (about 1.5 h)": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795018255189
+      }
+    ],
+    "7. Property additions and full-suite run (about 0.75 h)": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795019942109
+      }
+    ],
+    "9. Live test with the Cleanup_Helper (written here, not run against the host; about 0.75 h)": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795020020190
+      }
+    ],
+    "10. Amend the earlier requirements documents": [
+      {
+        "executionId": "1cede49e-b021-4bf3-a3ae-7e8a6209f211",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795020081643
+      }
+    ],
+    "13.1 Fix the probe/schema-constant collision in `tests/property/test_publisher_no_leak_responses.py`": [
+      {
+        "executionId": "b2b45f77-9586-4bc1-bf1f-db7feafbe884",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795021454928
+      },
+      {
+        "executionId": "b2b45f77-9586-4bc1-bf1f-db7feafbe884",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795021549377
+      },
+      {
+        "executionId": "b2b45f77-9586-4bc1-bf1f-db7feafbe884",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795022754195
+      },
+      {
+        "executionId": "b2b45f77-9586-4bc1-bf1f-db7feafbe884",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795022922916
+      }
+    ],
+    "12. Doc edits for the recovery limit and the lifted exposure restriction (the live pass exists, so these edits are now to be executed)": [
+      {
+        "executionId": "b2b45f77-9586-4bc1-bf1f-db7feafbe884",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795021550077
+      }
+    ],
+    "13.2 Check Properties 6, 8 and 9 of the publisher property tests for the same collision": [
+      {
+        "executionId": "b2b45f77-9586-4bc1-bf1f-db7feafbe884",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795021551971
+      },
+      {
+        "executionId": "b2b45f77-9586-4bc1-bf1f-db7feafbe884",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795021707474
+      }
+    ],
+    "13. Fix the probe/schema-constant collision in `tests/property/test_publisher_no_leak_responses.py` (test-only; about 0.5 h)": [
+      {
+        "executionId": "b2b45f77-9586-4bc1-bf1f-db7feafbe884",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795021707684
+      }
+    ],
+    "14. Final checkpoint - everything consistent": [
+      {
+        "executionId": "b2b45f77-9586-4bc1-bf1f-db7feafbe884",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795021709683
+      },
+      {
+        "executionId": "b2b45f77-9586-4bc1-bf1f-db7feafbe884",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795022930287
+      },
+      {
+        "executionId": "b2b45f77-9586-4bc1-bf1f-db7feafbe884",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795022932659
+      },
+      {
+        "executionId": "b2b45f77-9586-4bc1-bf1f-db7feafbe884",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795023689032
+      }
+    ]
+  }
+}

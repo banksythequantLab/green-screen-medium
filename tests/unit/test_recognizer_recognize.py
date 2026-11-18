@@ -114,7 +114,7 @@ def test_unknown_for_ispf_without_ispf_signature_shows_option_prompt():
     bundled = load_bundled_signatures()
     assert recognize(screen, bundled) == "ispf-primary-menu"
     reduced = [s for s in bundled if s.name != "ispf-primary-menu"]
-    assert len(reduced) == 6
+    assert len(reduced) == 9
     with pytest.raises(UnknownScreenError) as ei:
         recognize(screen, reduced)
     text = ei.value.summary.to_text()

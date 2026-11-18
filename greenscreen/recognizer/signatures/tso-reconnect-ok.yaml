@@ -1,0 +1,7 @@
+version: 1
+name: tso-reconnect-ok
+description: TSO reconnect succeeded; waiting for Enter.
+matchers:
+- kind: last_row
+  text: ' IKT00300I LOGON RECONNECT SUCCESSFUL, SESSION ESTABLISHED'
+volatile: []

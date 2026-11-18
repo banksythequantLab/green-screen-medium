@@ -400,7 +400,7 @@ class _Halt(Exception):       # internal control flow only; carries one _Failure
 | `session_error` | a Session method raised any `Exception` that is not a `FlowError` (`ConnectorError`, `OSError`, `RuntimeError`, any other class; Requirement 7.6) | Step that called | `()` | `None` | skipped |
 | `definition` (internal, not a Reason_Code) | `recognize` raised `SignatureError` or `TypeError` (Requirement 8.16) | failing Step | `()` | `None` | skipped (Requirement 13.3) |
 
-For a Handle_Step `expected` is `(signature,)` when the reason is one of the four screen reasons. For `definition` the runner raises `FlowDefinitionError` with only the exception class name and sends no further key (Requirement 8.16). Its Finally_Steps get `skipped` records like those of any other skip reason, so the list `_FINALLY_SKIP_REASONS` in the runner holds `definition` next to the six Reason_Codes of Requirement 13.3. `FlowDefinitionError` carries no `audit`, so the tests of the `definition` path (Requirement 18.22) read the audit trail from a `_RunState` driven directly.
+For a Handle_Step `expected` is `(signature,)` when the reason is one of the four screen reasons. For `definition` the runner raises `FlowDefinitionError` with only the exception class name and sends no further key (Requirement 8.16). Its Finally_Steps get `skipped` records like those of any other skip reason, so the list `_FINALLY_SKIP_REASONS` in the runner holds `definition` next to the six Reason_Codes of Requirement 13.3. The runner exports the same frozenset under the public name `FINALLY_SKIP_REASONS`, which the publisher imports to decide `session_clean`. `FlowDefinitionError` carries no `audit`, so the tests of the `definition` path (Requirement 18.22) read the audit trail from a `_RunState` driven directly.
 
 A Session method that raises a `BaseException` that is not an `Exception`, or a `FlowError`, produces no `_Failure` at all: it propagates out of `run_flow` unchanged after the Run_State is released (see "Session access" and "Entry and exit").
 
@@ -497,13 +497,34 @@ steps:
   input: userid
 - kind: key
   key: enter
+- kind: handle
+  signature: tso-userid-in-use
+  max_count: 1
+  settle: 0.0
+  steps:
+  - kind: type
+    text: 'LOGON '
+  - kind: type
+    input: userid
+  - kind: type
+    text: ' RECONNECT'
+  - kind: key
+    key: enter
 - kind: expect
   signatures:
   - tso-password-prompt
+  - tso-reconnect-password-prompt
 - kind: type
   input: password
 - kind: key
   key: enter
+- kind: handle
+  signature: tso-reconnect-ok
+  max_count: 1
+  settle: 0.0
+  steps:
+  - kind: key
+    key: enter
 - kind: handle
   signature: tso-pause
   max_count: 5
@@ -580,7 +601,7 @@ timeouts:
   run: 120.0
   finally: 30.0
 steps:
-# --- the 10 Steps of tk5-logon, unchanged ---
+# --- the 12 Steps of tk5-logon, unchanged ---
 # --- extracts, in screen order ---
 - kind: extract
   output: USERID
@@ -1027,7 +1048,7 @@ Scope: the pure logic of the flow package (YAML round trip, validation, the runn
 | 10 | The unsupported Step kind is echoed when it matches `[A-Za-z0-9_-]{1,32}`. | Requirements 1.3 and 4.9 ask for it; 5.15 lists no such exception. |
 | 11 | Duplicate YAML mapping keys cannot be detected (`safe_load` keeps the last). | Same limit as `greenscreen.recognizer`. |
 | 12 | A Handle_Step accepts the Pre_Key_Name, so a partial repaint of the handled screen counts as the next iteration. | Requirement 9.1. |
-| 13 | No Signature exists for `IKJ56700A ENTER USERID`; `tk5-logon` ends with `unknown_screen` and sends no key there. | Known Limits of the requirements. |
+| 13 | `tk5-logon` recovers only an orphan left at the ISPF primary option menu: when the host answers the user id with `IKJ56425I LOGON REJECTED, USERID <id> IN USE`, the `tso-userid-in-use` Handle_Step types `LOGON <id> RECONNECT` and the run continues through `tso-reconnect-password-prompt` and `tso-reconnect-ok` to the menu. An orphan left at `READY`, in a sub-panel or mid-logon is not handled. No Signature exists for `IKJ56700A ENTER USERID` (an abandoned logon) or for the second IN USE state (`IKJ56400A ENTER LOGON OR LOGOFF-` after an extra Enter), so the run ends with `unknown_screen`, sends no key there, skips the Finally_Steps and the publisher reports `session_clean` false. RECONNECT takes over whatever session holds the user id, and the host may purge the orphaned session by itself. | The reviewer's live pass on 2026-11-18 exercised the recovery from the ISPF menu only. |
 | 14 | `FlowDefinitionError` has no `audit`, so the `skipped` records of the `definition` path are checked on a `_RunState` driven directly, not on the raised error. | Requirement 13.10 asks for the records "on every path", and Requirement 14 gives the audit to `FlowError` only. To confirm: add an `audit` attribute to `FlowDefinitionError` instead. |
 | 15 | "No cell of the Output region was read" (Requirement 18.23) is checked with a spy on `read_region`, not a cell counter on the Screen. | The Redacted_Summary that the same failure must carry reads the whole screen. |
 | 16 | The `string` helper no longer takes a `secret` flag; every Session exception in every Step becomes `session_error`. | Requirement 7.6 widened the rule; a Session bug in a non-secret Step is now reported, not propagated. |

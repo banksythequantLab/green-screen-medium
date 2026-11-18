@@ -179,10 +179,13 @@ def test_bundled_tk5_logon_skips_logo_inr_and_pause_bodies():
     result, _ = _run(flow, states, _INPUTS, echo=True)
     main, _ = plan(flow)
     by_index = {r.step_index: r for r in result.audit}
-    for item in (main[0], main[1], main[8]):
+    # Unmatched handles: logo, INPUT NOT RECOGNIZED, in-use, reconnect-ok, pause.
+    for item in (main[0], main[1], main[5], main[9], main[10]):
         assert by_index[item.index].status == "ok"
         for child in item.children:
-            _assert_skipped(by_index[child.index], child.index, "key", "steps")
+            _assert_skipped(
+                by_index[child.index], child.index, child.step.kind, "steps"
+            )
     assert (by_index[1].status, by_index[3].status) == ("skipped", "skipped")
     _no_duplicates(result.audit)
     positions = [r.step_index for r in result.audit]
@@ -203,7 +206,9 @@ def test_bundled_tk5_system_info_skips_main_and_finally_bodies():
     by_index = {r.step_index: r for r in result.audit}
     _no_duplicates(result.audit)
     assert by_index[1].status == "skipped" and by_index[3].status == "skipped"
-    unmatched = [main[0], main[1], main[8], *[i for i in fin if i.children]]
+    unmatched = [
+        main[0], main[1], main[5], main[9], main[10], *[i for i in fin if i.children],
+    ]
     for item in unmatched:
         assert by_index[item.index].status == "ok"
         for child in item.children:

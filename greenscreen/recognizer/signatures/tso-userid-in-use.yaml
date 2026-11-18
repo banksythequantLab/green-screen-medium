@@ -1,0 +1,20 @@
+version: 1
+name: tso-userid-in-use
+description: TSO logon refused because the user id is already logged on.
+matchers:
+- kind: region_regex
+  row: 0
+  col: 0
+  length: 80
+  pattern: ^ IKJ56425I LOGON REJECTED, USERID [^ ]{1,8} IN USE *$
+- kind: region_regex
+  row: 1
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 2
+  col: 0
+  length: 80
+  pattern: ^ *$
+volatile: []

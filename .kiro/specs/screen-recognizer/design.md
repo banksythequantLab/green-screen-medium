@@ -4,7 +4,7 @@
 
 `greenscreen.recognizer` identifies which known screen a `greenscreen.connector.Screen` is. It is Core Piece 2 of Green Screen Medium. The runtime calls `recognize(screen, signatures)` at every flow step and stops on any unexpected screen, so the result must be deterministic, offline and auditable.
 
-A `ScreenSignature` is a named, YAML-serializable list of matchers (seven kinds) plus optional volatile regions that recognition ignores. `recognize` returns the one matching name or raises `UnknownScreenError` or `AmbiguousScreenError`. The package also ships seven bundled signatures built from `captures/`, and `suggest_signature(screen)` for the future recorder.
+A `ScreenSignature` is a named, YAML-serializable list of matchers (seven kinds) plus optional volatile regions that recognition ignores. `recognize` returns the one matching name or raises `UnknownScreenError` or `AmbiguousScreenError`. The package also ships ten bundled signatures built from `captures/`, and `suggest_signature(screen)` for the future recorder.
 
 **Design goals**
 
@@ -53,6 +53,9 @@ greenscreen/recognizer/
         ispf-primary-menu.yaml
         tso-ready.yaml
         tso-pause.yaml
+        tso-userid-in-use.yaml
+        tso-reconnect-password-prompt.yaml
+        tso-reconnect-ok.yaml
 ```
 
 Imports are limited to the standard library, PyYAML and `greenscreen.connector` (Requirement 12.3). `suggest.py` imports `Screen` and `SFToken` for typing and for reading `cell_grid`. `view.py` is the only module that reads `Screen` attributes. `recognizer.py`, `matching.py`, `summary.py` and `suggest.py` receive a `ScreenView`.
@@ -361,12 +364,13 @@ Because text matchers never touch an excluded cell, and volatile regions never o
 
 ```python
 _MANIFEST = ("tk5-logo", "tk5-logon", "tso-input-not-recognized",
-             "tso-password-prompt", "ispf-primary-menu", "tso-ready", "tso-pause")
+             "tso-password-prompt", "ispf-primary-menu", "tso-ready", "tso-pause",
+             "tso-userid-in-use", "tso-reconnect-password-prompt", "tso-reconnect-ok")
 
 def load_bundled_signatures() -> list[ScreenSignature]
 ```
 
-For each name in `_MANIFEST` it reads `importlib.resources.files("greenscreen.recognizer.signatures").joinpath(f"{name}.yaml").read_text(encoding="utf-8")` and calls `ScreenSignature.from_yaml`. A missing file (`FileNotFoundError`, `OSError`), a decoding error or a `SignatureError` is re-raised as `SignatureError(f"bundled signature file {name}.yaml: <reason>")`. The list is returned only after all seven loaded, so no partial list can escape (Req 8.14). A signature whose `name` differs from its file stem is also an error. Nothing is cached, so there is no module-level state. The result does not depend on the working directory, because `importlib.resources` resolves the package location (Req 8.1).
+For each name in `_MANIFEST` it reads `importlib.resources.files("greenscreen.recognizer.signatures").joinpath(f"{name}.yaml").read_text(encoding="utf-8")` and calls `ScreenSignature.from_yaml`. A missing file (`FileNotFoundError`, `OSError`), a decoding error or a `SignatureError` is re-raised as `SignatureError(f"bundled signature file {name}.yaml: <reason>")`. The list is returned only after all ten loaded, so no partial list can escape (Req 8.14). A signature whose `name` differs from its file stem is also an error. Nothing is cached, so there is no module-level state. The result does not depend on the working directory, because `importlib.resources` resolves the package location (Req 8.1).
 
 ### `__init__.py`
 
@@ -414,7 +418,7 @@ The design needs facts such as where the clock sits and where the cursor is. The
 2. **Facts test.** `tests/unit/test_recognizer_capture_facts.py` asserts every fact in the table below with `ScreenParser`, one test per row. A fact that stops being true fails loudly instead of silently producing a wrong signature.
 3. **Derivation rule for bundled YAML.** A bundled matcher may only use a value that a facts-test row asserts. A second test (`test_recognizer_bundled.py::test_bundled_matchers_match_capture_cells`) walks each bundled signature and checks every `text_at` text against the capture's `text_grid` at that position, every volatile region against the date/time pattern in the capture, and every `cursor_field` and `field_layout` against `Screen.fields`. It uses `Screen.text_grid` and `Screen.fields` here deliberately: it is test code, it is independent of the recognizer, and it must never be applied to a screen that holds a typed password.
 4. **Privacy check.** The same test file asserts that the hidden field of `tso-password-prompt` holds only blank cells, and that no `.yaml` under `signatures/` contains the userid `HERC01`, which is on `captures/tso-password-prompt` and `captures/ispf-primary-menu`.
-5. **Capture inventory.** A test asserts that the set of `*.readbuffer.txt` names in `captures/` equals the seven screens named in Requirement 10.2 (`tk5-logo`, `tk5-logon`, `tso-input-not-recognized`, `tso-password-prompt`, `ispf-primary-menu`, `tso-ready`, `tso-pause-2`). It fails if any other capture appears, so a capture of the residual-password screen cannot be added unnoticed (Req 13.6).
+5. **Capture inventory.** A test asserts that the set of `*.readbuffer.txt` names in `captures/` equals the ten screens named in Requirement 10.2 (`tk5-logo`, `tk5-logon`, `tso-input-not-recognized`, `tso-password-prompt`, `ispf-primary-menu`, `tso-ready`, `tso-pause-2`, `tso-userid-in-use`, `tso-reconnect-password-prompt`, `tso-reconnect-ok`). It fails if any other capture appears, so a capture of the residual-password screen cannot be added unnoticed (Req 13.6).
 
 **Facts read from the files (all 24 rows by 80 columns, each file holds one block):**
 
@@ -427,6 +431,9 @@ The design needs facts such as where the clock sits and where the cursor is. The
 | `ispf-primary-menu` | cursor (1,14) in the only unprotected field, which starts at (1,13); title `ISPF primary option menu` at row 0 col 28; `Option  ===>` (two spaces) at row 1 col 1; time `04:09` at row 3 col 71 length 5; row 2 holds the userid and is not used | parse |
 | `tso-ready` | cursor (1,0), inside the field starting at (0,7); ` READY` is the only non-blank row, row 0 | parse |
 | `tso-pause-2` | cursor (11,5), inside the field starting at (11,4); ` ***` on row 11 is the last non-blank row; text above it differs from other pause screens | parse |
+| `tso-userid-in-use` | cursor (1,0); row 0 holds ` IKJ56425I LOGON REJECTED, USERID <id> IN USE`; rows 1 and 2 are blank | parse |
+| `tso-reconnect-password-prompt` | cursor (3,1) in the hidden field that starts at (3,0); row 2 holds ` IKJ56714A ENTER CURRENT PASSWORD FOR <id>-`; the hidden field holds no password | parse |
+| `tso-reconnect-ok` | cursor (1,0); row 0 holds ` IKT00300I LOGON RECONNECT SUCCESSFUL, SESSION ESTABLISHED`, the last non-blank row; the screen has no hidden field | parse |
 
 The values for date and time columns come from running the two patterns over `text_grid` of the file, which is how they were found, and the facts test repeats that scan.
 
@@ -434,7 +441,7 @@ The values for date and time columns come from running the two patterns over `te
 
 ## Bundled signatures
 
-Each file below is written from the table above, loaded through `from_yaml`, and checked by the facts-based test in step 3. "Why exclusive" notes which matcher separates the screen from the other six.
+Each file below is written from the table above, loaded through `from_yaml`, and checked by the facts-based test in step 3. "Why exclusive" notes which matcher separates the screen from the other nine.
 
 | Name | Matchers | Volatile | Why exclusive |
 |---|---|---|---|
@@ -445,13 +452,16 @@ Each file below is written from the table above, loaded through `from_yaml`, and
 | `ispf-primary-menu` | `text_at(0,28,"ISPF primary option menu")`, `text_at(1,1,"Option  ===>")`, `field_layout(1,[(1,13)])`, `cursor_field(1,13,false)` | `(3,71,5)` | the title text and the single input field (Req 8.9) |
 | `tso-ready` | `last_row(" READY")` | none | only the last row decides (Req 8.18) |
 | `tso-pause` | `last_row(" ***")`, `before_cursor(" ***")` | none | no field layout and no fixed row (Req 8.19) |
+| `tso-userid-in-use` | `region_regex(0,0,80,"^ IKJ56425I LOGON REJECTED, USERID [^ ]{1,8} IN USE *$")`, `region_regex(1,0,80,"^ *$")`, `region_regex(2,0,80,"^ *$")` | none | the rejection text on row 0 with rows 1 and 2 blank, so the screen after an extra Enter (which adds `IKJ56400A` on row 2) does not match |
+| `tso-reconnect-password-prompt` | `region_regex(2,0,80,"^ IKJ56714A ENTER CURRENT PASSWORD FOR [^ ]{1,8}- *$")`, `cursor_field(3,0,true)` | none | the prompt on row 2 and the hidden field under the cursor; the normal prompt sits on row 0, so the two prompts never match each other's screen |
+| `tso-reconnect-ok` | `last_row(" IKT00300I LOGON RECONNECT SUCCESSFUL, SESSION ESTABLISHED")` | none | the success text as the last non-blank row; the `***` pause that follows has a different last row |
 
 Notes:
 
 - **Password prompt regex.** `[^ ]{1,8}-` accepts a userid of 1 to 8 non-space characters followed by `-`. A nine-character id fails because the `-` must follow within eight characters and ` *$` must then reach the end. The userid is never in the YAML. The regex runs on the visible text, where hidden cells are blank, so a residual password cannot satisfy or break it.
 - **`tso-pause`.** `last_row(" ***")` fails when any non-blank text sits below the `***` row. `before_cursor(" ***")` requires the cursor on that row just after the text. Row 10 or row 11 does not matter, because neither matcher names a row. The text above the `***` row varies (steering notes broadcast text and a random fortune), which is why no matcher looks above it.
-- **Disjointness.** The three line-mode signatures that use `last_row` have different declared strings (`INPUT NOT RECOGNIZED`, ` READY`, ` ***`). The password prompt is separated by its prompt regex and by the hidden field under the cursor. The logo, logon and ISPF screens are separated by their text.
-- **Prototype check.** While writing this design, the matcher semantics above were prototyped in a throwaway script against the seven captures. Each capture matched exactly its own signature and no other. The real test is `test_recognizer_bundled.py::test_capture_matrix` (7 by 7), which must reproduce that result with the shipped code.
+- **Disjointness.** The three line-mode signatures that use `last_row` have different declared strings (`INPUT NOT RECOGNIZED`, ` READY`, ` ***`). The password prompt is separated by its prompt regex and by the hidden field under the cursor. The logo, logon and ISPF screens are separated by their text. The reconnect password prompt differs from the normal one by the row of its prompt text (2 against 0) and by the row of its hidden field (3 against 1). `tso-userid-in-use` requires rows 1 and 2 to be blank, and `tso-reconnect-ok` is the only one of the ten with its message as the last non-blank row.
+- **Prototype check.** While writing this design, the matcher semantics above were prototyped in a throwaway script against the first seven captures. Each capture matched exactly its own signature and no other. The real test is `test_recognizer_capture_matrix.py` (10 by 10, after the three reconnect captures were added), which must reproduce that result with the shipped code.
 
 ---
 
@@ -654,7 +664,7 @@ tests/unit/test_recognizer_static.py         # source scans: no yaml.load/dump, 
 tests/property/test_recognizer_<name>.py     # one module per property or small group, see table
 ```
 
-**Capture-based unit tests (Req 10.2 to 10.7, 10.10).** Screens for the seven captures come only from `load_capture_screen`, through `ScreenParser`. Tests assert: each bundled signature matches its own capture; `recognize` over all seven signatures returns exactly the capture's name (`tso-pause-2` gives `tso-pause`); removing `ispf-primary-menu` makes `recognize` raise `UnknownScreenError` whose `summary.to_text()` contains `Option  ===>` and no hidden content; two signatures that both match raise `AmbiguousScreenError` naming exactly those two; `tso-pause` matches synthetic screens with different text above and `***` on rows 10 and 11; `tso-ready` does not match the ISPF capture. The residual-password screen is always synthetic (Req 13.6).
+**Capture-based unit tests (Req 10.2 to 10.7, 10.10).** Screens for the ten captures come only from `load_capture_screen`, through `ScreenParser`. Tests assert: each bundled signature matches its own capture; `recognize` over all ten signatures returns exactly the capture's name (`tso-pause-2` gives `tso-pause`); removing `ispf-primary-menu` makes `recognize` raise `UnknownScreenError` whose `summary.to_text()` contains `Option  ===>` and no hidden content; two signatures that both match raise `AmbiguousScreenError` naming exactly those two; `tso-pause` matches synthetic screens with different text above and `***` on rows 10 and 11; `tso-ready` does not match the ISPF capture. The residual-password screen is always synthetic (Req 13.6).
 
 **Synthetic builders.** `make_screen(rows, columns, text={(r, c): "..."}, fields=[(r, c, c0)], cursor=(r, c))` builds a `cell_grid` of `0x00` cells with `SFToken`s and text bytes, then a `Screen` with empty `sa_tokens` lists.
 

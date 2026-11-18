@@ -4,6 +4,7 @@ Covers Requirements 8.17, 10.7, 17.13, 17.14, 18.5 and 18.10.
 """
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
@@ -12,6 +13,7 @@ from greenscreen.connector.models import SFToken
 from greenscreen.flow.bundled import load_bundled_flows
 from greenscreen.recognizer.view import ScreenView
 
+from tests.connector_support import forms_of_run
 from tests.flow_support import capture, sentinel_password_screen
 from tests.screen_support import CAPTURE_NAMES
 
@@ -26,6 +28,9 @@ _EXPECTED_NAMES = {
     "ispf-primary-menu",
     "tso-ready",
     "tso-pause-2",
+    "tso-userid-in-use",
+    "tso-reconnect-password-prompt",
+    "tso-reconnect-ok",
 }
 
 _LABELS = {
@@ -113,14 +118,51 @@ def test_containing_field_agrees_with_find_field_at_the_cursor(name):
 # The capture set and the password sentinel
 # --------------------------------------------------------------------------
 
-def test_readbuffer_captures_are_exactly_the_seven_names():
+def test_readbuffer_captures_are_exactly_the_ten_names():
     names = {p.name[: -len(_SUFFIX)] for p in _CAPTURES_DIR.glob(f"*{_SUFFIX}")}
-    assert names == _EXPECTED_NAMES
+    unexpected = sorted(f"{n}{_SUFFIX}" for n in names - _EXPECTED_NAMES)
+    missing = sorted(f"{n}{_SUFFIX}" for n in _EXPECTED_NAMES - names)
+    assert not unexpected, f"unexpected capture file(s): {unexpected}"
+    assert not missing, f"missing capture file(s): {missing}"
     assert set(CAPTURE_NAMES) == _EXPECTED_NAMES
 
 
 def test_no_capture_holds_a_typed_password():
     assert [n for n in CAPTURE_NAMES if _holds_password(capture(n))] == []
+
+
+@pytest.mark.parametrize("name", sorted(_EXPECTED_NAMES))
+def test_every_capture_has_only_blank_hidden_cells(name):
+    assert _holds_password(capture(name)) is False, f"capture {name} holds a hidden-field cell"
+
+
+def test_no_password_hex_form_occurs_in_any_capture_file():
+    password = os.environ.get("TK5_PASSWORD", "")
+    if not password:
+        pytest.skip("TK5_PASSWORD is unset or empty")
+    forms = forms_of_run(list(password.encode("utf-8")))
+    offenders = []
+    for path in sorted(_CAPTURES_DIR.rglob("*")):
+        if not path.is_file():
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        found = False
+        for form in forms:
+            found = found or (form in text)
+        if found:
+            offenders.append(path.name)
+    # Verdict is a boolean list check; the message names files only.
+    assert offenders == [], f"capture file(s) contain the password: {offenders}"
+
+
+def test_no_capture_exists_for_the_screen_after_the_password_entry():
+    stems = set()
+    for path in _CAPTURES_DIR.rglob("*"):
+        if path.is_file():
+            stems.add(path.name.split(".")[0])
+    assert sorted(stems - _EXPECTED_NAMES) == []
+    assert "tso-pause" not in stems
+    assert "tso-pause-1" not in stems
 
 
 @pytest.mark.parametrize("sentinel", ["Qz9#vL", "zXq7!kP2"])

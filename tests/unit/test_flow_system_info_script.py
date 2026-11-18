@@ -158,3 +158,82 @@ def test_failure_after_extracts_runs_finally_steps_that_log_off():
     assert finals[-1].kind == "expect" and finals[-1].status == "ok"
     assert all(r.status == "ok" for r in finals)
     assert SENTINEL not in repr(error) and SENTINEL not in repr(error.audit)
+
+
+# Golden normal-path call lists, recorded from the flow as it was before
+# logon-recovery (logon-recovery task 1.1). Literals, never recomputed.
+GOLDEN_SYSTEM_INFO = {
+    2: [
+        ("string", USERID), ("enter",),
+        ("string", SENTINEL), ("enter",), ("enter",), ("enter",),
+        ("string", "X"), ("enter",), ("string", "LOGOFF"), ("enter",),
+    ],
+    1: [
+        ("string", USERID), ("enter",),
+        ("string", SENTINEL), ("enter",), ("enter",),
+        ("string", "X"), ("enter",), ("string", "LOGOFF"), ("enter",),
+    ],
+}
+
+
+@pytest.mark.parametrize("pauses", [2, 1])
+def test_golden_normal_path_calls_from_logon_screen(pauses):
+    states = [
+        ScriptedState(capture("tk5-logon")),
+        ScriptedState(capture("tso-password-prompt")),
+    ]
+    states += [ScriptedState(pause_variant(i)) for i in range(pauses)]
+    states += [
+        ScriptedState(capture("ispf-primary-menu")),
+        ScriptedState(capture("tso-ready")),
+        ScriptedState(capture("tk5-logon")),
+    ]
+    flow = load_bundled_flows()["tk5-system-info"]
+    session = ScriptedSession(states, echo_typing=True)
+    run_flow(
+        flow,
+        session,
+        {"userid": USERID, "password": SENTINEL},
+        clock=FakeClock(),
+        poll_interval=POLL,
+    )
+    assert _keys(session) == GOLDEN_SYSTEM_INFO[pauses]
+
+
+# logon-recovery task 6.3: the whole flow through the reconnect path.
+DECLARED_ORDER = ["USERID", "SYSTEMID", "RELEASE", "TERMINAL"]
+
+
+def test_recovery_logon_then_system_info_outputs_and_final_screen():
+    from tests.screen_support import reconnect_pause_screen
+
+    states = [
+        ScriptedState(capture("tk5-logon")),
+        ScriptedState(capture("tso-userid-in-use")),
+        ScriptedState(capture("tso-reconnect-password-prompt")),
+        ScriptedState(capture("tso-reconnect-ok")),
+        ScriptedState(reconnect_pause_screen()),
+        ScriptedState(capture("ispf-primary-menu")),
+        ScriptedState(capture("tso-ready")),
+        ScriptedState(capture("tk5-logon")),
+    ]
+    flow = load_bundled_flows()["tk5-system-info"]
+    session = ScriptedSession(states, echo_typing=True)
+    result = run_flow(
+        flow,
+        session,
+        {"userid": USERID, "password": SENTINEL},
+        clock=FakeClock(),
+        poll_interval=POLL,
+    )
+    assert [o.name for o in flow.outputs] == DECLARED_ORDER
+    assert len(result.outputs) == 4
+    assert set(result.outputs) == set(DECLARED_ORDER)
+    menu = load_capture_screen("ispf-primary-menu")
+    for name in DECLARED_ORDER:
+        row, col, length = REGIONS[name]
+        assert result.outputs[name] == menu.text_at(row, col, length).strip()
+    final = session.read_screen()
+    assert recognize(final, load_bundled_signatures()) == "tk5-logon"
+    assert result.audit[-1].status == "ok"
+    assert SENTINEL not in repr(result) and SENTINEL not in repr(result.audit)

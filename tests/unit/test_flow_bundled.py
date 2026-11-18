@@ -132,7 +132,7 @@ def test_logon_typing_sequence(flows):
         _expect("tk5-logon"),
         TypeStep(input="userid"),
         KeyStep(key="enter"),
-        _expect("tso-password-prompt"),
+        _expect("tso-password-prompt", "tso-reconnect-password-prompt"),
         TypeStep(input="password"),
         KeyStep(key="enter"),
         _expect("ispf-primary-menu"),
@@ -147,7 +147,7 @@ def test_logon_typing_sequence(flows):
                 walk(s.steps)
 
     walk(steps)
-    assert typed == ["userid", "password"]
+    assert typed == ["userid", "userid", "password"]
 
 
 # --- Requirement 17.9, 17.10 (tk5-logoff) -----------------------------------
@@ -324,4 +324,6 @@ def test_no_literal_credentials_or_placeholders(name):
         m = re.match(r"\s*(?:- )?(?:text|default|value|userid|password)\s*:\s*(.+)", line)
         if m:
             value = m.group(1).strip().strip("'\"")
-            assert value in {"X", "LOGOFF"}, f"unexpected literal in {name}.yaml"
+            assert value in {"X", "LOGOFF", "LOGON ", " RECONNECT"}, (
+                f"unexpected literal in {name}.yaml"
+            )

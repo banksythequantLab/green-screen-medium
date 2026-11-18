@@ -1,4 +1,4 @@
-"""Facts about the seven repo captures that the bundled signatures rely on.
+"""Facts about the ten repo captures that the bundled signatures rely on.
 
 Every value is read through ``ScreenParser`` on each run. This file may read
 ``Screen.text_grid`` and ``Screen.fields``; it must never be applied to a screen
@@ -140,3 +140,37 @@ def test_tso_pause_2():
     assert s.text_grid[11].rstrip(" ") == " ***"
     assert _scan(s, _DATE) == []
     assert _scan(s, _TIME) == []
+
+
+def _field_geometry(screen):
+    return [(f.start_row, f.start_col, f.byte_length) for f in screen.fields]
+
+
+def test_tso_userid_in_use():
+    s = load_capture_screen("tso-userid-in-use")
+    assert (s.rows, s.columns) == (24, 80)
+    assert _cursor(s) == (1, 0)
+    assert _field_geometry(s) == [(0, 0, 46), (0, 47, 1871), (23, 79, 0)]
+    assert all(not f.protected and not f.hidden for f in s.fields)
+    assert _non_blank_rows(s) == [0]
+
+
+def test_tso_reconnect_password_prompt():
+    s = load_capture_screen("tso-reconnect-password-prompt")
+    assert (s.rows, s.columns) == (24, 80)
+    assert _cursor(s) == (3, 1)
+    hidden = [f for f in s.fields if f.hidden]
+    assert [(f.start_row, f.start_col, f.byte_length) for f in hidden] == [(3, 0, 1678)]
+    f = _cursor_field(s)
+    assert (f.start_row, f.start_col, f.hidden) == (3, 0, True)
+    assert _non_blank_rows(s) == [0, 1, 2]
+    assert "IKJ56714A ENTER CURRENT PASSWORD FOR" in s.text_grid[2]
+
+
+def test_tso_reconnect_ok():
+    s = load_capture_screen("tso-reconnect-ok")
+    assert (s.rows, s.columns) == (24, 80)
+    assert _cursor(s) == (1, 0)
+    assert _field_geometry(s) == [(0, 0, 58), (0, 59, 1859), (23, 79, 0)]
+    assert not any(f.hidden for f in s.fields)
+    assert _non_blank_rows(s) == [0]

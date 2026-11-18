@@ -19,6 +19,9 @@ CAPTURE_NAMES: tuple[str, ...] = (
     "ispf-primary-menu",
     "tso-ready",
     "tso-pause-2",
+    "tso-userid-in-use",
+    "tso-reconnect-password-prompt",
+    "tso-reconnect-ok",
 )
 
 _CAPTURES_DIR = Path(__file__).parents[1] / "captures"
@@ -83,4 +86,54 @@ def make_screen(
         cursor_col=cursor[1],
         cell_grid=grid,
         sa_tokens=[[] for _ in range(rows)],
+    )
+
+
+def in_use_screen(userid: str) -> Screen:
+    """Synthetic ``IKJ56425I ... IN USE`` screen after the user id is sent."""
+    msg = f"IKJ56425I LOGON REJECTED, USERID {userid} IN USE"
+    return make_screen(
+        24, 80, {(0, 1): msg},
+        [(0, 0, 0xC8), (0, 1 + len(msg), 0xC0)], (1, 0),
+    )
+
+
+def reconnect_prompt_screen(userid: str) -> Screen:
+    """Synthetic reconnect password prompt (hidden field under the cursor)."""
+    msg = f"IKJ56425I LOGON REJECTED, USERID {userid} IN USE"
+    return make_screen(
+        24, 80,
+        {
+            (0, 1): msg,
+            (1, 0): f"LOGON {userid} RECONNECT",
+            (2, 1): f"IKJ56714A ENTER CURRENT PASSWORD FOR {userid}-",
+        },
+        [(0, 0, 0xC8), (2, 0, 0xC8), (3, 0, 0xCC)],
+        (3, 1),
+    )
+
+
+def reconnect_pause_screen() -> Screen:
+    """Synthetic ``***`` pause under the reconnect message (never captured)."""
+    return make_screen(
+        24, 80,
+        {
+            (0, 1): "IKT00300I LOGON RECONNECT SUCCESSFUL, SESSION ESTABLISHED",
+            (2, 1): "***",
+        },
+        [(0, 0, 0xC8), (2, 0, 0xC8)],
+        (2, 5),
+    )
+
+
+def second_in_use_screen() -> Screen:
+    """Synthetic IN USE screen after one more Enter (IKJ56400A on row 2)."""
+    return make_screen(
+        24, 80,
+        {
+            (0, 1): "IKJ56425I LOGON REJECTED, USERID FAKEUSR IN USE",
+            (2, 1): "IKJ56400A ENTER LOGON OR LOGOFF-",
+        },
+        [(0, 0, 0xC8), (2, 0, 0xC8)],
+        (3, 0),
     )

@@ -15,6 +15,9 @@ BUNDLED = [
     "tso-password-prompt.yaml",
     "tso-pause.yaml",
     "tso-ready.yaml",
+    "tso-reconnect-ok.yaml",
+    "tso-reconnect-password-prompt.yaml",
+    "tso-userid-in-use.yaml",
 ]
 
 
@@ -44,8 +47,8 @@ def test_package_data_entries() -> None:
     assert pkg_data["greenscreen.connector.testing"] == ["fixtures/*.yaml"]
 
 
-def test_seven_bundled_yaml_files_exist() -> None:
+def test_ten_bundled_yaml_files_exist() -> None:
     sig_dir = ROOT / "greenscreen" / "recognizer" / "signatures"
     for name in BUNDLED:
         assert (sig_dir / name).is_file(), name
-    assert len(BUNDLED) == 7
+    assert len(BUNDLED) == 10

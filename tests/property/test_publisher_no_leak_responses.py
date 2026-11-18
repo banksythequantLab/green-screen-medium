@@ -181,6 +181,51 @@ def rigs():
 _CAPTURES_TEXT = flow_support._captures_text()  # read once; the sentinel must not occur in it
 
 
+def _numbers_in(node) -> set:
+    """Every number (not bool) found by walking a JSON-like structure."""
+    if isinstance(node, bool):
+        return set()
+    if isinstance(node, (int, float)):
+        return {node}
+    if isinstance(node, dict):
+        return set().union(set(), *(_numbers_in(v) for v in node.values()))
+    if isinstance(node, (list, tuple)):
+        return set().union(set(), *(_numbers_in(v) for v in node))
+    return set()
+
+
+@functools.lru_cache(maxsize=1)
+def _schema_constants() -> tuple[str, ...]:
+    """The text of every number in the schemas of every Flow of the registry, with and
+    without bound Inputs. Derived from the generator, never hard-coded."""
+    from greenscreen.publisher.registry import build_schemas
+
+    found: set = set()
+    for flow in FLOWS.values():
+        names = [s.name for s in flow.inputs]
+        for bound in (frozenset(), *(frozenset({n}) for n in names)):
+            found |= _numbers_in(build_schemas(flow, bound))
+    return tuple(sorted(str(n) for n in found))
+
+
+def _collides(probe) -> bool:
+    """A probe collides when its text occurs inside the text of a schema constant, so the
+    constant legitimately present in ``/openapi.json`` would contain the probe."""
+    return any(str(probe) in c for c in _schema_constants())
+
+
+def _clear_of_constants(*values) -> bool:
+    return not any(_collides(v) for v in values)
+
+
+def _bound_sets_clear():
+    return bound_sets().filter(lambda b: _clear_of_constants(*b.values))
+
+
+def _bad_clear():
+    return bad_requests(2048).filter(lambda r: _clear_of_constants(*r.values))
+
+
 def _sentinels() -> st.SearchStrategy[str]:
     return probes("str", max_size=8).filter(lambda s: s not in _CAPTURES_TEXT)
 
@@ -201,7 +246,7 @@ def _flow_error_plans() -> st.SearchStrategy[HostPlan]:
 
 
 PLANS = st.one_of(fake_host_plans(), _flow_error_plans())
-BAD = st.one_of(st.none(), st.none(), bad_requests(2048))
+BAD = st.one_of(st.none(), st.none(), _bad_clear())
 
 
 def _host(target: str, plan: HostPlan, sentinel: str) -> FakeHost:
@@ -266,7 +311,7 @@ async def _observe(rig: _Rig, mode: str, target: str, args: dict, bad: BadReques
 # Feature: publisher, Property 5: No Input value or Bound_Value in any response
 @SETTINGS
 @given(
-    bs=bound_sets(),
+    bs=_bound_sets_clear(),
     plan=PLANS,
     target=st.sampled_from(TARGETS),
     mode=st.sampled_from(MODES),
@@ -294,3 +339,54 @@ def test_no_input_value_or_bound_value_in_any_response(rigs, bs, plan, target, m
     # The check is not vacuous: a clean valid call to MINI succeeds on both front ends.
     if target == "mini" and bad_used is None and plan.failure is None and not plan.wrong_screens:
         assert status == 200 and mcp_error is False
+
+
+# --------------------------------------------------------------------------
+# Helper tests: no probe can equal a schema constant
+# --------------------------------------------------------------------------
+
+
+def test_schema_constants_are_derived_and_include_the_mini_bounds():
+    consts = _schema_constants()
+    from greenscreen.publisher.registry import build_schemas
+
+    bounds = _numbers_in(build_schemas(MINI)[0]["properties"]["count"])
+    assert bounds and {str(n) for n in bounds} <= set(consts)
+
+
+def test_the_stored_collision_is_rejected_and_a_clean_probe_is_not():
+    assert _collides(9999) and not _collides(4711)
+    assert all(not _collides(v) for v in ("~^!#", "abcd"))
+
+
+def test_stored_9999_collision_is_real_in_openapi_and_the_helper_excludes_it(rigs):
+    """The old failing example (count=9999 on mini) stays covered even if Hypothesis no
+    longer replays it: the unfiltered leak check does fire on ``/openapi.json`` (the
+    constant is legitimate there), and the helper rejects 9999 as a probe."""
+    rig = rigs.get(frozenset())
+    rig.bound.current = BoundValues()
+    args = {"userid": "~^!#", "count": 9999}
+    status, mcp_error, text = rig.loop.run_until_complete(
+        _observe(rig, "auto", "mini", args, None, HostPlan().build)
+    )
+    assert status == 200 and mcp_error is False
+    assert find_leaks(text, (9999,)), "the schema constant 9999 is expected in the responses"
+    assert "9999" in _schema_constants() and _collides(9999)
+    assert not _clear_of_constants(9999)
+    assert _clear_of_constants(4711)
+
+
+@SETTINGS
+@given(bs=_bound_sets_clear(), bad=BAD)
+def test_strategies_never_produce_the_stored_9999_probe(bs, bad):
+    values = bs.values + (bad.values if bad else ())
+    assert all(str(v) != "9999" for v in values)
+
+
+@SETTINGS
+@given(bs=_bound_sets_clear(), bad=BAD)
+def test_no_probe_the_strategies_produce_equals_a_schema_constant(bs, bad):
+    values = bs.values + (bad.values if bad else ())
+    constants = set(_schema_constants())
+    assert not {str(v) for v in values} & constants
+    assert _clear_of_constants(*values)

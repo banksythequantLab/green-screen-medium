@@ -42,13 +42,34 @@ steps:
   input: userid
 - kind: key
   key: enter
+- kind: handle
+  signature: tso-userid-in-use
+  max_count: 1
+  settle: 0.0
+  steps:
+  - kind: type
+    text: 'LOGON '
+  - kind: type
+    input: userid
+  - kind: type
+    text: ' RECONNECT'
+  - kind: key
+    key: enter
 - kind: expect
   signatures:
   - tso-password-prompt
+  - tso-reconnect-password-prompt
 - kind: type
   input: password
 - kind: key
   key: enter
+- kind: handle
+  signature: tso-reconnect-ok
+  max_count: 1
+  settle: 0.0
+  steps:
+  - kind: key
+    key: enter
 - kind: handle
   signature: tso-pause
   max_count: 5

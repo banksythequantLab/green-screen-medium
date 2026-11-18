@@ -107,3 +107,37 @@ def test_secret_never_reaches_audit_text():
     result, _ = _run("logo")
     assert SENTINEL not in repr(result.audit)
     assert SENTINEL not in repr(dict(result.outputs))
+
+
+# Golden normal-path call lists, recorded from the flows as they were before
+# logon-recovery (logon-recovery task 1.1). Literals, never recomputed.
+GOLDEN_LOGON = {
+    2: [
+        ("string", USERID), ("enter",),
+        ("string", SENTINEL), ("enter",), ("enter",), ("enter",),
+    ],
+    1: [
+        ("string", USERID), ("enter",),
+        ("string", SENTINEL), ("enter",), ("enter",),
+    ],
+}
+
+
+@pytest.mark.parametrize("pauses", [2, 1])
+def test_golden_normal_path_calls_from_logon_screen(pauses):
+    states = [
+        ScriptedState(capture("tk5-logon")),
+        ScriptedState(capture("tso-password-prompt")),
+    ]
+    states += [ScriptedState(pause_variant(i)) for i in range(pauses)]
+    states.append(ScriptedState(capture("ispf-primary-menu")))
+    flow = load_bundled_flows()["tk5-logon"]
+    session = ScriptedSession(states, echo_typing=True)
+    run_flow(
+        flow,
+        session,
+        {"userid": USERID, "password": SENTINEL},
+        clock=FakeClock(),
+        poll_interval=POLL,
+    )
+    assert _keys(session) == GOLDEN_LOGON[pauses]
