@@ -23,7 +23,7 @@ import json
 import logging
 from unittest import mock
 
-from hypothesis import given, settings
+from hypothesis import example, given, settings
 from hypothesis import strategies as st
 
 from greenscreen.connector import (
@@ -39,7 +39,7 @@ from greenscreen.publisher.app import build_app, prepare
 from greenscreen.publisher.registry import build_registry
 from greenscreen.publisher.vault import BoundValues
 from tests.flow_support import FakeClock
-from tests.property._publisher_strategies import ArbitraryError, InjectedBase
+from tests.property._publisher_strategies import ArbitraryError
 from tests.publisher_support import (
     FAILURE_POINTS,
     MINI,
@@ -93,10 +93,16 @@ EXC_CLASSES = {
 EXC_KEYS = (*EXC_CLASSES, *(f"flow:{r}" for r in FLOW_STOP), "input")
 # Points of the MINI Flow that run (the others are never called).
 REACHED = ("read_screen", "string", "enter")
+# Points where a BaseException is injected: also the factory, open and close.
+BASE_POINTS = ("factory", "open", "close", *REACHED)
+
+
+class _LocalBase(BaseException):
+    """A BaseException that is not an Exception, local to this file."""
 
 UNIVERSE: tuple[tuple, ...] = (
     *(("host", at, key) for at in FAILURE_POINTS for key in EXC_KEYS),
-    *(("base", at) for at in REACHED),
+    *(("base", at) for at in BASE_POINTS),
     *(("runflow", key) for key in EXC_CLASSES),
     *(("pub", name) for name in (
         "unauthorized", "unknown_flow", "request_invalid", "request_too_large",
@@ -216,7 +222,7 @@ async def _rest(scn: tuple, exc):
             if scn == ("pub", "shutting_down"):
                 app.service.begin_shutdown()
             try:
-                resp = await client.post(f"/flows/{name}", **kwargs)
+                resp = await asyncio.wait_for(client.post(f"/flows/{name}", **kwargs), 20)
             except BaseException as err:  # noqa: BLE001 - the base scenario expects one
                 return host, app, err
             finally:
@@ -254,6 +260,12 @@ def _check_clean(host: FakeHost, app) -> None:
     assert app.service._limiter.in_flight == 0
 
 
+def _check_base_clean(host: FakeHost, app) -> None:
+    _check_clean(host, app)
+    assert all(s.close_calls == 1 for s in host.sessions)  # closed once, if created
+    assert host.close_calls == host.created
+
+
 def _runflow_patch(scn: tuple, exc):
     if scn[0] != "runflow":
         return mock.patch.object(calls, "run_flow", calls.run_flow)
@@ -265,6 +277,23 @@ def _runflow_patch(scn: tuple, exc):
 
 
 @settings(max_examples=100, deadline=None)
+# One example per base injection point; each runs on REST and on MCP.
+@example(("base", "factory"))
+@example(("base", "open"))
+@example(("base", "close"))
+@example(("base", "read_screen"))
+@example(("base", "string"))
+@example(("base", "enter"))
+# One example per Publisher_Code (host_unavailable and internal_error by injection).
+@example(("pub", "unauthorized"))
+@example(("pub", "unknown_flow"))
+@example(("pub", "request_invalid"))
+@example(("pub", "request_too_large"))
+@example(("pub", "busy"))
+@example(("pub", "shutting_down"))
+@example(("pub", "call_timeout"))
+@example(("host", "open", "OSError"))
+@example(("runflow", "RuntimeError"))
 @given(SCENARIOS)
 def test_error_mapping_is_total_single_valued_and_fixed_text(scn):
     # Feature: publisher, Property 4: Error mapping is total, single-valued and fixed-text
@@ -276,7 +305,7 @@ def test_error_mapping_is_total_single_valued_and_fixed_text(scn):
 
     key = scn[2] if scn[0] == "host" else scn[1] if scn[0] == "runflow" else None
     exc = (
-        InjectedBase("injected") if scn[0] == "base"
+        _LocalBase("injected") if scn[0] == "base"
         else _exception(key) if key is not None else None
     )
     base = scn[0] == "base"
@@ -291,11 +320,13 @@ def test_error_mapping_is_total_single_valued_and_fixed_text(scn):
     if base:
         assert isinstance(resp, BaseException)
         assert any(e is exc for e in _flatten(resp)), "BaseException must re-raise unchanged"
-        _check_clean(rest_host, rest_app)
+        _check_base_clean(rest_host, rest_app)
         mcp_host, mcp_app, result = mcp
         assert isinstance(result, BaseException)
         assert any(e is exc for e in _flatten(result)), "BaseException must re-raise unchanged"
-        _check_clean(mcp_host, mcp_app)
+        _check_base_clean(mcp_host, mcp_app)
+        # No Error_Body was built and the Call_Log_Record has no close_failed.
+        assert not any("close_failed" in r.fields for r in logs.records)
     else:
         assert not isinstance(resp, BaseException)
         assert resp.status_code == (200 if code == "ok" else STATUS[code])

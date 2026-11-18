@@ -10,12 +10,28 @@
     },
     "7.5 Write property test for error mapping totality (Property 4)": {
       "status": "passed",
-      "lastRunTimestamp": 1794968062822
+      "lastRunTimestamp": 1794973570420
     },
     "7.7 Write property test for the session lifecycle (Property 12)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794973521325
+    },
+    "8.1 Write property test for no value in responses (Property 5)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794971516144
+    },
+    "8.5 Write property test for validation errors (Property 9)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794973682959
+    },
+    "8.6 Write property test for exception frames (Property 10)": {
       "status": "failed",
-      "failingExample": "plan_list=[Plan(kind='ok', failure=Failure(at='close', exc=InjectedBase, n=1, session=None, message='injected'))]. A single successful Call whose session.close() raises a BaseException that is not an Exception. In greenscreen/publisher/calls.py _worker's finally, `run.session.close()` is guarded only by `except Exception`, so the BaseException skips `run.loop.call_soon_threadsafe(run.done.set)` and escapes the worker thread (PytestUnhandledThreadExceptionWarning). execute() never finishes within the 3 s hard limit; it would wait for the full Call deadline, then report call_timeout and hold the Slot that long. The session itself was closed once. With this one case excluded (diagnostic only, not committed), all 100 examples pass, BaseException at factory/open/Session methods included.",
-      "lastRunTimestamp": 1794968715538
+      "failingExample": "Explicit example scn=('seam',''): \"greenscreen.publisher.calls._execute local box._merged: the mapping given to run_flow\" (the same hit on 12 other explicit examples). Other hits: _run_slot local run.bound._data[...] (probe, cancel and thread-start paths), _Guarded.string local text (probe), parse_bindings local environ[..] (probe). Values withheld.",
+      "lastRunTimestamp": 1794973830747
+    },
+    "8.7 Write property test for binding variables (Property 14)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794973859485
     }
   },
   "executionHistory": {
@@ -352,6 +368,26 @@
         "executionId": "75104af0-aa27-4ab1-adf6-d58de0754753",
         "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
         "timestamp": 1794968434072
+      },
+      {
+        "executionId": "f68fe51c-ed1c-4139-82de-5db33cc40268",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794971324078
+      },
+      {
+        "executionId": "3cc98c64-b827-468e-b4aa-58b4fcc03b71",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794973075964
+      },
+      {
+        "executionId": "3cc98c64-b827-468e-b4aa-58b4fcc03b71",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794973531077
+      },
+      {
+        "executionId": "3cc98c64-b827-468e-b4aa-58b4fcc03b71",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794973578958
       }
     ],
     "7.6 Write property test for the limiter (Property 11)": [
@@ -371,6 +407,26 @@
         "executionId": "75104af0-aa27-4ab1-adf6-d58de0754753",
         "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
         "timestamp": 1794968434535
+      },
+      {
+        "executionId": "f68fe51c-ed1c-4139-82de-5db33cc40268",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794971210236
+      },
+      {
+        "executionId": "f68fe51c-ed1c-4139-82de-5db33cc40268",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794971323822
+      },
+      {
+        "executionId": "3cc98c64-b827-468e-b4aa-58b4fcc03b71",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794973456608
+      },
+      {
+        "executionId": "3cc98c64-b827-468e-b4aa-58b4fcc03b71",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794973530763
       }
     ],
     "7.8 Write property test for authentication (Property 13)": [
@@ -383,6 +439,116 @@
         "executionId": "75104af0-aa27-4ab1-adf6-d58de0754753",
         "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
         "timestamp": 1794968737621
+      }
+    ],
+    "7.0 Fix the worker done event (defect found by Property 12)": [
+      {
+        "executionId": "f68fe51c-ed1c-4139-82de-5db33cc40268",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794971210435
+      },
+      {
+        "executionId": "f68fe51c-ed1c-4139-82de-5db33cc40268",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794971323629
+      }
+    ],
+    "7. Property tests, group A (about 3.0 h, days 2 to 3)": [
+      {
+        "executionId": "f68fe51c-ed1c-4139-82de-5db33cc40268",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794971323925
+      }
+    ],
+    "8.1 Write property test for no value in responses (Property 5)": [
+      {
+        "executionId": "f68fe51c-ed1c-4139-82de-5db33cc40268",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794971327822
+      },
+      {
+        "executionId": "f68fe51c-ed1c-4139-82de-5db33cc40268",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794972843228
+      }
+    ],
+    "8.2 Write property test for no value in logs (Property 6)": [
+      {
+        "executionId": "f68fe51c-ed1c-4139-82de-5db33cc40268",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794971328017
+      },
+      {
+        "executionId": "f68fe51c-ed1c-4139-82de-5db33cc40268",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794972843535
+      }
+    ],
+    "8.3 Write property test for no Host_Data (Property 7)": [
+      {
+        "executionId": "f68fe51c-ed1c-4139-82de-5db33cc40268",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794971328267
+      },
+      {
+        "executionId": "f68fe51c-ed1c-4139-82de-5db33cc40268",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794972843715
+      }
+    ],
+    "8.4 Write property test for audit and summary (Property 8)": [
+      {
+        "executionId": "f68fe51c-ed1c-4139-82de-5db33cc40268",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794971328666
+      },
+      {
+        "executionId": "f68fe51c-ed1c-4139-82de-5db33cc40268",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794972843892
+      }
+    ],
+    "7.0b Re-raise a BaseException from session.open() (defect found by Property 4)": [
+      {
+        "executionId": "3cc98c64-b827-468e-b4aa-58b4fcc03b71",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794973076127
+      },
+      {
+        "executionId": "3cc98c64-b827-468e-b4aa-58b4fcc03b71",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794973456359
+      }
+    ],
+    "8.6 Write property test for exception frames (Property 10)": [
+      {
+        "executionId": "3cc98c64-b827-468e-b4aa-58b4fcc03b71",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794973579988
+      }
+    ],
+    "8.7 Write property test for binding variables (Property 14)": [
+      {
+        "executionId": "3cc98c64-b827-468e-b4aa-58b4fcc03b71",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794973580476
+      },
+      {
+        "executionId": "3cc98c64-b827-468e-b4aa-58b4fcc03b71",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794973876912
+      }
+    ],
+    "8.5 Write property test for validation errors (Property 9)": [
+      {
+        "executionId": "3cc98c64-b827-468e-b4aa-58b4fcc03b71",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794973580993
+      },
+      {
+        "executionId": "3cc98c64-b827-468e-b4aa-58b4fcc03b71",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794973876669
       }
     ]
   }

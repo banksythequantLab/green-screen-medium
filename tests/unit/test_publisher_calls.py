@@ -9,6 +9,7 @@ import asyncio
 import json
 import logging
 import threading
+import time
 
 import pytest
 
@@ -325,6 +326,192 @@ def test_base_exception_is_reraised_unchanged_after_teardown(caplog):
     rec = only_record(caplog)
     assert rec["outcome"] == "internal_error" and "session_clean" not in rec
     assert "BOOMPROBE" not in repr(vars(records(caplog)[0]))
+
+
+def test_base_exception_from_close_is_reraised_without_waiting_for_the_deadline(caplog):
+    boom = Boom("CLOSEBOOMPROBE")
+    host = FakeHost(mini_states(), failures=[Failure("close", boom)])
+    limiter = SpyLimiter(1, host)
+    svc = make(host, limiter=limiter, call_timeout=60.0)
+
+    async def main():
+        # hard bound far below the 60 s Call_Deadline: a hang fails here
+        return await asyncio.wait_for(call(svc), timeout=10.0)
+
+    started = time.monotonic()
+    with pytest.raises(Boom) as info:
+        asyncio.run(main())
+    assert time.monotonic() - started < 10.0
+    assert info.value is boom
+    assert host.close_calls == 1 and limiter.in_flight == 0
+    assert limiter.closes_at_release == [1]  # closed before the slot was released
+    rec = only_record(caplog)
+    assert rec["outcome"] == "internal_error"
+    assert "close_failed" not in rec and "session_clean" not in rec
+    assert "CLOSEBOOMPROBE" not in repr(vars(records(caplog)[0]))
+
+
+def _run_base(svc, limit=10.0):
+    """Run one call under a hard timeout far below the 60 s Call_Deadline."""
+    async def main():
+        return await asyncio.wait_for(call(svc), timeout=limit)
+
+    started = time.monotonic()
+    try:
+        asyncio.run(main())
+    finally:
+        assert time.monotonic() - started < limit
+
+
+def test_base_exception_from_open_is_reraised_after_close_and_slot_release(caplog):
+    boom = Boom("OPENBOOMPROBE")
+    host = FakeHost(mini_states(), failures=[Failure("open", boom)])
+    limiter = SpyLimiter(1, host)
+    svc = make(host, limiter=limiter, call_timeout=60.0)
+    with pytest.raises(Boom) as info:
+        _run_base(svc)
+    assert info.value is boom
+    assert host.created == 1 and host.close_calls == 1 and limiter.in_flight == 0
+    assert limiter.closes_at_release == [1]
+    rec = only_record(caplog)
+    assert rec["outcome"] == "internal_error"
+    assert "close_failed" not in rec and "session_clean" not in rec
+    assert "OPENBOOMPROBE" not in repr(vars(records(caplog)[0]))
+
+
+def test_base_exception_from_factory_is_reraised_after_slot_release(caplog):
+    boom = Boom("FACTBOOMPROBE")
+    host = FakeHost(mini_states(), failures=[Failure("factory", boom)])
+    limiter = SpyLimiter(1, host)
+    svc = make(host, limiter=limiter, call_timeout=60.0)
+    with pytest.raises(Boom) as info:
+        _run_base(svc)
+    assert info.value is boom
+    assert host.created == 0 and host.close_calls == 0 and limiter.in_flight == 0
+    assert limiter.acquires == 1 and limiter.closes_at_release == [0]
+    rec = only_record(caplog)
+    assert rec["outcome"] == "internal_error" and "close_failed" not in rec
+
+
+@pytest.mark.parametrize("first_at", ["open", "read_screen"])
+def test_first_stored_base_exception_wins_over_one_from_close(first_at):
+    first, second = Boom("FIRST"), Boom("SECOND")
+    host = FakeHost(mini_states(), failures=[Failure(first_at, first), Failure("close", second)])
+    svc = make(host, call_timeout=60.0)
+    with pytest.raises(Boom) as info:
+        _run_base(svc)
+    assert info.value is first
+    assert host.close_calls == 1 and svc._limiter.in_flight == 0
+
+
+def test_base_exception_from_thread_start_closes_the_session_and_is_reraised(monkeypatch, caplog):
+    from types import SimpleNamespace
+
+    from greenscreen.publisher import calls
+
+    boom = Boom("STARTBOOMPROBE")
+
+    class BadThread:
+        def __init__(self, *a, **k):
+            pass
+
+        def start(self):
+            raise boom
+
+    monkeypatch.setattr(calls, "threading", SimpleNamespace(Thread=BadThread, Event=threading.Event))
+    host = FakeHost(mini_states())
+    limiter = SpyLimiter(1, host)
+    svc = make(host, limiter=limiter, call_timeout=60.0)
+    with pytest.raises(Boom) as info:
+        _run_base(svc)
+    assert info.value is boom
+    assert host.created == 1 and host.opened == 0 and host.close_calls == 1
+    assert limiter.in_flight == 0 and limiter.closes_at_release == [1]
+    assert not svc._runs
+    rec = only_record(caplog)
+    assert rec["outcome"] == "internal_error" and "close_failed" not in rec
+
+
+def test_base_exception_from_box_clear_in_the_worker_is_stored_and_reraised(monkeypatch, caplog):
+    boom = Boom("CLEARBOOMPROBE")
+    real_clear = SecretBox.clear
+    loop_thread = threading.get_ident()
+
+    def clear(self):
+        if threading.get_ident() != loop_thread:
+            raise boom
+        real_clear(self)
+
+    monkeypatch.setattr(SecretBox, "clear", clear)
+    host = FakeHost(mini_states())
+    limiter = SpyLimiter(1, host)
+    svc = make(host, limiter=limiter, call_timeout=60.0)
+    with pytest.raises(Boom) as info:
+        _run_base(svc)
+    assert info.value is boom
+    assert host.close_calls == 1 and limiter.in_flight == 0
+    assert only_record(caplog)["outcome"] == "internal_error"
+
+
+def test_base_exception_after_deadline_abort_beats_call_timeout(caplog):
+    boom = Boom("LATEBOOMPROBE")
+    host = FakeHost(mini_states(), block_read=1, failures=[Failure("close", boom)])
+    limiter = SpyLimiter(1, host)
+    svc = make(host, limiter=limiter, call_timeout=0.2)
+    with pytest.raises(Boom) as info:
+        _run_base(svc)
+    assert info.value is boom
+    assert host.aborted == 1 and host.close_calls == 1 and limiter.in_flight == 0
+    assert only_record(caplog)["outcome"] == "internal_error"
+
+
+def _abort_raising(host, exc):
+    def factory():
+        session = host()
+        original = session.abort
+
+        def abort():
+            original()  # still releases the blocked read
+            raise exc
+
+        session.abort = abort
+        return session
+
+    return factory
+
+
+def test_base_exception_from_abort_at_the_deadline_is_reraised_after_the_worker_ends(caplog):
+    boom = Boom("ABORTBOOMPROBE")
+    host = FakeHost(mini_states(), block_read=1)
+    limiter = SpyLimiter(1, host)
+    svc = make(_abort_raising(host, boom), limiter=limiter, call_timeout=0.2)
+    with pytest.raises(Boom) as info:
+        _run_base(svc)
+    assert info.value is boom
+    assert host.close_calls == 1 and limiter.in_flight == 0
+    assert limiter.closes_at_release == [1]  # worker closed before the slot was released
+    assert only_record(caplog)["outcome"] == "internal_error"
+
+
+def test_base_exception_from_abort_during_drain_is_reraised_by_drain():
+    boom = Boom("DRAINBOOMPROBE")
+    host = FakeHost(mini_states(), block_read=1)
+    svc = make(_abort_raising(host, boom))
+
+    async def main():
+        task = asyncio.create_task(call(svc))
+        try:
+            await until_blocked(host)
+            with pytest.raises(Boom) as info:
+                await asyncio.wait_for(svc.drain(0), 10.0)
+            out = await asyncio.wait_for(task, 10.0)
+            return info.value, out
+        finally:
+            host.release_all()
+
+    got, out = asyncio.run(main())
+    assert got is boom and out.code == "shutting_down"
+    assert host.close_calls == 1 and svc._limiter.in_flight == 0
 
 
 def test_drain_tears_down_an_open_call_and_the_call_logs_shutting_down(caplog):

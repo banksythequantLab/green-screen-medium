@@ -413,12 +413,17 @@ def _work(run: _Run) -> None:           # no secret is ever bound to a local nam
         except BaseException as exc:
             res.kind, res.base = "base", exc
     finally:
-        run.box.clear()
         try:
-            run.session.close()
-        except Exception:
-            res.close_failed = True
-        run.loop.call_soon_threadsafe(run.done.set)
+            run.box.clear()
+            try:
+                run.session.close()
+            except Exception:
+                res.close_failed = True
+            except BaseException as exc:      # stored and re-raised by execute, like one from run_flow
+                if res.base is None:
+                    res.kind, res.base = "base", exc
+        finally:
+            run.loop.call_soon_threadsafe(run.done.set)   # runs on every exit path
 ```
 
 `_flow_error_data` reads only `reason`, `step_index`, `kind`, `expected`, `summary` (turned into a plain dict by `RedactedSummary.to_dict()`) and `audit`. `S3270Error.data_lines`, `status_line`, `ParseError.raw` are never read, and `str()` or `repr()` is called on no exception except `FlowInputError` (Requirement 6.7). A `FlowError` raised by the Session itself cannot happen: the runner converts Session exceptions to `session_error`.
@@ -661,7 +666,7 @@ Everything in a body is `str`, `int`, `float`, `bool`, `None`, list or dict, so 
 
 ### Property 4: Error mapping is total, single-valued and fixed-text
 
-*For any* Reason_Code (all 13), any Publisher_Code (all 9), and any injected exception class (`FlowError`, `FlowInputError`, `FlowDefinitionError`, `S3270Error`, `ConnectorTimeoutError`, `ParseError`, `ConfigurationError`, `SessionClosedError`, `OSError`, `RuntimeError`, an arbitrary `Exception` subclass) at open, at each Session call and at close, the REST response has exactly one Error_Code and the one HTTP status of the table, the MCP result has `isError` true with the same body as `structuredContent`, the `message` is the fixed text of the code (except `input_invalid`), the `error` object has no member beyond those allowed for that code, no exception reaches the SDK error path (the `mcp` loggers write no ERROR record), and a `BaseException` that is not an `Exception` re-raises unchanged after the session was closed and the Slot released.
+*For any* Reason_Code (all 13), any Publisher_Code (all 9), and any injected exception class (`FlowError`, `FlowInputError`, `FlowDefinitionError`, `S3270Error`, `ConnectorTimeoutError`, `ParseError`, `ConfigurationError`, `SessionClosedError`, `OSError`, `RuntimeError`, an arbitrary `Exception` subclass) at the Session_Factory, at open, at each Session call and at close, the REST response has exactly one Error_Code and the one HTTP status of the table, the MCP result has `isError` true with the same body as `structuredContent`, the `message` is the fixed text of the code (except `input_invalid`), the `error` object has no member beyond those allowed for that code, no exception reaches the SDK error path (the `mcp` loggers write no ERROR record), and a `BaseException` that is not an `Exception`, injected at the Session_Factory, at open, at a Session call and at close, re-raises unchanged after the session was closed and the Slot released (a `BaseException` from `close` does not set `close_failed`).
 
 **Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.8, 14.3, 14.6**
 
@@ -784,7 +789,7 @@ PBT applies: the schema generator, `extract_key`, the validator comparison, `par
 | 1 | `test_publisher_schema.py` | `flows()` and bound subsets | `check_schema`, structure walk, forbidden-key walk, equality with OpenAPI and `tools/list` |
 | 2 | `test_publisher_schema_agree.py` | flows, bound subsets, JSON mappings | `prepare_inputs` on the reduced declaration versus `Draft202012Validator.is_valid` |
 | 3 | `test_publisher_parity.py` | MINI and bundled Flows, Input values, `chain_scripts()` ending in each Reason_Code | REST body versus MCP body, Success_Schema validation |
-| 4 | `test_publisher_errors.py` | Reason_Codes, Publisher_Codes, exception classes, failure points | one code, one status, fixed text, allowed members, no `mcp` ERROR record |
+| 4 | `test_publisher_errors.py` | Reason_Codes, Publisher_Codes, exception classes and `BaseException`, failure points (factory, open, Session calls, close) | one code, one status, fixed text, allowed members, no `mcp` ERROR record |
 | 5 | `test_publisher_no_leak_responses.py` | probes, bound sets, Fake_Host plans | substring search of every Leak_Form over every body and header |
 | 6 | `test_publisher_no_leak_logs.py` | same as 5 including startup and shutdown | `LogCapture` search plus field-shape check |
 | 7 | `test_publisher_no_hostdata.py` | marker-bearing injected exceptions | marker, `Traceback`, path and `repr` search |
@@ -796,7 +801,7 @@ PBT applies: the schema generator, `extract_key`, the validator comparison, `par
 | 13 | `test_publisher_auth.py` | `key_headers()`, Host headers | `extract_key` model, response code, session count zero |
 | 14 | `test_publisher_bindings.py` | `binding_envs()` over generated Flows, `GS_PUBLISH_FLOWS` lists (valid, empty items, duplicates, unknown names, Flows left unpublished) and Binding_Variables; one startup and shutdown of the app per accepted example | independent model of the Requirement 22 algorithm; Leak_Form search over the startup-failure stdout and stderr, all-logger DEBUG records of startup and shutdown, `/health`, `/openapi.json` and `tools/list` |
 
-**Time budget.** Requirement 20.17 gives the publisher property modules 25 s and `tests/property` as a whole 115 s. No end-to-end cost per generated call has been measured since the Signatures are loaded once; the only measured figure is the front-end overhead (about 4 ms for REST and 5 ms for MCP per call). Planning estimate, to be measured in the property-test task: a generated call against the Fake_Host costs roughly 5 to 15 ms including the worker thread, so 14 properties of 100 examples, with P3, P5, P6 and P12 making one to two calls per example, come to roughly 10 to 20 s in total. If the measured total passes 25 s, the first lever is to draw one front end per example in P3, P5 and P6 instead of both; the minimum of 100 examples per property stays. The limits of 25 s and 115 s stay as the requirements give them.
+**Time budget.** Requirement 20.17 gives the publisher property modules 60 s together and `tests/property` as a whole 150 s (raised from 25 s and 115 s on 2026-11-17 by the user's decision, after the Property 12 and 13 measurements; this also replaces the whole-suite limit of flow-runtime Requirement 19.9). No end-to-end cost per generated call has been measured since the Signatures are loaded once; the only measured figure is the front-end overhead (about 4 ms for REST and 5 ms for MCP per call). Planning estimate, to be measured in the property-test task: a generated call against the Fake_Host costs roughly 5 to 15 ms including the worker thread, so 14 properties of 100 examples, with P3, P5, P6 and P12 making one to two calls per example, come to roughly 10 to 20 s in total. If the measured total passes 60 s, the first lever is to draw one front end per example in P3, P5 and P6 instead of both. Tests are not trimmed and `max_examples` is never lowered below 100 to save time. The limits are 60 s and 150 s, as the requirements give them.
 
 ### Unit tests (`tests/unit/test_publisher_*.py`)
 
@@ -850,6 +855,15 @@ Recorded after the day-one checkpoint, which the user accepted. They describe th
 - `ConnectorSession(config, *, popen=subprocess.Popen)` takes a keyword-only `popen`. Tests substitute the process; the production default is `subprocess.Popen`.
 - `run_stdio(server, service, *, stdin=None, stdout=None, ...)` takes optional `stdin` and `stdout` streams. Task 6.1 passes the duplicated streams.
 - A `BaseException` stored by the worker is re-raised by `execute` after teardown, and its Call_Log_Record has `outcome` `internal_error`. `internal_error` is an Error_Code, so Requirement 8.2 already allows it; Requirement 8.11 states it.
+
+**Defect found by Property 12: worker `done` event (task 7.0), 2026-11-17**
+
+- Defect: in `_worker`, a `BaseException` (not an `Exception`) raised by `session.close()` in the `finally` block skipped `run.loop.call_soon_threadsafe(run.done.set)`, so `execute` waited until the Call_Deadline and then returned `call_timeout` for a Call that had ended. Property 12 (session lifecycle, blocked reads and `BaseException` injection) found it.
+- Fix: `done.set` is scheduled in its own inner `finally`, so it runs on every exit path of the worker. A `BaseException` from `close` is stored in the result slot (`kind` `base`, unless `run_flow` already stored one) and re-raised by `execute` after teardown and Slot release, exactly like one from `run_flow` (Requirement 6.8). `close_failed` is NOT set for it: that field stays for an `Exception` from `close` (Requirement 3.5). The sketch in the "Worker" section shows the fixed shape. No code was changed by the spec update; task 7.0 makes the change.
+
+**Defect found by Property 4: `BaseException` at `session.open()` (task 7.0b), 2026-11-17.** A `BaseException` raised by `session.open()` returned `internal_error` and escaped the worker thread unstored. The fix stores it in the result slot (`kind` `base`) so `execute` re-raises it after `close` and Slot release, as for `run_flow` and `close` (Requirement 6.8). By standing user approval, any other `_worker` or `execute` path that lets a `BaseException` escape unstored, or returns an error body where 6.8 requires propagation, is fixed the same way with a unit test and listed in the report.
+
+**Time budget raised (2026-11-17).** The limits of Requirement 20.17 went from 25 s to 60 s (publisher property modules together) and from 115 s to 150 s (whole `tests/property`), by the user's decision after the Property 12 and 13 measurements. Tests are not trimmed and `max_examples` is not lowered.
 
 **Dead fields removed (task 5.2)**
 

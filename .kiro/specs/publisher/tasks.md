@@ -14,11 +14,11 @@ Implement the `greenscreen.publisher` Python 3.11+ package from `requirements.md
 | 4 | Checkpoint, end of day one (demo slice) | 0.5 | 1 |
 | 5 | Hardening: auth, crash guard, handlers, OpenAPI, bindings, wiring | 4.0 | 2 |
 | 6 | CLI, stdio hygiene, shutdown, startup-failure tests | 2.0 | 2 |
-| 7 | Property tests, group A: Properties 1, 2, 3, 4, 11, 12, 13, plus shared test helpers | 3.0 | 2 to 3 |
+| 7 | Property tests, group A: Properties 1, 2, 3, 4, 11, 12, 13, plus shared test helpers and the worker fixes 7.0 and 7.0b (7.0b adds 0.25 h) | 3.75 | 2 to 3 |
 | 8 | Property tests, group B: Properties 5, 6, 7, 8, 9, 10, 14 | 3.5 | 3 |
 | 9 | Checkpoint, end of the properties (timing and count) | 0.5 | 3 |
 | 10 | Perf test, live integration test, static rule tests | 2.0 | 3 |
-| | **Total** | **24.0** | |
+| | **Total** | **24.75** | |
 
 Day one is tasks 1 to 4 (9.0 hours, the slice). Day two is tasks 5 and 6, then the start of task 7. Day three is the rest of 7, then 8, 9 and 10.
 
@@ -29,6 +29,8 @@ Day one is tasks 1 to 4 (9.0 hours, the slice). Day two is tasks 5 and 6, then t
 - Screens come only from `captures/` through `tests/flow_support.py` helpers. No task captures, writes or adds a screen that holds a typed password. No task writes a credential, an API key or a Probe_Value into any file. `TK5_USERNAME` and `TK5_PASSWORD` are read only by the integration test (task 10.2). `.kiro` is never git-ignored.
 - The Publisher does not recover a locked TSO user id and adds no `RECONNECT`, retry or reaper (Requirement 23.7). Nothing in this plan builds anything under "What this design deliberately does not build". The design does not call for a README section, so none is planned.
 - Every property test is exactly one `@given` test with `@settings(max_examples=100, deadline=None)` or more, and its first line is the comment `# Feature: publisher, Property N: <title>`. Every property test task is required.
+- Time budget (Requirement 20.17): the publisher property modules take under 60 seconds together and the whole `tests/property` suite under 150 seconds. The limits were raised from 25 and 115 seconds on 2026-11-17 by the user's decision, after the Property 12 and 13 measurements. No test is trimmed and `max_examples` is never lowered below 100 to save time.
+- One-off mutation checks (tasks 7.8, 8.1, 8.2) change production code temporarily. They are verification steps, not permanent tests. The executor records the file hash (or `git diff` state) before, restores the file afterwards, verifies that the file is byte-identical to its state before the mutation, and reports the result. A production file left changed is a failure of the task.
 - `pyproject.toml` is touched in task 1.1 only. The 31-package `publish` extra is approved; the environment install happens in task 1.1 only.
 - The demo runs with `GS_PUBLISH_FLOWS=tk5-system-info`, because `tk5-logon` leaves the user id logged on and locked. Unset or empty `GS_PUBLISH_FLOWS` still publishes every Loaded_Flow. Tests set the variable through the injected environment mapping and never rely on the process environment.
 - `cancelled` is a Call_Log_Record outcome only (Requirements 8.2, 8.8). It is never an Error_Code and never appears in a response, the OpenAPI document or `tools/list`.
@@ -150,7 +152,7 @@ Day one is tasks 1 to 4 (9.0 hours, the slice). Day two is tasks 5 and 6, then t
     - Create `tests/unit/test_publisher_cli.py`: one test per startup failure of Requirements 1 (including `GS_PUBLISH_FLOWS` `empty_item`, `duplicate_name` and `unknown_flow`, and `flow_not_published` for a binding), 13, 15, 16 and 22 asserting exit code 2, the message, and that stdout and stderr hold no environment variable value (and no Leak_Form of a Bound_Value for Requirement 22); a failing signature load exits 2 before a port is bound; the missing-extra message (module import blocked in a subprocess); `GS_API_KEY` and `GS_BIND_*` removed from `os.environ` after `prepare`; the shutdown test of Requirement 19.7 (every opened session was closed after `drain`); the `StripTraceback` filter output; the stdio test in a subprocess against the Fake_Host seam through a test-only entry point that cannot select a factory from the environment, asserting every stdout line parses as JSON-RPC also when a handler prints and writes to descriptor 1 (Requirement 14.11)
     - _Requirements: 1.11, 1.12, 1.13, 8.7, 13.5, 13.6, 14.9, 14.11, 15.4, 15.5, 15.8, 16.1, 16.2, 16.3, 16.4, 16.5, 19.5, 19.7, 19.10, 22.7_
 
-- [ ] 7. Property tests, group A (about 3.0 h, days 2 to 3)
+- [x] 7. Property tests, group A (about 3.0 h, days 2 to 3)
   - [x] 7.1 Add shared test helpers and strategies
     - Extend `tests/publisher_support.py` with `LogCapture` (root logger at level 1 plus a recording handler on every non-propagating logger in `logging.root.manager.loggerDict`, recording the formatted message, `args`, `exc_text`, `stack_info` and formatted `exc_info`), the frame scanner of the design (walks the traceback and its chain, treats `BoundValues` and `PublishedFlow` as opaque, flags a probe in any local or container, and identity with a recorded mapping), and a clients helper (ASGI `httpx2` client inside the lifespan, in-memory MCP `Client` for `legacy` and `auto`)
     - Create `tests/property/_publisher_strategies.py`: `probes()` (at least 4 printable ASCII characters, alphabet disjoint from fixed text; `int` probes of at least 4 digits), `leak_forms(v)` (plain, JSON-escaped, URL-quoted and quote-plus, hex lower and upper with and without spaces, base64 and URL-safe base64 with and without padding), `bound_sets`, `fake_host_plans`, `bad_requests`, `key_headers`, `binding_envs`
@@ -175,6 +177,8 @@ Day one is tasks 1 to 4 (9.0 hours, the slice). Day two is tasks 5 and 6, then t
   - [x] 7.5 Write property test for error mapping totality (Property 4)
     - **Property 4: Error mapping is total, single-valued and fixed-text**
     - `tests/property/test_publisher_errors.py`, over all Reason_Codes, Publisher_Codes and injected exception classes at open, at each Session call and at close; one code, one status, `isError` result with the same body, fixed message except `input_invalid`, allowed members only, `cancelled` in no body, status table or message table, no `mcp` ERROR record, a `BaseException` re-raised unchanged after close and Slot release
+    - Follow-up (the test file already exists; done as an edit inside `tests/property/test_publisher_errors.py`): the scenario list is extended with a `BaseException` that is not an `Exception` raised at the Session_Factory, at `open` and at `close` (as well as at a Session call). Each is re-raised unchanged after the session was closed (when one exists) and the Slot released, builds no Error_Body, and a `BaseException` from `close` leaves `close_failed` absent. This follow-up needs the fix of task 7.0 for the `close` case and of task 7.0b for the `open` case
+    - Follow-up (depends on task 7.0b): one `@example` per base injection point (factory, open, close, read_screen, string, enter) on both front ends, and one `@example` per Publisher_Code, so every run covers them
     - **Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.8, 8.8, 14.3, 14.6**
 
   - [x] 7.6 Write property test for the limiter (Property 11)
@@ -182,54 +186,77 @@ Day one is tasks 1 to 4 (9.0 hours, the slice). Day two is tasks 5 and 6, then t
     - `tests/property/test_publisher_limiter.py`, limits 1 to 64, concurrent Calls over REST and MCP with generated outcomes; in-flight never above the limit, Slots and live sessions return to zero, rejected Calls are `busy` and opened no session
     - **Validates: Requirements 9.1, 9.2, 9.3, 9.6**
 
-  - [-] 7.7 Write property test for the session lifecycle (Property 12)
+  - [x] 7.0 Fix the worker done event (defect found by Property 12)
+    - Numbering: inserted as sub-task `7.0` of top-level task 7 so that no existing id changes. It is done BEFORE 7.7 (7.7 depends on it, see the dependency graph).
+    - Defect: in `calls._worker`, a `BaseException` (not an `Exception`) raised by `session.close()` in the `finally` block skips `run.loop.call_soon_threadsafe(run.done.set)`, so `execute` waits until the Call_Deadline and returns `call_timeout` for a Call that ended
+    - Change in `greenscreen/publisher/calls.py` `_worker` only: `done.set` runs on every exit path (its own inner `finally`, as in the design "Worker" sketch); `except Exception` around `close()` still sets `close_failed`; a new `except BaseException` stores it in the result slot (`kind` `base`, `base` the exception, unless `run_flow` already stored one) and does NOT set `close_failed`; `execute` then re-raises it after teardown and Slot release exactly as for one from `run_flow` (existing `_finish` path)
+    - Add to `tests/unit/test_publisher_calls.py` a unit test for a `BaseException` raised by `close` (a Fake_Host `close` failure with a `BaseException` subclass): the same exception object is re-raised by `execute`, after `close` was called and after the Slot was released (`Limiter.in_flight` is 0), the Call_Log_Record has no `close_failed` key and `outcome` `internal_error`, the worker's `done` event was set, and the call returns promptly (a `FakeClock` or a short real deadline far above the test's own timeout proves there is no wait for the deadline). Keep the existing `Exception`-from-`close` test (`close_failed` true) unchanged
+    - Re-run `tests/unit -k publisher` and the Property 12 test file; no other production file changes
+    - _Requirements: 3.3, 3.5, 6.8, 9.4_
+
+  - [x] 7.0b Re-raise a BaseException from session.open() (defect found by Property 4)
+    - Defect: in `calls._worker`, a `BaseException` (not an `Exception`) raised by `session.open()` returned `internal_error` and escaped the worker thread unstored
+    - Change in `greenscreen/publisher/calls.py`: store it in the result slot (`kind` `base`) so `execute` re-raises it after `close` and Slot release, like the `run_flow` and `close` cases (Requirement 6.8). `close_failed` stays absent
+    - Standing approval (user, 2026-11-17): any other path in `calls._worker` or `CallService.execute` that lets a `BaseException` escape the worker thread unstored, or returns an error body where Requirement 6.8 requires propagation, is fixed the same way with a unit test. List each such fix in the report
+    - Unit test in `tests/unit/test_publisher_calls.py`: a Fake_Host `open` raising a `BaseException` subclass; the same object is re-raised by `execute` after `close` and after Slot release (`Limiter.in_flight` is 0), the record has `outcome` `internal_error`, and the call returns promptly. Also cover the factory case if it is not already covered
+    - Time: adds 0.25 h to task 7 (3.5 to 3.75 h; total about 24.75 h)
+    - _Requirements: 3.3, 3.4, 6.8, 9.4_
+
+  - [x] 7.7 Write property test for the session lifecycle (Property 12)
+    - Depends on task 7.0 (the worker `done` event fix): the plan injects a `BaseException` at `close`
+    - Also depends on task 7.0b: the plan injects a `BaseException` at `open` and at the factory
     - **Property 12: Session lifecycle**
     - `tests/property/test_publisher_lifecycle.py`, Fake_Host plans including failures at every point, blocked reads with deadline expiry, cancellation and a `BaseException`; each created session closed exactly once before the Slot is released, no reuse, zero sessions for a Call rejected before the Slot, and no key after `call_timeout` was returned
+    - Follow-up (depends on task 7.0b): also assert the re-raise for a `BaseException` at open and at the factory
     - **Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 9.3, 9.4, 10.3, 10.4**
 
   - [x] 7.8 Write property test for authentication (Property 13)
     - **Property 13: Authentication**
     - `tests/property/test_publisher_auth.py`, over wrong keys in either carrier, differing pairs, malformed `Authorization`, empty and repeated `X-API-Key`, valid keys, and the disabled-auth Host header cases, against `extract_key` as the model; zero sessions, no body read, no value in the response, over Flow routes, `/openapi.json`, `/docs` and `/mcp`
+    - Follow-up, one-off mutation check (not a permanent test): record the hash of `greenscreen/publisher/auth.py`, temporarily make the key comparison always succeed, run `tests/property/test_publisher_auth.py` and confirm that Property 13 FAILS, restore the file, verify with `git diff` or the hash that `auth.py` is byte-identical to its state before, and report the result (the failing example and the verification)
     - **Validates: Requirements 13.2, 13.3, 13.7, 13.9, 13.11, 13.12**
 
 - [ ] 8. Property tests, group B (about 3.5 h, day 3)
-  - [ ] 8.1 Write property test for no value in responses (Property 5)
+  - [x] 8.1 Write property test for no value in responses (Property 5)
     - **Property 5: No Input value or Bound_Value in any response**
     - `tests/property/test_publisher_no_leak_responses.py`; probes as Inputs and as Bound_Values (bound Input secret and not secret), all Fake_Host outcomes, bodies, headers, MCP results, `/openapi.json`, `tools/list` and `/health`; the `sentinel_password_screen` case with the sentinel supplied as the password
+    - One-off mutation check (not a permanent test): record the hash of the production file you change, temporarily put one supplied Input value into a response body (for example into the `message` of an error or the Success_Body), run this test and confirm that Property 5 FAILS, restore the file, verify with `git diff` or the hash that it is byte-identical to its state before, and report the result
     - **Validates: Requirements 7.1, 7.7, 7.8, 7.9, 22.10**
 
-  - [ ] 8.2 Write property test for no value in logs (Property 6)
+  - [x] 8.2 Write property test for no value in logs (Property 6)
     - **Property 6: No Input value or Bound_Value in any log record**
     - `tests/property/test_publisher_no_leak_logs.py`; same Calls plus startup and shutdown with Bound_Values set, `LogCapture` at DEBUG on all loggers, message, `args`, `exc_text`, `stack_info` and formatted `exc_info`; every `greenscreen.publisher` record has only the permitted fields; the API key never appears
+    - One-off mutation check (not a permanent test): record the hash of the production file you change, temporarily log one supplied Input value in production code (for example in the Call_Log_Record or a debug record), run this test and confirm that Property 6 FAILS, restore the file, verify with `git diff` or the hash that it is byte-identical to its state before, and report the result
     - **Validates: Requirements 7.2, 7.7, 8.2, 8.3, 8.4, 13.8, 22.10**
 
-  - [ ] 8.3 Write property test for no Host_Data (Property 7)
+  - [x] 8.3 Write property test for no Host_Data (Property 7)
     - **Property 7: No Host_Data in responses or logs**
     - `tests/property/test_publisher_no_hostdata.py`; injected `S3270Error` with marker `data_lines`, `ConnectorTimeoutError`, `ParseError` with marker `raw`, `ConfigurationError`, `SessionClosedError` and an arbitrary `Exception` with a marker message; no marker, `Traceback`, frame path, `Screen` or `Field` repr or hidden cell text in a response or a record
     - **Validates: Requirements 6.7, 7.3, 7.7**
 
-  - [ ] 8.4 Write property test for audit and summary (Property 8)
+  - [x] 8.4 Write property test for audit and summary (Property 8)
     - **Property 8: Audit entries and summaries are free of secrets and mask hidden cells**
     - `tests/property/test_publisher_audit_summary.py`; Calls ending in each Reason_Code and the residual-password screen; no Leak_Form in any Audit_Summary or Redacted_Summary and every hidden cell shown as `*`
     - **Validates: Requirements 7.4, 22.10**
 
-  - [ ] 8.5 Write property test for validation errors (Property 9)
+  - [x] 8.5 Write property test for validation errors (Property 9)
     - **Property 9: Validation errors never echo a submitted value**
     - `tests/property/test_publisher_validation_echo.py`; `bad_requests()` over REST and MCP (wrong type, too long, regex violation, undeclared and bound names from an alphabet disjoint from the probes, missing Input, malformed JSON, duplicate key at any depth, `NaN`, non-object, oversize, wrong media type); no Leak_Form, no `input` member, zero factory calls
+    - The shared `bad_requests()` strategy targets `MINI`, which has no `regex` Input, so it cannot generate a regex-violation request. This test builds, locally in its own test file, a Flow with a regex-constrained `str` Input (and uses it for the regex-violation cases), and does NOT edit `tests/property/_publisher_strategies.py` or `tests/publisher_support.py`
     - **Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.7, 7.5, 11.2, 22.2**
 
-  - [ ] 8.6 Write property test for exception frames (Property 10)
+  - [-] 8.6 Write property test for exception frames (Property 10)
     - **Property 10: No traceback frame of the publisher holds a value**
     - `tests/property/test_publisher_frames.py`; probes and bound sets with a cancellation, a `BaseException` from the Session, an exception injected into the test seam and a failing `parse_bindings`; the frame scanner and `traceback.format_exception` with chain
     - **Validates: Requirements 3.6, 3.9, 6.8, 7.6, 22.10**
 
-  - [ ] 8.7 Write property test for binding variables (Property 14)
+  - [x] 8.7 Write property test for binding variables (Property 14)
     - **Property 14: Binding variables either start cleanly or stop the startup**
     - `tests/property/test_publisher_bindings.py`; `binding_envs()` over generated Flows, generated `GS_PUBLISH_FLOWS` values (valid, empty items, duplicates, unknown names, Flows left unpublished) and variables compared with a small independent model of Requirements 1.9 to 1.15 and 22 (including `flow_not_published`); an accepted run's registry holds exactly the selected Flows in loading order; accepted runs have no bound name in any schema, `tools/list` or OpenAPI document; stopped runs name the variable, Flow or family and the rule; no Leak_Form in startup stdout and stderr, in DEBUG records of startup and shutdown, or in `/health`; no session in either case
     - **Validates: Requirements 1.9, 1.10, 1.11, 1.12, 1.13, 1.14, 1.15, 22.1, 22.3, 22.4, 22.5, 22.6, 22.7, 22.8, 22.9, 22.10, 22.12, 7.8**
 
 - [ ] 9. Checkpoint - properties complete
-  - Run `pytest tests/property --durations=10` and require that all 14 publisher property tests pass, that the publisher property modules take under 25 seconds and the whole `tests/property` suite under 115 seconds with no network connection and no subprocess; if over budget, trim the strategies (draw one front end per example in Properties 3, 5 and 6), never lower `max_examples` below 100. Record the timings in the task notes.
+  - Run `pytest tests/property --durations=10` and require that all 14 publisher property tests pass, that the publisher property modules take under 60 seconds together and the whole `tests/property` suite under 150 seconds with no network connection and no subprocess (limits raised from 25 and 115 seconds on 2026-11-17 by the user's decision, after the Property 12 and 13 measurements; this replaces the whole-suite limit of flow-runtime Requirement 19.9); never trim tests and never lower `max_examples` below 100 to save time. If over budget, report it to the user instead of trimming. Record the timings in the task notes.
   - Run the full `pytest -m "not integration"` and require no failure and no edit to a pre-existing test file.
   - Ensure all tests pass, ask the user if questions arise.
   - _Requirements: 20.1, 20.17, 20.18_
@@ -281,9 +308,11 @@ Day one is tasks 1 to 4 (9.0 hours, the slice). Day two is tasks 5 and 6, then t
     { "id": 9, "tasks": ["5.3"] },
     { "id": 10, "tasks": ["5.5"] },
     { "id": 11, "tasks": ["6.1", "7.1"] },
-    { "id": 12, "tasks": ["6.2", "7.2", "7.3", "7.4", "7.5", "7.6", "7.7", "7.8"] },
-    { "id": 13, "tasks": ["8.1", "8.2", "8.3", "8.4", "8.5", "8.6", "8.7"] },
-    { "id": 14, "tasks": ["10.1", "10.2", "10.3"] }
+    { "id": 12, "tasks": ["6.2", "7.0", "7.2", "7.3", "7.4", "7.6", "7.8"] },
+    { "id": 13, "tasks": ["7.0b"] },
+    { "id": 14, "tasks": ["7.5", "7.7"] },
+    { "id": 15, "tasks": ["8.1", "8.2", "8.3", "8.4", "8.5", "8.6", "8.7"] },
+    { "id": 16, "tasks": ["10.1", "10.2", "10.3"] }
   ]
 }
 ```

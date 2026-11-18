@@ -341,43 +341,62 @@ class _Record:
     session_clean: bool | None = None
 
 
+def _store_base(res: _Result, exc: BaseException) -> None:
+    """Keep the first BaseException of a run (Requirement 6, criterion 8)."""
+    if res.kind != "base":
+        res.kind, res.base = "base", exc
+
+
 def _worker(run: _Run) -> None:
     """The only code that touches the session. No secret is bound to a local name."""
     res = run.result
     try:
         try:
-            run.session.open()
-        except Exception:
-            res.kind = "host_unavailable"
-            return
-        try:
-            res.value = run_flow(
-                run.flow,
-                _Guarded(run.session, run.aborted),
-                run.box.merged(run.bound),
-                signatures=run.signatures,
-                clock=run.clock,
-                poll_interval=run.poll,
-            )
-            res.kind = "ok"
-        except FlowInputError as exc:
-            res.kind, res.value = "input_invalid", str(exc)
-        except FlowError as exc:
-            res.kind, res.value = "flow_error", flow_error_data(exc)
-        except Exception:
-            res.kind = "internal"  # no str(), no repr(), no attribute reads
-        except BaseException as exc:
-            res.kind, res.base = "base", exc
+            try:
+                run.session.open()
+            except Exception:
+                res.kind = "host_unavailable"
+                return
+            try:
+                res.value = run_flow(
+                    run.flow,
+                    _Guarded(run.session, run.aborted),
+                    run.box.merged(run.bound),
+                    signatures=run.signatures,
+                    clock=run.clock,
+                    poll_interval=run.poll,
+                )
+                res.kind = "ok"
+            except FlowInputError as exc:
+                res.kind, res.value = "input_invalid", str(exc)
+            except FlowError as exc:
+                res.kind, res.value = "flow_error", flow_error_data(exc)
+            except Exception:
+                res.kind = "internal"  # no str(), no repr(), no attribute reads
+        except Exception:  # raised by a handler above
+            if not res.kind:
+                res.kind = "internal"
+        except BaseException as exc:  # from open, run_flow or a handler above
+            _store_base(res, exc)
     finally:
-        run.box.clear()
         try:
-            run.session.close()
+            run.box.clear()
         except Exception:
-            res.close_failed = True
+            pass  # execute() clears the box again
+        except BaseException as exc:
+            _store_base(res, exc)
         try:
-            run.loop.call_soon_threadsafe(run.done.set)
-        except RuntimeError:  # loop already closed
-            pass
+            try:
+                run.session.close()
+            except Exception:
+                res.close_failed = True
+            except BaseException as exc:
+                _store_base(res, exc)
+        finally:
+            try:
+                run.loop.call_soon_threadsafe(run.done.set)
+            except RuntimeError:  # loop already closed
+                pass
 
 
 def _session_clean(code: str, abort_reason: str | None) -> bool | None:
@@ -460,14 +479,19 @@ class CallService:
         with anyio.move_on_after(grace):
             while self._runs:
                 await anyio.sleep(0.02)
+        first: BaseException | None = None
         for run in list(self._runs):
             if run.abort_reason is None:
                 run.abort_reason = "shutdown"
             with anyio.CancelScope(shield=True):
-                await self._teardown(run)
+                pending = await self._teardown(run)
+            if first is None:
+                first = pending
         with anyio.move_on_after(1.0):  # let the awaiting calls build their answers
             while self._runs:
                 await anyio.sleep(0.01)
+        if first is not None:
+            raise first
 
     # -- internals -------------------------------------------------------
 
@@ -519,12 +543,19 @@ class CallService:
         try:
             try:
                 threading.Thread(target=_worker, args=(run,), daemon=True).start()
-            except Exception:
+            except BaseException as start_exc:
+                close_base: BaseException | None = None
                 try:
                     session.close()
                 except Exception:
                     rec.close_failed = True
+                except BaseException as exc:
+                    close_base = exc
                 rec.outcome = "internal_error"
+                if not isinstance(start_exc, Exception):
+                    raise  # no worker ran: close once, then propagate (Requirement 6.8)
+                if close_base is not None:
+                    raise close_base
                 return CallOutcome("internal_error", error_body("internal_error")), None
 
             shutting = False
@@ -537,17 +568,22 @@ class CallService:
                 if run.abort_reason is None:
                     run.abort_reason = "shutdown" if shutting else "cancel"
                 with anyio.CancelScope(shield=True):
-                    await self._teardown(run)
+                    await self._teardown(run)  # the cancellation wins over an abort error
                 rec.outcome = "shutting_down" if run.abort_reason == "shutdown" else "cancelled"
                 rec.session_clean = False
                 rec.close_failed = run.result.close_failed
                 raise
             if scope.cancelled_caught and run.abort_reason is None:
                 run.abort_reason = "timeout"
+            pending: BaseException | None = None
             if run.abort_reason is not None:
                 with anyio.CancelScope(shield=True):
-                    await self._teardown(run)
-            return self._finish(run, rec)
+                    pending = await self._teardown(run)
+            outcome, base = self._finish(run, rec)
+            if base is None and pending is not None:
+                rec.outcome = "internal_error"
+                base = pending
+            return outcome, base
         finally:
             self._runs.discard(run)
 
@@ -559,7 +595,10 @@ class CallService:
         step_index: int | None = None
         base: BaseException | None = None
         body: dict
-        if reason == "timeout":
+        if res.kind == "base":  # Requirement 6.8 beats a timeout or shutdown answer
+            base = res.base
+            code, body = "internal_error", error_body("internal_error")
+        elif reason == "timeout":
             code, body = "call_timeout", error_body("call_timeout")
         elif reason == "shutdown":
             code, body = "shutting_down", error_body("shutting_down")
@@ -586,9 +625,6 @@ class CallService:
                 summary=data["summary"],
                 audit=data["audit"],
             )
-        elif res.kind == "base":
-            base = res.base
-            code, body = "internal_error", error_body("internal_error")
         else:
             code, body = "internal_error", error_body("internal_error")
 
@@ -609,19 +645,28 @@ class CallService:
         run.bound = {}
         return outcome, base
 
-    async def _teardown(self, run: _Run) -> None:
-        """Abort the session from outside the worker, then wait for the worker."""
+    async def _teardown(self, run: _Run) -> BaseException | None:
+        """Abort the session from outside the worker, then wait for the worker.
+
+        Returns a ``BaseException`` (not an ``Exception``) raised by ``abort`` so that
+        the caller can propagate it; the wait for the worker happens either way.
+        """
         run.aborted.set()
         if run.done.is_set():
-            return
+            return None
+        pending: BaseException | None = None
         try:
             await anyio.to_thread.run_sync(run.session.abort)
         except Exception:
             _LOG.warning("session abort failed")
+        except BaseException as exc:
+            _LOG.warning("session abort failed")
+            pending = exc
         with anyio.move_on_after(_WORKER_GRACE):
             await run.done.wait()
         if not run.done.is_set():
             _LOG.warning("worker_stuck")
+        return pending
 
     def _write_log(self, rec: _Record, t0: float) -> None:
         extra: dict[str, Any] = {

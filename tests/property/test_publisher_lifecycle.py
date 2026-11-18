@@ -17,7 +17,7 @@ import functools
 import time
 from dataclasses import dataclass
 
-from hypothesis import given, settings
+from hypothesis import example, given, settings
 from hypothesis import strategies as st
 
 from greenscreen.connector import (
@@ -69,6 +69,7 @@ class Plan:
 
 
 _FAIL_POOL = tuple(Failure(at, exc, 1, None) for at in FAILURE_POINTS for exc in _EXCS)
+_BASE_POINTS = ("factory", "open")
 _CLOSE_POOL = (None,) * 3 + tuple(Failure("close", exc, 1, None) for exc in _EXCS)
 
 
@@ -78,6 +79,9 @@ def plans(draw):
     failure = None
     if kind == "fail":
         failure = draw(st.sampled_from(_FAIL_POOL))
+        if failure.at in _BASE_POINTS and failure.exc is InjectedBase:
+            # a fresh instance, so the test can check that the same object comes back
+            failure = Failure(failure.at, InjectedBase("injected base"), 1, None)
     elif kind in ("timeout", "cancel", "ok", "wrong"):
         failure = draw(st.sampled_from(_CLOSE_POOL))
     return Plan(kind, failure)
@@ -176,8 +180,23 @@ async def _scenario(plan_list):
             else:
                 try:
                     outcome = await _hard(task, "call did not finish")
-                except InjectedBase:
+                except InjectedBase as raised:
                     outcome = None  # a BaseException is re-raised to the caller (design)
+                    f = plan.failure
+                    if f is not None and f.at in _BASE_POINTS and isinstance(f.exc, BaseException):
+                        # the very object injected, after teardown and Slot release
+                        assert raised is f.exc
+                        assert limiter.in_flight == 0
+                        assert limiter.early_release == []
+                        created = len(sessions) - before
+                        assert created == (1 if f.at == "open" else 0)
+                        for s in sessions[before:]:
+                            assert s.close_calls == 1 and s.is_closed
+                else:
+                    f = plan.failure
+                    assert not (
+                        f is not None and f.at in _BASE_POINTS and isinstance(f.exc, BaseException)
+                    ), "an injected BaseException was not re-raised"
                 if kind == "ok" and plan.failure is None:
                     assert outcome is not None and outcome.code == "ok"
                 if kind == "bad_input":
@@ -206,6 +225,8 @@ async def _scenario(plan_list):
 
 # Feature: publisher, Property 12: Session lifecycle
 @settings(max_examples=100, deadline=None)
+@example([Plan("fail", Failure("factory", InjectedBase("injected base"), 1, None))])
+@example([Plan("fail", Failure("open", InjectedBase("injected base"), 1, None))])
 @given(st.lists(plans(), min_size=1, max_size=3))
 def test_session_lifecycle(plan_list):
     service, limiter, sessions, hosts, rejected, snapshots = asyncio.run(_scenario(plan_list))
