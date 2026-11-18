@@ -801,7 +801,7 @@ PBT applies: the schema generator, `extract_key`, the validator comparison, `par
 | 13 | `test_publisher_auth.py` | `key_headers()`, Host headers | `extract_key` model, response code, session count zero |
 | 14 | `test_publisher_bindings.py` | `binding_envs()` over generated Flows, `GS_PUBLISH_FLOWS` lists (valid, empty items, duplicates, unknown names, Flows left unpublished) and Binding_Variables; one startup and shutdown of the app per accepted example | independent model of the Requirement 22 algorithm; Leak_Form search over the startup-failure stdout and stderr, all-logger DEBUG records of startup and shutdown, `/health`, `/openapi.json` and `tools/list` |
 
-**Time budget.** Requirement 20.17 gives the publisher property modules 60 s together and `tests/property` as a whole 150 s (raised from 25 s and 115 s on 2026-11-17 by the user's decision, after the Property 12 and 13 measurements; this also replaces the whole-suite limit of flow-runtime Requirement 19.9). No end-to-end cost per generated call has been measured since the Signatures are loaded once; the only measured figure is the front-end overhead (about 4 ms for REST and 5 ms for MCP per call). Planning estimate, to be measured in the property-test task: a generated call against the Fake_Host costs roughly 5 to 15 ms including the worker thread, so 14 properties of 100 examples, with P3, P5, P6 and P12 making one to two calls per example, come to roughly 10 to 20 s in total. If the measured total passes 60 s, the first lever is to draw one front end per example in P3, P5 and P6 instead of both. Tests are not trimmed and `max_examples` is never lowered below 100 to save time. The limits are 60 s and 150 s, as the requirements give them.
+**Time budget.** Requirement 20.17 gives the publisher property modules 120 s together and `tests/property` as a whole 240 s (raised from 25 s and 115 s to 60 s and 150 s, and then to 120 s and 240 s, on 2026-11-17 by the user's decisions; this also replaces the whole-suite limit of flow-runtime Requirement 19.9). Measured on 2026-11-17: a clean serial run of the 14 publisher property modules took 74.7 s (pytest-reported; slowest: Property 6 15.2 s, Property 14 13.4 s, Property 11 9.0 s), and the user's checkpoint run of `pytest -m "not integration"` gave 1940 passed, 4 skipped, 0 failed in 301 s on a loaded machine. The earlier planning estimate of 10 to 20 s was too low. The front-end overhead is about 4 ms for REST and 5 ms for MCP per call. If a later run passes 120 s, the first lever is to draw one front end per example in P3, P5 and P6 instead of both, but only with the user's approval. Tests are not trimmed and `max_examples` is never lowered below 100 to save time. The limits are 120 s and 240 s, as the requirements give them.
 
 ### Unit tests (`tests/unit/test_publisher_*.py`)
 
@@ -828,6 +828,8 @@ PBT applies: the schema generator, `extract_key`, the validator comparison, `par
 
 Builds the app with the default Session_Factory and calls `POST /flows/tk5-system-info` through the ASGI client. Skips naming each missing variable if `TK5_USERNAME` or `TK5_PASSWORD` is unset or empty (the test passes them as call values or as Binding_Variables of the app under test), and skips when the `host_reachable` fixture reports the host down. Asserts `USERID` equals the user id case-insensitively, `SYSTEMID` and `RELEASE` are non-blank, the password appears in no response and no DEBUG log record in plain, hex, base64 and URL-encoded form, and no `s3270` / `ws3270` process started by the test is still running. `GS_MAX_CONCURRENCY` stays at 1, and the test makes one call at a time so that the single user id is never logged on twice. A previous run that did not log off can lock the account and make this test stop with `unknown_screen`; the test does not recover it.
 
+**VERIFIED BY THE REVIEWER on 2026-11-17:** `pytest -m integration` with `TK5_USERNAME` and `TK5_PASSWORD` set gave 6 passed, 0 skipped in 26.8 s, including `tests/integration/test_publisher_live.py`, and no `s3270` process was left behind.
+
 ---
 
 ## Implementation notes and accepted exceptions (2026-11-17)
@@ -843,7 +845,9 @@ Recorded after the day-one checkpoint, which the user accepted. They describe th
 
 - **`handle_exit` does not call `super()`.** The `uvicorn.Server` subclass in `cli.py` overrides `handle_exit` and replicates uvicorn's `should_exit` / `force_exit` logic (a second SIGINT forces exit) after calling `service.begin_shutdown()`. With uvicorn 0.38, `super().handle_exit` leads to a captured signal being re-raised after the graceful stop, which killed the process with exit code 3 before the final `drain(0)` ran. A test fails if `handle_exit` calls `super()`.
 - **No uvicorn log level below INFO.** `build_uvicorn_config` passes the fixed `UVICORN_LOG_LEVEL = "info"`, reads no level from the environment and has no parameter for it. uvicorn's TRACE level overrides the third-party logger clamp and logs the ASGI scope, which holds path and query. A test pins this.
-- **Live run.** The user ran the real CLI against the live host with bound credentials. REST and MCP each returned the four outputs, the exit code was 0 and nothing leaked.
+- **Live run.** VERIFIED BY THE REVIEWER (2026-11-17, earlier runs): the real CLI against the live host with bound credentials. REST and MCP each returned the four outputs, the exit code was 0 and nothing leaked.
+- **Reviewer's test runs, VERIFIED BY THE REVIEWER on 2026-11-17.** `pytest -m integration` with `TK5_*` set: 6 passed, 0 skipped, 26.8 s, including `tests/integration/test_publisher_live.py`, no `s3270` process left. `pytest -m "not integration"`: 1940 passed, 4 skipped, 0 failed, 301 s on a loaded machine.
+- **`print` rule (decision of 2026-11-17; Requirement 8.6, 15.4; task 10.3).** No call of `print` in `greenscreen/publisher` unless it passes `file=sys.stderr` (a keyword `file` whose value is the attribute `sys.stderr`), checked with `ast`. Bare `print(...)` and `file=sys.stdout` fail; the static test has self-tests for the three cases. The startup error messages in `cli.py` are printed to stderr this way.
 - **Binding names are case-sensitive and upper-case (Requirement 22.4).** `GS_BIND_a__u` is an `unknown_flow` startup error. The "duplicate binding" guard in `parse_bindings` (`if (flow.name, spec.name) in bound: ... ambiguous_name`, and the `bound` set that feeds it) is unreachable under case-sensitive matching: the variable name is fully determined by the matched Flow and Input, and environment names are unique. It is being removed in the code task, together with its `bound` set. No test is kept for it. No other route to it was found in `config.py`: the other `ambiguous_name` checks (normalised Flow names, normalised Input names, the `__` and trailing `_` rule) stay and stay tested.
 - **Auth-disabled Host rule covers every path, `/health` included (Requirement 13.7).**
 
@@ -863,7 +867,35 @@ Recorded after the day-one checkpoint, which the user accepted. They describe th
 
 **Defect found by Property 4: `BaseException` at `session.open()` (task 7.0b), 2026-11-17.** A `BaseException` raised by `session.open()` returned `internal_error` and escaped the worker thread unstored. The fix stores it in the result slot (`kind` `base`) so `execute` re-raises it after `close` and Slot release, as for `run_flow` and `close` (Requirement 6.8). By standing user approval, any other `_worker` or `execute` path that lets a `BaseException` escape unstored, or returns an error body where 6.8 requires propagation, is fixed the same way with a unit test and listed in the report.
 
-**Time budget raised (2026-11-17).** The limits of Requirement 20.17 went from 25 s to 60 s (publisher property modules together) and from 115 s to 150 s (whole `tests/property`), by the user's decision after the Property 12 and 13 measurements. Tests are not trimmed and `max_examples` is not lowered.
+**Time budget raised (2026-11-17).** The limits of Requirement 20.17 went from 25 s to 60 s (publisher property modules together) and from 115 s to 150 s (whole `tests/property`), by the user's decision after the Property 12 and 13 measurements. They were raised again the same day, to 120 s and 240 s, after a clean serial run of the 14 publisher property modules took 74.7 s and `pytest -m "not integration"` took 301 s on a loaded machine (see "Time budget"). Tests are not trimmed and `max_examples` is not lowered.
+
+**Further `BaseException` fixes in `calls.py` (task 7.0b, standing approval), 2026-11-17.** Beyond the `open()` case above, six more paths were fixed, each with a unit test (Requirement 6.8):
+
+1. `open()`: a `BaseException` is stored in the result slot and re-raised after `close` and Slot release.
+2. A `BaseException` raised inside the `FlowInputError` or `FlowError` handler bodies of the worker is stored, not lost.
+3. A `BaseException` from `box.clear()` in the worker's `finally` is stored.
+4. A `BaseException` from `Thread.start()` closes the session once and is re-raised after the Slot is released.
+5. `_finish` checks a stored `BaseException` before the timeout and shutdown branches, so a stored exception is never replaced by `call_timeout` or `shutting_down`.
+6. `_teardown` and `drain` re-raise a `BaseException` raised by `abort()`, after the worker has closed the session and the Slot is released.
+
+The case of a `BaseException` raised by the Session_Factory on the event loop was already correct; a test was added. Unfixed edges, recorded on purpose: a cancellation with a simultaneous `BaseException` from `abort()` drops the abort exception (the cancellation wins, deliberate, see the comment in `_run_slot`); a cancellation during `open` is handled by `_run_slot`, which tears down and logs `cancelled` or `shutting_down`.
+
+**Frame-local fixes found by Property 10 (task 8.6), 2026-11-17.** Property 10 found four places where a traceback frame still held a value:
+
+1. `CallService._run_slot` clears `run.bound` in its outer `finally`.
+2. `_Guarded.string` clears `text` in a `try/finally`, including the path where the abort check raises.
+3. `config.parse_bindings` drops its `environ` reference before it raises `StartupError`.
+4. `ConnectorSession.string` clears `text` the same way (found by audit, under the standing approval).
+
+Test-only changes to the scanner and the traceback filter: an empty `SecretBox` merged dict is skipped only when it is empty at scan time; Fake_Host objects are opaque to the scanner; a `Screen` held directly in a publisher frame is still a finding; the traceback filter strips only lines made of whitespace, `~` and `^`, and the line number `N` of `File "...", line N`.
+
+**Mutation checks (tasks 7.8, 8.1, 8.2), 2026-11-17.** Each production file was hashed, changed, tested, restored, and verified byte-identical by hash and `git diff`:
+
+- Property 13: the key comparison in `auth.py` was made always succeed. The test failed as required; the counterexample was a wrong key in `X-API-Key` that was accepted.
+- Property 5: the first supplied Input was copied into every response body in `calls.py`. The test failed; both the leak check and the MCP output schema caught it.
+- Property 6: the first supplied Input was logged at DEBUG in `calls.py`. The test failed.
+
+Task 7.0 (the worker `done` event) is described in the section above.
 
 **Dead fields removed (task 5.2)**
 

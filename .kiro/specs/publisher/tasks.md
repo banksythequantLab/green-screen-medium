@@ -2,7 +2,7 @@
 
 ## Overview
 
-Implement the `greenscreen.publisher` Python 3.11+ package from `requirements.md` and `design.md` in this folder. One process loads every Flow and publishes each as an MCP tool and a REST endpoint. Both front ends call one `CallService`. The plan is sized for three working days (about 24 hours) and builds the cheapest vertical slice first: one Flow over REST and MCP on the Fake_Host by the end of day one.
+Implement the `greenscreen.publisher` Python 3.11+ package from `requirements.md` and `design.md` in this folder. One process loads every Flow and publishes each as an MCP tool and a REST endpoint. Both front ends call one `CallService`. The plan is sized for three working days (about 25 hours) and builds the cheapest vertical slice first: one Flow over REST and MCP on the Fake_Host by the end of day one.
 
 ### Estimates and order
 
@@ -18,9 +18,10 @@ Implement the `greenscreen.publisher` Python 3.11+ package from `requirements.md
 | 8 | Property tests, group B: Properties 5, 6, 7, 8, 9, 10, 14 | 3.5 | 3 |
 | 9 | Checkpoint, end of the properties (timing and count) | 0.5 | 3 |
 | 10 | Perf test, live integration test, static rule tests | 2.0 | 3 |
-| | **Total** | **24.75** | |
+| 11 | Final checkpoint (added 2026-11-17, 0.25 h) | 0.25 | 3 |
+| | **Total** | **25.0** | |
 
-Day one is tasks 1 to 4 (9.0 hours, the slice). Day two is tasks 5 and 6, then the start of task 7. Day three is the rest of 7, then 8, 9 and 10.
+Day one is tasks 1 to 4 (9.0 hours, the slice). Day two is tasks 5 and 6, then the start of task 7. Day three is the rest of 7, then 8, 9, 10 and 11.
 
 ### Rules for every task
 
@@ -29,7 +30,7 @@ Day one is tasks 1 to 4 (9.0 hours, the slice). Day two is tasks 5 and 6, then t
 - Screens come only from `captures/` through `tests/flow_support.py` helpers. No task captures, writes or adds a screen that holds a typed password. No task writes a credential, an API key or a Probe_Value into any file. `TK5_USERNAME` and `TK5_PASSWORD` are read only by the integration test (task 10.2). `.kiro` is never git-ignored.
 - The Publisher does not recover a locked TSO user id and adds no `RECONNECT`, retry or reaper (Requirement 23.7). Nothing in this plan builds anything under "What this design deliberately does not build". The design does not call for a README section, so none is planned.
 - Every property test is exactly one `@given` test with `@settings(max_examples=100, deadline=None)` or more, and its first line is the comment `# Feature: publisher, Property N: <title>`. Every property test task is required.
-- Time budget (Requirement 20.17): the publisher property modules take under 60 seconds together and the whole `tests/property` suite under 150 seconds. The limits were raised from 25 and 115 seconds on 2026-11-17 by the user's decision, after the Property 12 and 13 measurements. No test is trimmed and `max_examples` is never lowered below 100 to save time.
+- Time budget (Requirement 20.17): the publisher property modules take under 120 seconds together and the whole `tests/property` suite under 240 seconds. The limits were raised from 25 and 115 seconds to 60 and 150 seconds on 2026-11-17 by the user's decision, after the Property 12 and 13 measurements, and to 120 and 240 seconds the same day, after a clean serial run of the 14 publisher property modules took 74.7 s (pytest-reported; slowest: Property 6 15.2 s, Property 14 13.4 s, Property 11 9.0 s) and the user's `pytest -m "not integration"` run gave 1940 passed, 4 skipped, 0 failed in 301 s on a loaded machine. No test is trimmed and `max_examples` is never lowered below 100 to save time.
 - One-off mutation checks (tasks 7.8, 8.1, 8.2) change production code temporarily. They are verification steps, not permanent tests. The executor records the file hash (or `git diff` state) before, restores the file afterwards, verifies that the file is byte-identical to its state before the mutation, and reports the result. A production file left changed is a failure of the task.
 - `pyproject.toml` is touched in task 1.1 only. The 31-package `publish` extra is approved; the environment install happens in task 1.1 only.
 - The demo runs with `GS_PUBLISH_FLOWS=tk5-system-info`, because `tk5-logon` leaves the user id logged on and locked. Unset or empty `GS_PUBLISH_FLOWS` still publishes every Loaded_Flow. Tests set the variable through the injected environment mapping and never rely on the process environment.
@@ -255,25 +256,33 @@ Day one is tasks 1 to 4 (9.0 hours, the slice). Day two is tasks 5 and 6, then t
     - `tests/property/test_publisher_bindings.py`; `binding_envs()` over generated Flows, generated `GS_PUBLISH_FLOWS` values (valid, empty items, duplicates, unknown names, Flows left unpublished) and variables compared with a small independent model of Requirements 1.9 to 1.15 and 22 (including `flow_not_published`); an accepted run's registry holds exactly the selected Flows in loading order; accepted runs have no bound name in any schema, `tools/list` or OpenAPI document; stopped runs name the variable, Flow or family and the rule; no Leak_Form in startup stdout and stderr, in DEBUG records of startup and shutdown, or in `/health`; no session in either case
     - **Validates: Requirements 1.9, 1.10, 1.11, 1.12, 1.13, 1.14, 1.15, 22.1, 22.3, 22.4, 22.5, 22.6, 22.7, 22.8, 22.9, 22.10, 22.12, 7.8**
 
-- [-] 9. Checkpoint - properties complete
-  - Run `pytest tests/property --durations=10` and require that all 14 publisher property tests pass, that the publisher property modules take under 60 seconds together and the whole `tests/property` suite under 150 seconds with no network connection and no subprocess (limits raised from 25 and 115 seconds on 2026-11-17 by the user's decision, after the Property 12 and 13 measurements; this replaces the whole-suite limit of flow-runtime Requirement 19.9); never trim tests and never lower `max_examples` below 100 to save time. If over budget, report it to the user instead of trimming. Record the timings in the task notes.
+- [x] 9. Checkpoint - properties complete
+  - Run `pytest tests/property --durations=10` and require that all 14 publisher property tests pass, that the publisher property modules take under 120 seconds together and the whole `tests/property` suite under 240 seconds with no network connection and no subprocess (limits raised from 25 and 115 seconds to 60 and 150 seconds, and then to 120 and 240 seconds, on 2026-11-17 by the user's decisions; the clean serial run of the 14 modules took 74.7 s; this replaces the whole-suite limit of flow-runtime Requirement 19.9); never trim tests and never lower `max_examples` below 100 to save time. If over budget, report it to the user instead of trimming. Record the timings in the task notes.
   - Run the full `pytest -m "not integration"` and require no failure and no edit to a pre-existing test file.
   - Ensure all tests pass, ask the user if questions arise.
   - _Requirements: 20.1, 20.17, 20.18_
 
-- [ ] 10. Perf test, live integration test, static rule tests (about 2.0 h, day 3)
-  - [ ] 10.1 Write the `recognize` perf test
+- [x] 10. Perf test, live integration test, static rule tests (about 2.0 h, day 3)
+  - [x] 10.1 Write the `recognize` perf test
     - `tests/unit/test_publisher_perf.py` marked `@pytest.mark.perf` (already registered in `pyproject.toml`; follow the sibling convention that it is skipped unless `GS_RUN_PERF=1`): recognize each of `tk5-logon`, `tso-password-prompt`, `ispf-primary-menu` and `tso-ready` 200 times with the bundled Signatures and fail when the median of one call on any is above 5 ms
     - _Requirements: 17.1, 17.4_
 
-  - [ ] 10.2 Write the live integration test
+  - [x] 10.2 Write the live integration test
     - `tests/integration/test_publisher_live.py` marked `@pytest.mark.integration`: build the app with the default Session_Factory and the Flow `tk5-system-info`, call `POST /flows/tk5-system-info` through the ASGI client; skip with a message naming each missing variable when `TK5_USERNAME` or `TK5_PASSWORD` is unset or empty, before any connection, and skip when `host_reachable` reports the host down; the test (not the Publisher) reads the variables and passes them as Input values or as Binding_Variables for the app under test; `GS_MAX_CONCURRENCY` stays 1
     - Assert `USERID` equals `TK5_USERNAME` ignoring case and `SYSTEMID` and `RELEASE` are non-blank; assert the password (and, at 4 or more characters, its hex, base64 and URL-encoded forms from `leak_forms`) is in no response and in no DEBUG record of any logger; assert no `s3270` or `ws3270` process started by the test is still running. No credential in the file, no capture of a typed-password screen, no account recovery
     - _Requirements: 21.1, 21.2, 21.3, 21.4, 21.5, 21.6, 7.10_
 
-  - [ ] 10.3 Write the static rule tests
-    - `tests/unit/test_publisher_static.py`, file reads only: no `TK5_USERNAME`, `TK5_PASSWORD` or other credential variable read in `greenscreen/publisher`; `os.environ` read only in `cli.py` and `config.py` (Requirement 22.11); no `print(`, `traceback.print`, `logger.exception` or `exc_info=` in the package; no cache of `ScreenView` or `recognize` results and no change to `greenscreen/recognizer` for caching; `.gitignore` does not hide `.kiro`; no tracked file holds a non-empty `GS_API_KEY` or `GS_BIND_` value (`.env.example` has names only, and `GS_PUBLISH_FLOWS` there is empty or holds only the Flow name `tk5-system-info`); the string `cancelled` occurs in `greenscreen/publisher` only in `calls.py` (the log-only outcome) and in no message, status or schema table
-    - _Requirements: 7.7, 7.10, 8.4, 15.6, 15.7, 17.1, 18.6, 22.11_
+  - [x] 10.3 Write the static rule tests
+    - `tests/unit/test_publisher_static.py`, file reads only: no `TK5_USERNAME`, `TK5_PASSWORD` or other credential variable read in `greenscreen/publisher`; `os.environ` read only in `cli.py` and `config.py` (Requirement 22.11); no `traceback.print`, `logger.exception` or `exc_info=` in the package; no call of `print` in `greenscreen/publisher` unless it passes a keyword argument `file` whose value is the attribute `sys.stderr`, checked by walking each module with `ast` (decision of 2026-11-17). Self-tests on source snippets: a bare `print(x)` fails, `print(x, file=sys.stdout)` fails, `print(x, file=sys.stderr)` passes. The startup error messages in `cli.py` are printed this way; no cache of `ScreenView` or `recognize` results and no change to `greenscreen/recognizer` for caching; `.gitignore` does not hide `.kiro`; no tracked file holds a non-empty `GS_API_KEY` or `GS_BIND_` value (`.env.example` has names only, and `GS_PUBLISH_FLOWS` there is empty or holds only the Flow name `tk5-system-info`); the string `cancelled` occurs in `greenscreen/publisher` only in `calls.py` (the log-only outcome) and in no message, status or schema table
+    - _Requirements: 7.7, 7.10, 8.4, 8.6, 15.4, 15.6, 15.7, 17.1, 18.6, 22.11_
+
+- [x] 11. Final checkpoint (about 0.25 h, day 3)
+  - Run `pytest -m "not integration"` and `pytest tests/property --durations=10`. Budgets: the publisher property modules under 120 seconds together and `tests/property` under 240 seconds (Requirement 20.17). Report the timings. If a budget is missed, report it to the user and never trim a test or lower `max_examples` below 100
+  - Run the integration test `tests/integration/test_publisher_live.py` twice: once with `TK5_USERNAME` and `TK5_PASSWORD` set (against the live host, when reachable) and once with them unset or empty. Without them it must skip cleanly with a message naming each missing variable, and make no connection
+  - Confirm that no `s3270` or `ws3270` process remains running after the runs
+  - Confirm that `git diff` is empty for `greenscreen/connector`, `greenscreen/recognizer` and `greenscreen/flow`, and that `pyproject.toml` is unchanged since commit 19a5091 (`git diff 19a5091 -- pyproject.toml` is empty)
+  - Ensure all tests pass, ask the user if questions arise.
+  - _Requirements: 15.6, 18.1, 18.3, 20.17, 21.1, 21.2, 21.3, 21.4, 21.5, 21.6_
 
 ## Notes
 
@@ -283,7 +292,8 @@ Day one is tasks 1 to 4 (9.0 hours, the slice). Day two is tasks 5 and 6, then t
 - `tasks.meta.json` is written by the property-test status tool when tests run, as in the sibling specs, so it is not authored here.
 - Requirement 17.2, 17.3 and 17.5 (the recorded decision and measurements) and Requirement 18.5 (the licence list) are documentation already in the design; no task is needed.
 - Account-lock recovery is not planned (Requirement 23.7). Task 2.2 marks the affected calls with `session_clean` only.
-- Hours: 24.0 total, up from 23.5. The allow-list and the `cancelled` outcome fit inside the existing tasks as sub-bullets. After the day-one checkpoint, task 5.2 gained sub-bullets (rejection log records and the hook `log_rejection`, removal of the dead `CallService` fields, the starlette and uvicorn re-check) and grew by 0.5 hour (3.5 to 4.0); no top-level task was added and the dependency graph is unchanged.
+- Task 11, the final checkpoint after task 10, was added on 2026-11-17 and adds 0.25 h (24.75 to 25.0 h). The Task Dependency Graph gains wave 17 for it.
+- Hours (earlier note): 24.0 total, up from 23.5. The allow-list and the `cancelled` outcome fit inside the existing tasks as sub-bullets. After the day-one checkpoint, task 5.2 gained sub-bullets (rejection log records and the hook `log_rejection`, removal of the dead `CallService` fields, the starlette and uvicorn re-check) and grew by 0.5 hour (3.5 to 4.0); no top-level task was added and the dependency graph is unchanged.
 - Hour estimates are tight for the amount of test code; task 7 and task 8 carry most of the risk. If day three runs short, the first lever in task 9 is to draw one front end per example in Properties 3, 5 and 6.
 
 ### Points for review
@@ -312,7 +322,8 @@ Day one is tasks 1 to 4 (9.0 hours, the slice). Day two is tasks 5 and 6, then t
     { "id": 13, "tasks": ["7.0b"] },
     { "id": 14, "tasks": ["7.5", "7.7"] },
     { "id": 15, "tasks": ["8.1", "8.2", "8.3", "8.4", "8.5", "8.6", "8.7"] },
-    { "id": 16, "tasks": ["10.1", "10.2", "10.3"] }
+    { "id": 16, "tasks": ["10.1", "10.2", "10.3"] },
+    { "id": 17, "tasks": ["11"] }
   ]
 }
 ```

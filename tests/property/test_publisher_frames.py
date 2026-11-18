@@ -16,19 +16,30 @@ One generated scenario per example. Each scenario makes an exception leave a fun
 * ``bindings``: ``parse_bindings`` fails at startup with Probe_Values in the environment.
 
 The frame scanner of ``tests/publisher_support.py`` checks every ``greenscreen.publisher``
-frame (the objects of the ``BoundValues`` and ``PublishedFlow`` classes are opaque, as the
-requirements permit) for a Probe_Value, a ``Screen`` and the merged mapping handed to
-``run_flow`` (by identity). ``traceback.format_exception`` with chain is searched for every
-Leak_Form of every Probe_Value.
+frame for a Probe_Value, a ``Screen`` and the merged mapping handed to ``run_flow`` (by
+identity). ``traceback.format_exception`` with chain is searched for every Leak_Form of
+every Probe_Value.
+
+Scanner rules:
+
+* The objects of the ``BoundValues`` and ``PublishedFlow`` classes are opaque, as the
+  requirements permit.
+* The ``_merged`` dict of a ``SecretBox`` is skipped only when it is empty at scan time. A
+  non-empty one is walked.
+* The Fake_Host objects (``FakeHost``, ``HostSession`` and their scripted internals) are
+  opaque.
+* A ``Screen`` is a finding wherever it is found, also when it is held directly as a local
+  of a publisher frame.
 
 The probes are made-up values, never credentials. A failure message names the path, the
 frame function, the local and the kind of hit, never a value, and the example data is
 hidden from Hypothesis's report for the same reason.
 
-Two decorations of a formatted traceback cannot carry a value and collide with the probe
-alphabet, so they are normalised before the Leak_Form search: the ``~~~^^^`` marker lines
-(the probes use ``~`` and ``^``) and the line numbers of the ``File ..., line N`` headers
-(an ``int`` probe of four digits can equal one).
+Traceback filter: a formatted traceback is normalised before the Leak_Form search in two
+ways only. Lines that consist solely of whitespace, ``~`` and ``^`` are removed (the
+``~~~^^^`` marker lines, which collide with the probe alphabet), and in a
+``File "...", line N`` header only the number ``N`` is replaced (an ``int`` probe of four
+digits can equal it). Nothing else is stripped or changed.
 """
 from __future__ import annotations
 
