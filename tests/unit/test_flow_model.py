@@ -26,7 +26,13 @@ PYPROJECT = Path(__file__).resolve().parents[2] / "pyproject.toml"
 # The lists present when task 10.1 started.
 EXPECTED_DEPENDENCIES = ["pyyaml>=6.0.3"]
 EXPECTED_OPTIONAL = {
-    "dev": ["hypothesis>=6.170.15", "pytest>=8.0", "pyyaml>=6.0.3"],
+    "publish": ["mcp>=2.3,<3", "fastapi>=0.163,<1"],
+    "dev": [
+        "greenscreen-connector[publish]",
+        "hypothesis>=6.170.15",
+        "pytest>=8.0",
+        "pyyaml>=6.0.3",
+    ],
 }
 
 
@@ -248,6 +254,7 @@ def test_flow_errors_are_not_connector_or_recognizer_errors(cls):
 
 
 def test_pyproject_dependency_lists_unchanged():
+    # The `publish` extra and the dev entry for it are allowed by publisher Requirement 18.3.
     project = tomllib.loads(PYPROJECT.read_text(encoding="utf-8"))["project"]
     assert project["dependencies"] == EXPECTED_DEPENDENCIES
     assert project["optional-dependencies"] == EXPECTED_OPTIONAL

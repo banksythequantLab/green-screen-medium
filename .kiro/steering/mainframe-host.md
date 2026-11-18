@@ -84,9 +84,11 @@ code depends on them.
   Recovery (verified): send Clear(); the logon screen returns.
 - A logon abandoned midway can also leave `IKJ56700A ENTER USERID -` showing
   on the next connection; typing the userid there continues the logon.
-- Disconnecting while logged on ends the TSO session on this host (the log
-  shows the user ENDED and PURGED within seconds). A clean exit is still
-  preferred: ISPF option X, then LOGOFF at READY.
+- Disconnecting while logged on: on 2026-11-15 the host log showed the user ENDED
+  and PURGED within seconds. On 2026-11-17 the opposite was observed (see the last
+  section): the user id stayed IN USE for minutes after a disconnect from the ISPF
+  menu. The difference is unexplained. Do not rely on a disconnect to end the
+  session; always exit with ISPF option X, then LOGOFF at READY.
 - Clean exit verified through the Connector: type X at `Option ===>`, Enter,
   wait for `READY`, type LOGOFF, Enter; the logon screen returns and the host
   log shows `LOGGED OFF`. Whole logon-to-logoff run took under 6 seconds.
@@ -147,3 +149,54 @@ code depends on them.
   (MCP + REST) must not include it in any tool result or HTTP body.
 - A traceback's frame locals count as output: no frame inside `greenscreen.flow` may
   hold an input mapping, a supplied value or a `Screen` when an error leaves `run_flow`.
+
+
+## Verified 2026-11-17: one TSO session per user id, and dropped connections
+
+- A second logon for a user id that is already logged on is refused with no password
+  prompt. The screen shows `IKJ56425I LOGON REJECTED, USERID <id> IN USE` on row 0
+  (cursor 1,0), and after one more Enter also `IKJ56400A ENTER LOGON OR LOGOFF-` on
+  row 2 (cursor 3,0). No bundled signature matches either screen, so a flow stops with
+  `unknown_screen` at the password-prompt Expect step.
+- Closing the connection without `LOGOFF` (Connector `close()`, or killing s3270) leaves
+  the TSO session alive. The user id stayed `IN USE` for at least three minutes and did
+  not clear by itself. Every later logon for that id failed.
+- Recovery that worked: at `Logon ===>` type `<id> RECONNECT`, Enter, give the password
+  at `IKJ56714A ENTER CURRENT PASSWORD FOR <id>-`. The host answers
+  `IKT00300I LOGON RECONNECT SUCCESSFUL, SESSION ESTABLISHED`; Enter until the ISPF menu
+  repaints (one `***` pause seen), then `X`, then `LOGOFF` at `READY`.
+
+### Rules that follow
+
+- With one demo account, the publisher runs one call at a time (`GS_MAX_CONCURRENCY=1`).
+- Any path that ends a call without the flow's `finally` logoff (call timeout, abort,
+  process kill, shutdown) locks the account for the next caller. The publisher needs a
+  recovery path for this before it is exposed publicly.
+
+
+## Verified 2026-11-17 (evening): reconnect from the IN USE screen (captures in /captures/incoming)
+
+Run twice with the same result, model 3279-2 (24x80), account locked by a dropped
+connection each time. No capture holds the password (checked in plain and hex form).
+
+1. `tso-userid-in-use`: after the user id and Enter at `Logon ===>`. Row 0 holds
+   ` IKJ56425I LOGON REJECTED, USERID <id> IN USE`; fields `SF(c0=c8)` at r0c0 and an
+   unprotected `SF(c0=c0)` at r0c47; cursor (1,0). No bundled signature matches.
+2. Typing `LOGON <id> RECONNECT` there and Enter gives `tso-reconnect-password-prompt`:
+   row 1 shows the typed command, row 2 ` IKJ56714A ENTER CURRENT PASSWORD FOR <id>-`,
+   hidden field `SF(c0=cc)` at r3c0, cursor (3,1). This is the same prompt text as
+   `tso-password-prompt` but two rows lower, so that signature does not match it.
+3. Password and Enter gives `tso-reconnect-ok`: row 0
+   ` IKT00300I LOGON RECONNECT SUCCESSFUL, SESSION ESTABLISHED`, cursor (1,0). The
+   hidden cells did not hold the password on this screen. The host waited: after 4 s
+   nothing more arrived, and it needed one Enter.
+4. That Enter gives a `***` pause under the same message (recognized as `tso-pause`),
+   one more Enter gives the ISPF menu (`ispf-primary-menu`), then `X` gives
+   `tso-ready` and `LOGOFF` returns to `tk5-logon`. All four are recognized by the
+   bundled signatures.
+
+- Running s3270 without `-model 3279-2` gives a 43x80 screen on this host. The
+  Connector always passes the model; capture tooling must too.
+- The capture inventory tests pin exactly seven files in `/captures`, so the three new
+  captures wait in `/captures/incoming` until a spec adds their signatures and updates
+  those tests.

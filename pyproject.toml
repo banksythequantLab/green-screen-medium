@@ -13,11 +13,19 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+publish = [
+    "mcp>=2.3,<3",
+    "fastapi>=0.163,<1",
+]
 dev = [
+    "greenscreen-connector[publish]",
     "hypothesis>=6.170.15",
     "pytest>=8.0",
     "pyyaml>=6.0.3",
 ]
+
+[project.scripts]
+greenscreen-publish = "greenscreen.publisher.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

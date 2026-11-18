@@ -26,7 +26,9 @@ EXPECTED_YAML = {
 
 EXPECTED_DEPENDENCIES = ["pyyaml>=6.0.3"]
 EXPECTED_OPTIONAL = {
+    "publish": ["mcp>=2.3,<3", "fastapi>=0.163,<1"],
     "dev": [
+        "greenscreen-connector[publish]",
         "hypothesis>=6.170.15",
         "pytest>=8.0",
         "pyyaml>=6.0.3",
@@ -58,6 +60,7 @@ def test_pyproject_declares_flow_package_data() -> None:
 
 
 def test_pyproject_dependencies_are_unchanged() -> None:
+    # The `publish` extra and the dev entry for it are allowed by publisher Requirement 18.3.
     project = _pyproject()["project"]
     assert project["dependencies"] == EXPECTED_DEPENDENCIES
     assert project["optional-dependencies"] == EXPECTED_OPTIONAL

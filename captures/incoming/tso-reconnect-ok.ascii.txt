@@ -1,0 +1,26 @@
+data:  IKT00300I LOGON RECONNECT SUCCESSFUL, SESSION ESTABLISHED                      
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+U F U C(192.168.68.72) I 2 24 80 1 0 0x0 0.001
+ok

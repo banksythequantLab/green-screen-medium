@@ -29,7 +29,13 @@ def test_runtime_dependencies_exact() -> None:
 
 def test_dev_extra_unchanged() -> None:
     dev = _pyproject()["project"]["optional-dependencies"]["dev"]
-    assert dev == ["hypothesis>=6.170.15", "pytest>=8.0", "pyyaml>=6.0.3"]
+    # The extra `greenscreen-connector[publish]` entry is allowed by publisher Requirement 18.3.
+    assert dev == [
+        "greenscreen-connector[publish]",
+        "hypothesis>=6.170.15",
+        "pytest>=8.0",
+        "pyyaml>=6.0.3",
+    ]
 
 
 def test_package_data_entries() -> None:
