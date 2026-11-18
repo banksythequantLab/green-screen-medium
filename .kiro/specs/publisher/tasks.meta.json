@@ -1,5 +1,23 @@
 {
-  "pbtResults": {},
+  "pbtResults": {
+    "7.2 Write property test for schema validity (Property 1)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794967750804
+    },
+    "7.3 Write property test for schema and validator agreement (Property 2)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794967760103
+    },
+    "7.5 Write property test for error mapping totality (Property 4)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794968062822
+    },
+    "7.7 Write property test for the session lifecycle (Property 12)": {
+      "status": "failed",
+      "failingExample": "plan_list=[Plan(kind='ok', failure=Failure(at='close', exc=InjectedBase, n=1, session=None, message='injected'))]. A single successful Call whose session.close() raises a BaseException that is not an Exception. In greenscreen/publisher/calls.py _worker's finally, `run.session.close()` is guarded only by `except Exception`, so the BaseException skips `run.loop.call_soon_threadsafe(run.done.set)` and escapes the worker thread (PytestUnhandledThreadExceptionWarning). execute() never finishes within the 3 s hard limit; it would wait for the full Call deadline, then report call_timeout and hold the Slot that long. The session itself was closed once. With this one case excluded (diagnostic only, not committed), all 100 examples pass, BaseException at factory/open/Session methods included.",
+      "lastRunTimestamp": 1794968715538
+    }
+  },
   "executionHistory": {
     "1.1 Packaging: the `publish` extra, the console script and the package skeleton": [
       {
@@ -274,6 +292,97 @@
         "executionId": "dc247dcb-de12-4dee-a1b9-49c68f6d63f1",
         "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
         "timestamp": 1794966324377
+      }
+    ],
+    "7.1 Add shared test helpers and strategies": [
+      {
+        "executionId": "75104af0-aa27-4ab1-adf6-d58de0754753",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794967071969
+      },
+      {
+        "executionId": "75104af0-aa27-4ab1-adf6-d58de0754753",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794967663820
+      }
+    ],
+    "7.2 Write property test for schema validity (Property 1)": [
+      {
+        "executionId": "75104af0-aa27-4ab1-adf6-d58de0754753",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794967668993
+      },
+      {
+        "executionId": "75104af0-aa27-4ab1-adf6-d58de0754753",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794968433111
+      }
+    ],
+    "7.3 Write property test for schema and validator agreement (Property 2)": [
+      {
+        "executionId": "75104af0-aa27-4ab1-adf6-d58de0754753",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794967669142
+      },
+      {
+        "executionId": "75104af0-aa27-4ab1-adf6-d58de0754753",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794968433462
+      }
+    ],
+    "7.4 Write property test for front-end parity (Property 3)": [
+      {
+        "executionId": "75104af0-aa27-4ab1-adf6-d58de0754753",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794967669315
+      },
+      {
+        "executionId": "75104af0-aa27-4ab1-adf6-d58de0754753",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794968433772
+      }
+    ],
+    "7.5 Write property test for error mapping totality (Property 4)": [
+      {
+        "executionId": "75104af0-aa27-4ab1-adf6-d58de0754753",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794967669751
+      },
+      {
+        "executionId": "75104af0-aa27-4ab1-adf6-d58de0754753",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794968434072
+      }
+    ],
+    "7.6 Write property test for the limiter (Property 11)": [
+      {
+        "executionId": "75104af0-aa27-4ab1-adf6-d58de0754753",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794967670107
+      },
+      {
+        "executionId": "75104af0-aa27-4ab1-adf6-d58de0754753",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794968434239
+      }
+    ],
+    "7.7 Write property test for the session lifecycle (Property 12)": [
+      {
+        "executionId": "75104af0-aa27-4ab1-adf6-d58de0754753",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794968434535
+      }
+    ],
+    "7.8 Write property test for authentication (Property 13)": [
+      {
+        "executionId": "75104af0-aa27-4ab1-adf6-d58de0754753",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794968434984
+      },
+      {
+        "executionId": "75104af0-aa27-4ab1-adf6-d58de0754753",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794968737621
       }
     ]
   }

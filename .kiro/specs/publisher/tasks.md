@@ -151,43 +151,43 @@ Day one is tasks 1 to 4 (9.0 hours, the slice). Day two is tasks 5 and 6, then t
     - _Requirements: 1.11, 1.12, 1.13, 8.7, 13.5, 13.6, 14.9, 14.11, 15.4, 15.5, 15.8, 16.1, 16.2, 16.3, 16.4, 16.5, 19.5, 19.7, 19.10, 22.7_
 
 - [ ] 7. Property tests, group A (about 3.0 h, days 2 to 3)
-  - [ ] 7.1 Add shared test helpers and strategies
+  - [x] 7.1 Add shared test helpers and strategies
     - Extend `tests/publisher_support.py` with `LogCapture` (root logger at level 1 plus a recording handler on every non-propagating logger in `logging.root.manager.loggerDict`, recording the formatted message, `args`, `exc_text`, `stack_info` and formatted `exc_info`), the frame scanner of the design (walks the traceback and its chain, treats `BoundValues` and `PublishedFlow` as opaque, flags a probe in any local or container, and identity with a recorded mapping), and a clients helper (ASGI `httpx2` client inside the lifespan, in-memory MCP `Client` for `legacy` and `auto`)
     - Create `tests/property/_publisher_strategies.py`: `probes()` (at least 4 printable ASCII characters, alphabet disjoint from fixed text; `int` probes of at least 4 digits), `leak_forms(v)` (plain, JSON-escaped, URL-quoted and quote-plus, hex lower and upper with and without spaces, base64 and URL-safe base64 with and without padding), `bound_sets`, `fake_host_plans`, `bad_requests`, `key_headers`, `binding_envs`
     - Create `tests/unit/test_publisher_helpers.py` (task 1.5 owns the Fake_Host test file): the leak forms of a known value are spelled out literally, `LogCapture` sees records from a non-propagating logger, the frame scanner flags a planted probe and ignores a `BoundValues`
     - _Requirements: 7.1, 7.2, 7.6, 20.1, 20.10, 20.16_
 
-  - [ ] 7.2 Write property test for schema validity (Property 1)
+  - [x] 7.2 Write property test for schema validity (Property 1)
     - **Property 1: Schemas are valid, deterministic, free of values and embedded unchanged**
     - `tests/property/test_publisher_schema.py`, drawing `flows()` from `tests/property/_flow_strategies.py` and bound subsets; assert draft 2020-12 validity, determinism, `writeOnly` exactly on secrets, no forbidden keys, and equality with the OpenAPI document and `tools/list` schemas
     - **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.9, 2.10, 2.11, 2.12, 12.2, 12.5, 12.7, 22.1**
 
-  - [ ] 7.3 Write property test for schema and validator agreement (Property 2)
+  - [x] 7.3 Write property test for schema and validator agreement (Property 2)
     - **Property 2: The schema never rejects what the validator accepts**
     - `tests/property/test_publisher_schema_agree.py`, generated JSON mappings over `flows()` and bound subsets (fractional floats only; integral floats are covered by a unit test in `tests/unit/test_publisher_registry.py`); one-directional agreement as in Requirement 20.3, and the all-bound Flow accepting only `{}`
     - **Validates: Requirements 2.8, 20.3, 22.1, 22.2**
 
-  - [ ] 7.4 Write property test for front-end parity (Property 3)
+  - [x] 7.4 Write property test for front-end parity (Property 3)
     - **Property 3: Both front ends return the same body, and a success body fits its schema**
     - `tests/property/test_publisher_parity.py`, over `MINI` and `chain_scripts()` outcomes through REST and MCP; same outputs or same code, `step_index`, `kind`, `expected`, `summary` and Audit_Summary; every Success_Body validates against its Success_Schema
     - **Validates: Requirements 4.6, 5.1, 5.2, 5.3, 5.4, 5.5, 11.1, 11.7, 14.2, 14.7**
 
-  - [ ] 7.5 Write property test for error mapping totality (Property 4)
+  - [x] 7.5 Write property test for error mapping totality (Property 4)
     - **Property 4: Error mapping is total, single-valued and fixed-text**
     - `tests/property/test_publisher_errors.py`, over all Reason_Codes, Publisher_Codes and injected exception classes at open, at each Session call and at close; one code, one status, `isError` result with the same body, fixed message except `input_invalid`, allowed members only, `cancelled` in no body, status table or message table, no `mcp` ERROR record, a `BaseException` re-raised unchanged after close and Slot release
     - **Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.8, 8.8, 14.3, 14.6**
 
-  - [ ] 7.6 Write property test for the limiter (Property 11)
+  - [x] 7.6 Write property test for the limiter (Property 11)
     - **Property 11: The Limiter never lets more than the limit through**
     - `tests/property/test_publisher_limiter.py`, limits 1 to 64, concurrent Calls over REST and MCP with generated outcomes; in-flight never above the limit, Slots and live sessions return to zero, rejected Calls are `busy` and opened no session
     - **Validates: Requirements 9.1, 9.2, 9.3, 9.6**
 
-  - [ ] 7.7 Write property test for the session lifecycle (Property 12)
+  - [-] 7.7 Write property test for the session lifecycle (Property 12)
     - **Property 12: Session lifecycle**
     - `tests/property/test_publisher_lifecycle.py`, Fake_Host plans including failures at every point, blocked reads with deadline expiry, cancellation and a `BaseException`; each created session closed exactly once before the Slot is released, no reuse, zero sessions for a Call rejected before the Slot, and no key after `call_timeout` was returned
     - **Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 9.3, 9.4, 10.3, 10.4**
 
-  - [ ] 7.8 Write property test for authentication (Property 13)
+  - [x] 7.8 Write property test for authentication (Property 13)
     - **Property 13: Authentication**
     - `tests/property/test_publisher_auth.py`, over wrong keys in either carrier, differing pairs, malformed `Authorization`, empty and repeated `X-API-Key`, valid keys, and the disabled-auth Host header cases, against `extract_key` as the model; zero sessions, no body read, no value in the response, over Flow routes, `/openapi.json`, `/docs` and `/mcp`
     - **Validates: Requirements 13.2, 13.3, 13.7, 13.9, 13.11, 13.12**

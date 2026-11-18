@@ -21,10 +21,14 @@ Counting rules
 """
 from __future__ import annotations
 
+import contextlib
 import itertools
+import logging
 import threading
-from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+import traceback
+import types
+from collections.abc import AsyncIterator, Callable, Iterable, Sequence
+from dataclasses import dataclass, field
 from typing import Any
 
 from greenscreen.connector import (
@@ -419,3 +423,282 @@ def system_info_states() -> list[ScriptedState]:
         ScriptedState(capture("tso-ready")),
         ScriptedState(capture("tk5-logon")),
     ]
+
+
+# --------------------------------------------------------------------------
+# LogCapture (task 7.1)
+# --------------------------------------------------------------------------
+
+_STANDARD_RECORD_ATTRS = frozenset(
+    logging.LogRecord("n", 0, "p", 0, "m", (), None).__dict__
+) | {"message", "asctime"}
+
+
+@dataclass(frozen=True)
+class CapturedRecord:
+    """One log record, copied as text so that the record object is not kept alive.
+
+    ``fields`` holds the non-standard attributes (the ``extra`` of the call), which is
+    where the Call_Log_Record carries its members.
+    """
+
+    logger: str
+    level: int
+    message: str
+    args: tuple[str, ...]  # str() and repr() of every element of record.args
+    exc_text: str | None
+    stack_info: str | None
+    exc_info_text: str | None
+    fields: dict[str, Any] = field(default_factory=dict)
+
+    def texts(self) -> list[str]:
+        """Every string that can carry a value: message, args, exc and stack text, fields."""
+        out = [self.message, *self.args]
+        out += [t for t in (self.exc_text, self.stack_info, self.exc_info_text) if t]
+        for key, value in self.fields.items():
+            out += [str(key), str(value), repr(value)]
+        return out
+
+
+def _copy_record(record: logging.LogRecord) -> CapturedRecord:
+    try:
+        message = record.getMessage()
+    except Exception:  # a bad format call must not hide the record
+        message = f"<unformattable> {record.msg!r}"
+    raw_args = record.args
+    if isinstance(raw_args, dict):
+        elements: list[Any] = list(raw_args.values())
+    elif isinstance(raw_args, tuple):
+        elements = list(raw_args)
+    else:
+        elements = [] if raw_args is None else [raw_args]
+    args = tuple(t for a in elements for t in (str(a), repr(a)))
+    exc_info_text = None
+    if record.exc_info and record.exc_info[0] is not None:
+        exc_info_text = "".join(traceback.format_exception(*record.exc_info))
+    fields = {k: v for k, v in record.__dict__.items() if k not in _STANDARD_RECORD_ATTRS}
+    return CapturedRecord(
+        record.name, record.levelno, message, args, record.exc_text, record.stack_info,
+        exc_info_text, fields,
+    )
+
+
+class _Recorder(logging.Handler):
+    def __init__(self) -> None:
+        super().__init__(level=1)
+        self.records: list[CapturedRecord] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self.records.append(_copy_record(record))
+
+
+class LogCapture:
+    """Record every log record of every logger at level 1 (below DEBUG).
+
+    The root logger gets the level and a recording handler. A record of a logger with
+    ``propagate = False`` never reaches the root handler, so the same handler is also
+    attached to each such logger found in ``logging.root.manager.loggerDict``. Call
+    ``refresh()`` after ``build_app`` (or anything that creates loggers) to attach to
+    loggers created since ``__enter__``. Loggers with their own level (the clamp of
+    ``limit_third_party_loggers``) keep it, as in production.
+    """
+
+    def __init__(self) -> None:
+        self._handler = _Recorder()
+        self._attached: list[logging.Logger] = []
+        self._root_level = logging.NOTSET
+
+    def __enter__(self) -> "LogCapture":
+        root = logging.getLogger()
+        self._root_level = root.level
+        root.setLevel(1)
+        root.addHandler(self._handler)
+        self._attached = [root]
+        self.refresh()
+        return self
+
+    def __exit__(self, *exc_info: object) -> None:
+        for logger in self._attached:
+            logger.removeHandler(self._handler)
+        self._attached = []
+        logging.getLogger().setLevel(self._root_level)
+
+    def refresh(self) -> None:
+        """Attach to every non-propagating logger that exists now (idempotent)."""
+        for logger in list(logging.root.manager.loggerDict.values()):
+            if (
+                isinstance(logger, logging.Logger)
+                and not logger.propagate
+                and logger not in self._attached
+            ):
+                logger.addHandler(self._handler)
+                self._attached.append(logger)
+
+    @property
+    def records(self) -> list[CapturedRecord]:
+        return list(self._handler.records)
+
+    def texts(self) -> list[str]:
+        return [t for r in self.records for t in r.texts()]
+
+    def call_records(self) -> list[CapturedRecord]:
+        """The Call_Log_Records of the publisher."""
+        return [
+            r for r in self.records
+            if r.logger == "greenscreen.publisher" and r.message == "call finished"
+        ]
+
+    def find(self, forms: Iterable[str]) -> list[str]:
+        """Descriptions (logger and level, never the text) of records holding any form."""
+        wanted = [f for f in forms if f]
+        hits: list[str] = []
+        for r in self.records:
+            if any(f in t for t in r.texts() for f in wanted):
+                hits.append(f"{r.logger} level={r.level}")
+        return hits
+
+
+# --------------------------------------------------------------------------
+# Frame scanner (Property 10)
+# --------------------------------------------------------------------------
+
+_SCAN_DEPTH = 4
+_OPAQUE_NAMES = frozenset({"BoundValues", "PublishedFlow"})
+_SKIP_TYPES = (types.ModuleType, type, types.FunctionType, types.BuiltinFunctionType,
+               types.MethodType, types.CodeType, types.FrameType, types.TracebackType)
+
+
+def _holds_probe(value: object, probes: Sequence[Any]) -> bool:
+    if isinstance(value, str):
+        return any(isinstance(p, str) and p in value for p in probes)
+    if isinstance(value, (bytes, bytearray)):
+        return any(isinstance(p, str) and p.encode("utf-8") in bytes(value) for p in probes)
+    if type(value) is int:
+        return any(type(p) is int and p == value for p in probes)
+    return False
+
+
+def _scan_value(
+    value: object, probes: Sequence[Any], mappings: Sequence[object], depth: int,
+    seen: set[int], path: str, out: list[str],
+) -> None:
+    if any(value is m for m in mappings):
+        out.append(f"{path}: the mapping given to run_flow")
+        return
+    if _holds_probe(value, probes):
+        out.append(f"{path}: a probe value")
+        return
+    if isinstance(value, Screen):
+        out.append(f"{path}: a Screen")
+        return
+    if depth <= 0 or isinstance(value, _SKIP_TYPES) or id(value) in seen:
+        return
+    if type(value).__name__ in _OPAQUE_NAMES:
+        return
+    seen.add(id(value))
+    kids: list[tuple[str, object]] = []
+    if isinstance(value, dict):
+        for k, v in list(value.items()):
+            kids += [("key", k), (f"[{k!r}]" if isinstance(k, str) and len(k) < 20 else "[..]", v)]
+    elif isinstance(value, (list, tuple, set, frozenset)):
+        kids = [(f"[{i}]", v) for i, v in enumerate(list(value))]
+    else:
+        module = getattr(type(value), "__module__", "") or ""
+        if not module.startswith(("greenscreen", "tests")):
+            return  # third-party and stdlib objects: only plain containers are walked
+        for klass in type(value).__mro__:
+            for slot in getattr(klass, "__slots__", ()) or ():
+                if isinstance(slot, str) and hasattr(value, slot):
+                    kids.append((f".{slot}", getattr(value, slot)))
+        kids += [(f".{k}", v) for k, v in list(getattr(value, "__dict__", {}).items())]
+    for label, kid in kids:
+        _scan_value(kid, probes, mappings, depth - 1, seen, f"{path}{label}", out)
+
+
+def _chain(err: BaseException) -> list[BaseException]:
+    out: list[BaseException] = []
+    todo = [err]
+    while todo:
+        e = todo.pop()
+        if e is None or any(e is o for o in out):
+            continue
+        out.append(e)
+        todo += [e.__cause__, e.__context__]  # type: ignore[list-item]
+    return out
+
+
+def scan_frames(
+    err: BaseException, probes: Iterable[Any], *, mappings: Iterable[object] = ()
+) -> list[str]:
+    """Findings for every frame of ``greenscreen.publisher`` in ``err`` and its chain.
+
+    A finding names the module, the function, the local and the kind of hit, never the
+    value. ``probes`` are strings or ints. ``mappings`` are the objects handed to
+    ``run_flow``; a local that IS one of them (identity) is flagged. A ``BoundValues``
+    and a ``PublishedFlow`` are opaque: they are the permitted long-lived holders. A
+    ``Screen`` is flagged wherever it is found. Objects are walked only when their
+    class lives in ``greenscreen`` or ``tests`` (plus dict, list, tuple, set, frozenset),
+    to depth 4, so a scan stays cheap.
+    """
+    wanted = [p for p in probes if p is not None and not isinstance(p, bool)]
+    held = list(mappings)
+    out: list[str] = []
+    for e in _chain(err):
+        for frame, _lineno in traceback.walk_tb(e.__traceback__):
+            module = str(frame.f_globals.get("__name__", ""))
+            if not module.startswith("greenscreen.publisher"):
+                continue
+            where = f"{module}.{frame.f_code.co_name}"
+            seen: set[int] = set()
+            for name, value in list(frame.f_locals.items()):
+                _scan_value(value, wanted, held, _SCAN_DEPTH, seen, f"{where} local {name}", out)
+    return out
+
+
+def formatted_traceback(err: BaseException) -> str:
+    """``"".join(traceback.format_exception(err))``, which follows the chain."""
+    return "".join(traceback.format_exception(err))
+
+
+# --------------------------------------------------------------------------
+# Clients
+# --------------------------------------------------------------------------
+
+MCP_MODES: tuple[str, ...] = ("legacy", "auto")
+
+
+@contextlib.asynccontextmanager
+async def rest_client(
+    app: Any, *, headers: dict[str, str] | None = None, base_url: str = "http://test"
+) -> AsyncIterator[Any]:
+    """An ``httpx2.AsyncClient`` on the ASGI app, inside the lifespan of ``app``.
+
+    ``app`` is a ``PublisherApp`` (``app.asgi``, ``app.lifespan()``).
+    """
+    import httpx2
+
+    async with app.lifespan():
+        transport = httpx2.ASGITransport(app=app.asgi)
+        async with httpx2.AsyncClient(
+            transport=transport, base_url=base_url, headers=headers
+        ) as client:
+            yield client
+
+
+@contextlib.asynccontextmanager
+async def mcp_client(app: Any, mode: str = "auto") -> AsyncIterator[Any]:
+    """The in-memory MCP ``Client`` on ``app.server``. ``mode`` is ``legacy`` or ``auto``."""
+    from mcp import Client
+
+    async with Client(app.server, mode=mode) as client:
+        yield client
+
+
+@contextlib.asynccontextmanager
+async def mcp_http_client(http: Any, mode: str = "auto", base: str = "http://test") -> AsyncIterator[Any]:
+    """An MCP ``Client`` over Streamable HTTP through an open ``httpx2`` client."""
+    from mcp import Client
+    from mcp.client.streamable_http import streamable_http_client
+
+    async with Client(streamable_http_client(f"{base}/mcp", http_client=http), mode=mode) as client:
+        yield client

@@ -176,6 +176,14 @@ def test_variable_parts_are_matched_against_the_upper_case_normal_form():
     _fails({"GS_BIND_DEMO_FLOW__user_id": FAKE}, "unknown_input", "GS_BIND_DEMO_FLOW__user_id")
 
 
+def test_lower_case_variable_for_an_upper_case_binding_is_unknown_flow():
+    # The duplicate-binding guard was removed as unreachable: the variable name is fully
+    # determined by the matched Flow and Input, and the match is case-sensitive.
+    loaded = {"a": _flow("a", _str("u"))}
+    _fails({"GS_BIND_a__u": FAKE}, "unknown_flow", "GS_BIND_a__u", loaded=loaded)
+    assert _parse({"GS_BIND_A__U": FAKE}, loaded=loaded).names_for("a") == {"u"}
+
+
 def test_first_error_is_deterministic_in_ascending_name_order():
     message = _fails({"GS_BIND_ZZZ__X": FAKE, "GS_BIND_AAA__X": FAKE}, "unknown_flow")
     assert "GS_BIND_AAA__X" in message

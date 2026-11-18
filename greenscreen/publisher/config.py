@@ -277,7 +277,6 @@ def _bind_error(
             if "__" in norm or norm.endswith("_"):
                 return f"{flow_name}: ambiguous_name"
 
-    bound: set[tuple[str, str]] = set()
     for name, flow_part, input_part in split:
         flows = [f for f in loaded.values() if _norm(f.name) == flow_part]
         if not flows:
@@ -293,9 +292,6 @@ def _bind_error(
         if len(specs) > 1:
             return f"{_BIND_PREFIX}{flow_part}__{input_part}: ambiguous_name"
         spec = specs[0]
-        if (flow.name, spec.name) in bound:
-            return f"{name}: ambiguous_name"
-        bound.add((flow.name, spec.name))
         error = _store_value(environ, name, spec, store, flow.name)
         if error is not None:
             return error
