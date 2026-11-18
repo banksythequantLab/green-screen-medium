@@ -8,12 +8,14 @@ Requirements: 21.2, 21.5, 21.6
 
 from __future__ import annotations
 
+import contextlib
 import shutil
 import subprocess
 import sys
 import tempfile
 import tomllib
 import zipfile
+from collections.abc import Iterator
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -67,15 +69,33 @@ def test_pyproject_dependencies_are_unchanged() -> None:
     assert project["optional-dependencies"] == EXPECTED_OPTIONAL
 
 
-def test_wheel_contains_exactly_the_three_flow_yaml_files() -> None:
-    import os
-
+@contextlib.contextmanager
+def _wheel_workspace() -> Iterator[tuple[Path, Path]]:
+    """Yield (work, out) inside a temp directory removed on every exit path."""
     with tempfile.TemporaryDirectory(prefix="gs-wheel-") as tmp:
         work = Path(tmp) / "repo"
         out = Path(tmp) / "out"
         out.mkdir()
         shutil.copytree(REPO, work, ignore=_IGNORE)
+        yield work, out
 
+
+def test_wheel_workspace_is_removed_when_the_body_raises() -> None:
+    seen: list[Path] = []
+    try:
+        with _wheel_workspace() as (work, out):
+            seen.extend([work, out])
+            assert work.is_dir() and out.is_dir()
+            raise subprocess.TimeoutExpired("pip", 300)
+    except subprocess.TimeoutExpired:
+        pass
+    assert seen and not seen[0].parent.exists()
+
+
+def test_wheel_contains_exactly_the_three_flow_yaml_files() -> None:
+    import os
+
+    with _wheel_workspace() as (work, out):
         env = {
             k: v
             for k, v in os.environ.items()

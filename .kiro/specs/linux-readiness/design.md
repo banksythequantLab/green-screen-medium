@@ -420,7 +420,7 @@ Run the D1 block once per interpreter too: the answer may differ by version (Ope
 - `pip install -e ".[dev]"` resolved setuptools 84.2.1. No `wheel` package was installed.
 - `pytest -m "not integration"`: 2113 passed, 1 failed, 5 skipped in 109 s. No "Too many open files". `test_fake_s3270_descriptors` ran and passed. The Wheel_Test passed. The one failure is `test_stdio_sigterm_stops_cleanly`.
 - Real s3270, 40 open/read/close sessions against the live host: descriptor count 4, 4, 4, 4. Ten refused connections: 4 to 4.
-- Status: **Requirements 1, 3, 4 and 5 are verified by the reviewer.** Requirement 2 is open until the fix below is verified.
+- Status: **Requirements 1, 3, 4 and 5 are verified by the reviewer.** Requirement 2 was open until the fix below was verified; "Reviewer run 2" records that (verified on 3.14.4).
 
 ### Diagnostic result (`.kiro/specs/linux-readiness/sigterm-diagnostic.txt`)
 
@@ -483,12 +483,27 @@ A copier blocked in `os.write` (the pipe is full because the SDK stopped reading
 
 `tests/unit/test_publisher_cli.py` is not edited.
 
-- Launch the real stdio server in a subprocess on the fake host, using the same child entry as the Stdio_SIGTERM_Test (`tests.publisher_cli_entry`) or a sibling entry file in `tests/` that, after the handler `cli._on_sigterm` is installed and 1 s has passed, calls `signal.raise_signal(signal.SIGTERM)` from a timer thread. This works on Windows because `raise_signal` invokes the Python handler in-process, which a Windows parent cannot do with a kernel SIGTERM.
+- Launch the real stdio server in a subprocess on the fake host, using the sibling entry file `tests/publisher_sigterm_entry.py`. After the handler `cli._on_sigterm` is installed and 1 s has passed, a timer thread delivers SIGTERM to the process. The delivery call depends on the platform (see "Reviewer run 2" below): on POSIX (`os.name == "posix"`) it is `os.kill(os.getpid(), signal.SIGTERM)`; elsewhere it is `signal.raise_signal(signal.SIGTERM)`. `os.kill` with SIGTERM terminates the process on Windows without running the Python handler, so Windows keeps `raise_signal`, which calls the Python handler in-process.
 - The parent holds the child's stdin pipe open and idle for the whole test and never closes it before the assertion.
 - Assert: the child exits with code 0 within a bound (30 s, matching Requirement 2.2) while stdin is still open, and the report file holds `rc: 0` and no live session. Kill the child in a `finally` if it is still alive.
 - Windows evidence for the failure without the fix: the experiment above hung with the main thread in `threading._shutdown` and the `AnyIO worker thread` on stdin. The executor does not need to revert the fix to see the failure; the evidence above stands as the "fails without the fix" proof.
 
-What it can prove on Windows (3.11.9): the process no longer waits for the stdin reader thread after the handler runs, the report and drain still happen, and the exit code is 0. What it cannot prove: kernel SIGTERM delivery, the selector event loop used on Linux, and Python 3.12 to 3.14 behaviour. The Stdio_SIGTERM_Test on the reviewer's box stays the proof for those.
+The test is portable in structure (same child, same assertions on every platform), not in the delivery call. What it can prove on Windows (3.11.9): the process no longer waits for the stdin reader thread after the handler runs, the report and drain still happen, and the exit code is 0. On Windows the signal is an in-process `raise_signal`, so it does not prove kernel SIGTERM delivery or the selector event loop used on Linux. On POSIX the same test sends the signal with `os.kill` to the child's own pid, which goes through the kernel and the selector loop, but it is still sent by the child to itself, so it does not prove delivery from another process. Python 3.12 to 3.14 behaviour is not shown by any run on the executor's machine. The Stdio_SIGTERM_Test (an external `kill -TERM` from the parent) on the reviewer's box stays the proof for external delivery.
+
+### Reviewer run 2 (Linux, Python 3.14.4, uncommitted tree, after tasks 6 and 7)
+
+| Check | Result |
+|---|---|
+| `test_stdio_sigterm_stops_cleanly`, 20 repeats | 20 of 20 passed. The `cli.py` fix works. **Requirement 2 is verified for Python 3.14.4.** Python 3.11 to 3.13 stay reviewer-only. |
+| Full suite `-m "not integration"` | 2116 passed, 1 failed, 6 skipped |
+| The failure | `tests/unit/test_publisher_stdio_sigterm_portable.py::test_stdio_sigterm_with_idle_open_stdin_exits_0`: the child did not exit within 30 s |
+
+**Confirmed cause (test-only, not a product defect).** `tests/publisher_sigterm_entry.py` delivers the signal with `signal.raise_signal(SIGTERM)` from a timer thread. On Linux the child then stays alive and writes no report. With `os.kill(os.getpid(), signal.SIGTERM)` from the same thread, and with a real external `kill -TERM`, the child exits 0 with a clean report while stdin is still open. The product code (`cli.py`) is correct and stays unchanged. The fix is in the test entry only (task 8.1).
+
+### Test hygiene found on the same run (tasks 8.2 and 8.3)
+
+- **Wheel temp directory.** `/tmp/gs-wheel-*` directories were left behind on Linux. The wheel test in `tests/unit/test_flow_packaging.py` must remove its temp directory on every exit path (success, build failure, timeout, exception, skip). The fix is test-only and does not change what the test asserts. Preferred form: `tempfile.TemporaryDirectory` or pytest `tmp_path`; otherwise `try`/`finally`. A small test proves cleanup on the failure path where it is feasible.
+- **Stale wording in publisher Requirement 23.7.** The sentence ends with "(Assumptions: recovery belongs to a follow-up spec)". That is no longer true: the logon-recovery spec is done, the bundled `tk5-logon` and `tk5-system-info` Flows recover an orphan left at the ISPF menu, and the Publisher changed only `_session_clean`. The parenthetical is removed and the requirement keeps its meaning (the Publisher itself does not recover, send `RECONNECT` or retry). The matching sentences in `.kiro/specs/publisher/design.md` (the "Recovery of a locked TSO user id" row near line 20 and the "No recovery logic in the Publisher" bullet near line 470) already say the recovery lives in the Flow, so they are checked and not changed. Any other stale text found there is flagged, not edited.
 
 ### Reviewer_Check after the fix
 
@@ -519,6 +534,10 @@ Then re-run the D1 block of the earlier diagnostic: the process must be gone wit
 | `tests/unit/test_connector_close_pipes.py` (new) | pipe closing and blocked-reader stand-in | 4.1 to 4.4, 4.9, 4.10 |
 | `greenscreen/publisher/cli.py` | `_copy_stdin`, feed holder, `_stdio_streams` uses a pipe, `_run_stdio` `finally` closes the feed | 2 |
 | `tests/unit/test_publisher_stdio_sigterm_portable.py` (new, plus a child entry in `tests/` if needed) | portable SIGTERM regression test | 2.8 |
+| `tests/publisher_sigterm_entry.py` | POSIX delivers with `os.kill(os.getpid(), SIGTERM)`, else `signal.raise_signal`; docstring corrected | 2.8 |
+| `tests/unit/test_publisher_stdio_sigterm_portable.py` | docstring and "What this cannot prove" note corrected, no assertion change | 2.8 |
+| `tests/unit/test_flow_packaging.py` | wheel test removes its temp directory on every path; small cleanup test; no change to what it asserts | 3 |
+| `.kiro/specs/publisher/requirements.md` | Requirement 23.7: stale parenthetical removed | (docs) |
 | `greenscreen/publisher/mcp_server.py`, `tests/unit/test_publisher_cli.py` | no change | 2 |
 | `.kiro/specs/linux-readiness/sigterm-diagnostic.txt` | created by the reviewer (done) | 2.10 |
 

@@ -225,6 +225,116 @@
         "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
         "timestamp": 1795028074646
       }
+    ],
+    "6.1 Implement the stdin copier in `greenscreen/publisher/cli.py` only": [
+      {
+        "executionId": "5d6198e3-b98d-41e9-b1f6-0a486221488c",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795032758372
+      },
+      {
+        "executionId": "5d6198e3-b98d-41e9-b1f6-0a486221488c",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795032825098
+      }
+    ],
+    "6.2 Add the portable regression test in a new file": [
+      {
+        "executionId": "5d6198e3-b98d-41e9-b1f6-0a486221488c",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795032827724
+      },
+      {
+        "executionId": "5d6198e3-b98d-41e9-b1f6-0a486221488c",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795032970265
+      }
+    ],
+    "6.3 Run the publisher suites": [
+      {
+        "executionId": "5d6198e3-b98d-41e9-b1f6-0a486221488c",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795032972512
+      },
+      {
+        "executionId": "5d6198e3-b98d-41e9-b1f6-0a486221488c",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795033229289
+      }
+    ],
+    "6. SIGTERM fix: daemon-thread stdin copier (about 1.5 h)": [
+      {
+        "executionId": "5d6198e3-b98d-41e9-b1f6-0a486221488c",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795033229428
+      }
+    ],
+    "7. Final checkpoint and re-check (about 0.5 h)": [
+      {
+        "executionId": "5d6198e3-b98d-41e9-b1f6-0a486221488c",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795033231291
+      },
+      {
+        "executionId": "5d6198e3-b98d-41e9-b1f6-0a486221488c",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795034004437
+      }
+    ],
+    "8.1 Fix the signal delivery in the portable test entry (test-only)": [
+      {
+        "executionId": "9e7ccaed-0fb8-47b7-9e9f-6fab946e93fa",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795040403883
+      },
+      {
+        "executionId": "9e7ccaed-0fb8-47b7-9e9f-6fab946e93fa",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795040465134
+      }
+    ],
+    "8.2 Make the wheel test clean up its temp directory on every path (test-only)": [
+      {
+        "executionId": "9e7ccaed-0fb8-47b7-9e9f-6fab946e93fa",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795040404684
+      },
+      {
+        "executionId": "9e7ccaed-0fb8-47b7-9e9f-6fab946e93fa",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795040465976
+      }
+    ],
+    "8.3 Reword publisher Requirement 23.7 (documentation only)": [
+      {
+        "executionId": "9e7ccaed-0fb8-47b7-9e9f-6fab946e93fa",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795040405058
+      },
+      {
+        "executionId": "9e7ccaed-0fb8-47b7-9e9f-6fab946e93fa",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795040466395
+      }
+    ],
+    "8.4 Final re-run and report": [
+      {
+        "executionId": "9e7ccaed-0fb8-47b7-9e9f-6fab946e93fa",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795040468314
+      },
+      {
+        "executionId": "9e7ccaed-0fb8-47b7-9e9f-6fab946e93fa",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795040793360
+      }
+    ],
+    "8. Reviewer findings on the Linux run: portable SIGTERM test, wheel temp directory, Requirement 23.7 wording (about 1.5 h)": [
+      {
+        "executionId": "9e7ccaed-0fb8-47b7-9e9f-6fab946e93fa",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795040793615
+      }
     ]
   }
 }

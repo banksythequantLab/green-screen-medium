@@ -18,6 +18,7 @@ import math
 import os
 import signal
 import sys
+import threading
 import traceback
 from typing import Any
 
@@ -177,11 +178,67 @@ def _stdio_streams() -> tuple[Any, Any]:
     out_fd = os.dup(1)
     os.dup2(2, 1)
     sys.stdout = sys.stderr
+    # The blocking read of the real stdin happens in a daemon thread we own, so a
+    # SIGTERM stop is not held up by a non-daemon reader thread (see _copy_stdin).
+    feed_r, feed_w = os.pipe()
+    with _FEED_LOCK:
+        _FEED["fd"] = feed_w
+        _FEED["closed"] = False
+    threading.Thread(
+        target=_copy_stdin, args=(in_fd, feed_w), name="gs-stdin-copier", daemon=True
+    ).start()
     stdin = io.TextIOWrapper(
-        os.fdopen(in_fd, "rb"), encoding="utf-8", errors="replace", newline="\n"
+        os.fdopen(feed_r, "rb"), encoding="utf-8", errors="replace", newline="\n"
     )
     stdout = io.TextIOWrapper(os.fdopen(out_fd, "wb"), encoding="utf-8", newline="\n")
     return anyio.wrap_file(stdin), anyio.wrap_file(stdout)
+
+
+#: Write end of the stdin feed pipe and a one-shot flag, so that the copier and
+#: ``_run_stdio`` never close a recycled descriptor number twice.
+_FEED: dict[str, Any] = {"fd": None, "closed": True}
+_FEED_LOCK = threading.Lock()
+
+
+def _close_feed(fd: int) -> None:
+    """Close ``fd`` quietly. For the tracked feed fd only the first call closes."""
+    with _FEED_LOCK:
+        if _FEED["fd"] == fd:
+            if _FEED["closed"]:
+                return
+            _FEED["closed"] = True
+    try:
+        os.close(fd)
+    except OSError:
+        pass
+
+
+def _stdin_feed_close() -> None:
+    """Close the write end of the stdin feed, if one exists. Idempotent."""
+    with _FEED_LOCK:
+        fd = _FEED["fd"]
+    if fd is not None:
+        _close_feed(fd)
+
+
+def _copy_stdin(in_fd: int, feed_w: int) -> None:
+    """Copy bytes from the real stdin to the feed pipe until EOF or an error.
+
+    Closes the write end at the end so the SDK reader sees EOF. Writes to no
+    stream and logs nothing.
+    """
+    try:
+        while True:
+            chunk = os.read(in_fd, 65536)
+            if not chunk:
+                break
+            view = memoryview(chunk)
+            while view:
+                view = view[os.write(feed_w, view) :]
+    except OSError:
+        pass
+    finally:
+        _close_feed(feed_w)
 
 
 def _on_sigterm(signum: int, frame: Any) -> None:
@@ -210,6 +267,8 @@ def _run_stdio(app: Any, settings: Any) -> None:
         )
     except KeyboardInterrupt:
         pass
+    finally:
+        _stdin_feed_close()
 
 
 # -- main --------------------------------------------------------------------
