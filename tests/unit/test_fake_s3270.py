@@ -30,14 +30,26 @@ def make_fake():
             f.stdin.close()
         except Exception:
             pass
+        f.close()
 
 
 @pytest.fixture
-def reader_for():
-    def _r(fake):
-        return PipeReader(fake.stdout)
+def reader_for(make_fake):
+    # Depends on make_fake so it is torn down first: every reader thread
+    # ends before any pipe is closed.
+    readers = []
 
-    return _r
+    def _r(fake):
+        reader = PipeReader(fake.stdout)
+        readers.append((fake, reader))
+        return reader
+
+    yield _r
+    for fake, reader in readers:
+        fake.terminate()
+        thread = getattr(reader, "_thread", None)
+        if thread is not None:
+            thread.join(2.0)
 
 
 def _read(reader, n):

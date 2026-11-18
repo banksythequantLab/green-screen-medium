@@ -1,0 +1,230 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Add `close()` and the descriptor release to `greenscreen/connector/testing/fake.py`": [
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027607085
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027611808
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027654360
+      }
+    ],
+    "1.2 Make every construction site close its fake": [
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027607260
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027659146
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027994975
+      }
+    ],
+    "1.3 Add `tests/unit/test_fake_s3270_close.py` (all platforms)": [
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027607416
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027998370
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795028072660
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795028740830
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795029160085
+      }
+    ],
+    "1.4 Add `tests/unit/test_fake_s3270_descriptors.py` (POSIX count, skipped on Windows)": [
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027607514
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027999295
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795028073465
+      }
+    ],
+    "2.1 Add the end-of-session release to `greenscreen/connector/connector.py`": [
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027607657
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027659350
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027995464
+      }
+    ],
+    "2.2 Add `tests/unit/test_connector_close_pipes.py` (all platforms)": [
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027607747
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027999832
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795028074076
+      }
+    ],
+    "3.1 Edit `pyproject.toml`": [
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027607828
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027612031
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027653334
+      }
+    ],
+    "3.2 Update the three Dev_Extra_Guard_Tests": [
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027607913
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027659572
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027995920
+      }
+    ],
+    "3.3 Re-search `tests/` for any other test that pins the `dev` list": [
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027608000
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795028000329
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795028074538
+      }
+    ],
+    "4.1 Re-check `design.md` and stop": [
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027608089
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027612274
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027653862
+      }
+    ],
+    "5. Final checkpoint and report": [
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027608179
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795028078327
+      },
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795029829413
+      }
+    ],
+    "4. SIGTERM: confirm the evidence and the reviewer diagnostic, change no code (about 0.25 h)": [
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795027653946
+      }
+    ],
+    "1. `FakeS3270.close()`, the fixtures and the fake tests (about 1.75 h)": [
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795028073580
+      }
+    ],
+    "2. `Connector` session pipe release and its tests (about 1.5 h)": [
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795028074204
+      }
+    ],
+    "3. `setuptools>=70.1` in the `dev` extra and the guard tests (about 0.5 h)": [
+      {
+        "executionId": "33dd8d6b-f14c-4c35-acf2-da968faa5cb8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795028074646
+      }
+    ]
+  }
+}

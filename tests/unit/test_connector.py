@@ -85,6 +85,7 @@ def make_connector():
     yield make
     for _conn, fake in created:
         fake.terminate()
+        fake.close()
 
 
 def opened(make, script, **cfg):

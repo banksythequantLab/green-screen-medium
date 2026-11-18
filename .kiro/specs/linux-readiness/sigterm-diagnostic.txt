@@ -1,0 +1,25 @@
+Reviewer diagnostic, run on banksy-box-01 (Ubuntu, Linux 7.0), 2026-11-18, by the reviewer.
+Working tree = HEAD 7b9cd6c plus the uncommitted linux-readiness changes. Only Python 3.14.4 is installed on the box,
+so D1 was run on 3.14.4 only. D3 (strace, py-spy) and D4 (-X dev) were not run.
+Result: H1. main() returned 0 and wrote the report; the process stayed alive with the main thread in a futex wait
+and one 'AnyIO worker th' thread blocked in anon_pipe_read on stdin; it exited rc=0 as soon as stdin was closed.
+The last line of the remote output is the count of leftover publisher_cli_entry processes.
+
+Python 3.14.4
+anyio                     4.16.0
+mcp                       2.3.0
+uvicorn                   0.54.0
+== D1
+started line seen: 1
+D1: STILL ALIVE after 5 s
+-rw-rw-r-- 1 banksiai banksiai 74 Nov 18 14:29 /tmp/gs-diag/report.json
+{"rc": 0, "created": 0, "opened": 0, "closed": 0, "aborted": 0, "live": 0}
+
+-- threads (tid comm wchan)
+365161 python futex_do_wait
+365172 AnyIO worker th anon_pipe_read
+== D2: close stdin (kill sleep)
+D2: exited rc=0 after stdin closed
+-- stderr (last 40 lines)
+2026-11-18 14:29:50,983 INFO greenscreen.publisher publishing 1 of 3 flows over stdio
+0

@@ -36,6 +36,8 @@ class FakeS3270:
         self._script = list(script)
         self._index = 0
         self._terminated = False
+        self._closed = False
+        self._close_lock = threading.Lock()
         self.failure: AssertionError | None = None
 
         # Stdin: Connector writes here; we read from stdin_read
@@ -80,12 +82,41 @@ class FakeS3270:
                     self._close_stdout_write()
         except (OSError, ValueError):
             pass
+        finally:
+            # The loop ends when the write end (self.stdin) closes.
+            self._close_quietly(self._stdin_read)
 
-    def _close_stdout_write(self) -> None:
+    @staticmethod
+    def _close_quietly(f) -> None:
         try:
-            self._stdout_write.close()
+            f.close()
         except Exception:
             pass
+
+    def _close_stdout_write(self) -> None:
+        self._close_quietly(self._stdout_write)
+
+    def close(self) -> None:
+        """Release all five file objects and end the handler thread.
+
+        Idempotent, never raises, safe after terminate/kill/wait and after
+        Connector.close(). Caller rule: close the fake only after any reader
+        of ``stdout`` (e.g. a PipeReader) has ended; Connector.close() joins
+        its readers first, and test fixtures do the same.
+        """
+        with self._close_lock:
+            if self._closed:
+                return
+            self._closed = True
+        self._terminated = True
+        self._close_stdout_write()
+        self._close_quietly(self.stdin)
+        if threading.current_thread() is not self._thread:
+            self._thread.join(timeout=5)
+        if not self._thread.is_alive():
+            self._close_quietly(self._stdin_read)
+        self._close_quietly(self.stdout)
+        self._close_quietly(self.stderr)
 
     def raise_if_failed(self) -> None:
         """Re-raise the stored script mismatch/exhaustion failure, if any."""
@@ -114,7 +145,12 @@ class FakeS3270:
     # ── Popen-compatible interface ────────────────────────────────────────
 
     def wait(self, timeout: float | None = None) -> int:
-        """Return 0 immediately (FakeS3270 never crashes)."""
+        """Return 0 immediately (FakeS3270 never crashes).
+
+        Like Popen.wait(), a return means the process has exited, so its
+        stdout write end is closed and readers see EOF after buffered data.
+        """
+        self._close_stdout_write()
         return 0
 
     def terminate(self) -> None:

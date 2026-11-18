@@ -5,6 +5,7 @@ import logging
 import math
 import re
 import subprocess
+import threading
 import time
 from types import TracebackType
 from typing import Any, Callable
@@ -37,6 +38,10 @@ def _status_for_log(line: str) -> str:
 class Connector:
     """Headless 3270 session backed by an s3270/ws3270 subprocess."""
 
+    # Total budget for joining the reader and drain threads before closing
+    # their pipes at the end of a session.
+    PIPE_JOIN_SECONDS: float = 2.0
+
     def __init__(
         self,
         config: ConnectorConfig,
@@ -48,6 +53,8 @@ class Connector:
         self._reader: PipeReader | None = None
         self._closed = False
         self._opened = False
+        self._drain: threading.Thread | None = None
+        self._pipes_released = False
 
     # ── Context manager ──────────────────────────────────────────────────
     def __enter__(self) -> "Connector":
@@ -87,7 +94,7 @@ class Connector:
 
         self._proc = proc
         self._reader = PipeReader(proc.stdout)
-        start_stderr_drain(proc.stderr)
+        self._drain = start_stderr_drain(proc.stderr)
         self._opened = True
 
         try:
@@ -98,6 +105,7 @@ class Connector:
         except S3270Error as exc:
             self._terminate_proc()
             self._closed = True
+            self._release_session()
             raise ConnectorError(
                 f"Connect to {cfg.host}:{cfg.port} failed: {exc}"
             ) from exc
@@ -122,6 +130,7 @@ class Connector:
                 self._terminate_proc()
         finally:
             self._closed = True
+            self._release_session()
 
     # ── Core I/O ─────────────────────────────────────────────────────────
     def send(self, action: str) -> Response:
@@ -146,6 +155,7 @@ class Connector:
         except ConnectorTimeoutError as exc:
             self._terminate_proc()
             self._closed = True
+            self._release_session()
             raise ConnectorTimeoutError(
                 f"Timed out waiting for response to {shown!r}: {exc}",
                 operation=shown,
@@ -397,3 +407,38 @@ class Connector:
         except subprocess.TimeoutExpired:
             proc.kill()
             logger.warning("s3270 did not terminate; killed")
+
+    def _release_session(self) -> None:
+        """Close the three session pipes once the process is gone.
+
+        Order: stdin first (nobody reads it), then a bounded join of the reader
+        and drain threads, then stdout/stderr only if their thread has ended.
+        Closing a buffered pipe under a blocked reader can hang, so a pipe whose
+        thread is still alive is left open (freed at collection). Idempotent;
+        never raises; calls nothing on the process except the pipes' close().
+        """
+        proc = self._proc
+        if proc is None or self._pipes_released:
+            return
+        self._pipes_released = True
+        self._close_pipe(getattr(proc, "stdin", None), "stdin")
+        deadline = time.monotonic() + self.PIPE_JOIN_SECONDS
+        for name, thread in (
+            ("stdout", getattr(self._reader, "_thread", None)),
+            ("stderr", self._drain),
+        ):
+            if thread is not None:
+                thread.join(max(0.0, deadline - time.monotonic()))
+                if thread.is_alive():
+                    logger.debug("pipe reader still running; leaving %s open", name)
+                    continue
+            self._close_pipe(getattr(proc, name, None), name)
+
+    @staticmethod
+    def _close_pipe(pipe: Any, name: str) -> None:
+        if pipe is None:
+            return
+        try:
+            pipe.close()
+        except (OSError, ValueError) as exc:
+            logger.debug("closing %s failed: %s", name, type(exc).__name__)

@@ -101,6 +101,7 @@ def make_connector():
     yield make
     for fake in created:
         fake.terminate()
+        fake.close()
 
 
 def proc_connector(proc) -> Connector:
@@ -583,6 +584,7 @@ def test_whole_session_records_hold_no_response_text(make_connector, logs):
         conn.close()
     finally:
         fake.terminate()
+        fake.close()
     scripted = [echo, LINE_1, LINE_2, "disc-line-xyz", "quit-line-xyz", *lines]
     texts = all_log_text(logs)
     assert texts

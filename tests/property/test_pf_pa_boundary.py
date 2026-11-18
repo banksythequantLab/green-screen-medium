@@ -51,7 +51,7 @@ def _run(method: str, n: int) -> None:
         # Close the WRITE ends so the reader threads see EOF and exit.
         # (Closing the read end under a blocked reader deadlocks on Windows.)
         fake.terminate()
-        fake.stdin.close()
+        fake.close()
     assert fake._index == len(script)  # only Disconnect/Quit followed
 
 

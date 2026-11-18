@@ -27,6 +27,8 @@ def finalize_fakes(fakes):
         except Exception:
             pass
     for f in fakes:
+        f.close()
+    for f in fakes:
         f.raise_if_failed()
 
 

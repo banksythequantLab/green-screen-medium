@@ -38,6 +38,7 @@ def test_dev_extra_unchanged() -> None:
         "hypothesis>=6.170.15",
         "pytest>=8.0",
         "pyyaml>=6.0.3",
+        "setuptools>=70.1",
     ]
 
 
