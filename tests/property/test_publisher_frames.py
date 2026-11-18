@@ -216,12 +216,13 @@ class _StartFails(threading.Thread):
         super().start()
 
 
-_MARKERS = re.compile(r"^[ \t]*[~^]+[ \t]*$", re.M)
-_LINENO = re.compile(r", line \d+,")
+_HEADER = re.compile(r'^(\s*File ".*", line )\d+', re.M)  # only the number N of a File header
 
 
 def _normalised(text: str) -> str:
-    return _LINENO.sub(", line N,", _MARKERS.sub("", text))
+    """Strip lines of only whitespace, ``~`` and ``^``, and the N of ``File "...", line N``."""
+    kept = [ln for ln in text.split("\n") if not set(ln) <= set(" \t\r~^")]
+    return _HEADER.sub(r"\1N", "\n".join(kept))
 
 
 def _check(errs: list[BaseException], values: tuple, mappings: list) -> None:

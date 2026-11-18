@@ -315,5 +315,6 @@ def parse_bindings(
         for inner in store.values():
             inner.clear()
         store.clear()
+        environ = {}  # drop the reference to the environment mapping before raising
         raise StartupError(error) from None
     return BoundValues(store)

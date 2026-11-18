@@ -595,3 +595,105 @@ def test_success_log_has_no_session_clean_and_no_value(caplog):
     assert rec["outcome"] == "ok" and set(rec) == {"call_id", "flow", "transport", "outcome", "duration_ms"}
     assert isinstance(rec["duration_ms"], int) and rec["flow"] == "mini" and rec["transport"] == "rest"
     assert_clean_log(caplog, *map(str, out.body["outputs"].values()))
+
+
+# --------------------------------------------------------------------------
+# Frames of an exception path hold no value (Property 10 fixes)
+# --------------------------------------------------------------------------
+
+def _publisher_frames(err):
+    tb = err.__traceback__
+    while tb is not None:
+        if str(tb.tb_frame.f_globals.get("__name__", "")).startswith("greenscreen.publisher"):
+            yield tb.tb_frame
+        tb = tb.tb_next
+
+
+BOUND_PROBE = "BND4K9TW"  # a made-up bound password value
+
+
+def test_run_slot_frame_holds_no_bound_value_after_a_cancelled_call():
+    from greenscreen.publisher.calls import _Run
+
+    host = FakeHost(mini_states(), block_read=1)
+    bound = BoundValues({"mini": {"password": BOUND_PROBE}})
+    registry = build_registry({"mini": (MINI, "test")}, bound, 30.0)
+    svc = CallService(registry, bound, SIGS, Limiter(1), host, clock=FakeClock())
+
+    async def main():
+        task = asyncio.create_task(
+            svc.execute(registry.get("mini"), SecretBox.adopt({"userid": PROBE}), "rest")
+        )
+        try:
+            await until_blocked(host)
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError as err:
+                return err
+            raise AssertionError("the call was not cancelled")
+        finally:
+            host.release_all()
+
+    err = asyncio.run(main())
+    runs = [
+        v for f in _publisher_frames(err) if f.f_code.co_name == "_run_slot"
+        for v in f.f_locals.values() if isinstance(v, _Run)
+    ]
+    assert runs, "no _run_slot frame with a run in the traceback"
+    for run in runs:
+        assert BOUND_PROBE not in list(run.bound.values())
+        assert not run.bound
+    assert BOUND_PROBE in list(bound.for_flow("mini").values())  # the vault itself is intact
+
+
+class _Boom(BaseException):
+    pass
+
+
+def _string_frames(call, text):
+    try:
+        call(text)
+    except _Boom as err:
+        return [f for f in _publisher_frames(err) if f.f_code.co_name == "string"]
+    raise AssertionError("expected _Boom")
+
+
+def test_guarded_string_frame_does_not_keep_the_typed_text():
+    from greenscreen.publisher.calls import _Guarded
+
+    class Raising:
+        def string(self, text):
+            raise _Boom("x")
+
+    frames = _string_frames(_Guarded(Raising(), threading.Event()).string, PROBE)
+    assert frames
+    assert all(f.f_locals.get("text") != PROBE for f in frames)
+
+
+def test_guarded_string_frame_does_not_keep_the_text_when_the_call_is_aborted():
+    from greenscreen.connector import SessionClosedError
+    from greenscreen.publisher.calls import _Guarded
+
+    aborted = threading.Event()
+    aborted.set()
+    guarded = _Guarded(object(), aborted)
+    try:
+        guarded.string(PROBE)
+    except SessionClosedError as err:
+        frames = [f for f in _publisher_frames(err) if f.f_code.co_name == "string"]
+    assert frames and all(f.f_locals.get("text") != PROBE for f in frames)
+
+
+def test_connector_session_string_frame_does_not_keep_the_typed_text():
+    from greenscreen.publisher.calls import ConnectorSession
+
+    class Conn:
+        def string(self, text):
+            raise _Boom("x")
+
+    session = object.__new__(ConnectorSession)
+    session._conn = Conn()
+    frames = _string_frames(session.string, PROBE)
+    assert frames
+    assert all(f.f_locals.get("text") != PROBE for f in frames)

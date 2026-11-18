@@ -284,8 +284,11 @@ class _Guarded:
         return self._session.read_screen()
 
     def string(self, text: str) -> None:
-        self._check()
-        self._session.string(text)
+        try:
+            self._check()
+            self._session.string(text)
+        finally:
+            text = ""  # no typed value stays in this frame on an exception path
 
     def enter(self) -> None:
         self._check()
@@ -586,6 +589,7 @@ class CallService:
             return outcome, base
         finally:
             self._runs.discard(run)
+            run.bound = {}  # drop the per-call view of the Bound_Values from this frame
 
     def _finish(self, run: _Run, rec: _Record) -> tuple[CallOutcome, BaseException | None]:
         """Build the outcome from the worker's result slot, then drop the references."""
@@ -747,7 +751,10 @@ class ConnectorSession:
         return self._conn.read_screen()
 
     def string(self, text: str) -> None:
-        self._conn.string(text)
+        try:
+            self._conn.string(text)
+        finally:
+            text = ""  # no typed value stays in this frame on an exception path
 
     def enter(self) -> None:
         self._conn.enter()

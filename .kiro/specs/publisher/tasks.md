@@ -216,7 +216,7 @@ Day one is tasks 1 to 4 (9.0 hours, the slice). Day two is tasks 5 and 6, then t
     - Follow-up, one-off mutation check (not a permanent test): record the hash of `greenscreen/publisher/auth.py`, temporarily make the key comparison always succeed, run `tests/property/test_publisher_auth.py` and confirm that Property 13 FAILS, restore the file, verify with `git diff` or the hash that `auth.py` is byte-identical to its state before, and report the result (the failing example and the verification)
     - **Validates: Requirements 13.2, 13.3, 13.7, 13.9, 13.11, 13.12**
 
-- [ ] 8. Property tests, group B (about 3.5 h, day 3)
+- [x] 8. Property tests, group B (about 3.5 h, day 3)
   - [x] 8.1 Write property test for no value in responses (Property 5)
     - **Property 5: No Input value or Bound_Value in any response**
     - `tests/property/test_publisher_no_leak_responses.py`; probes as Inputs and as Bound_Values (bound Input secret and not secret), all Fake_Host outcomes, bodies, headers, MCP results, `/openapi.json`, `tools/list` and `/health`; the `sentinel_password_screen` case with the sentinel supplied as the password
@@ -245,7 +245,7 @@ Day one is tasks 1 to 4 (9.0 hours, the slice). Day two is tasks 5 and 6, then t
     - The shared `bad_requests()` strategy targets `MINI`, which has no `regex` Input, so it cannot generate a regex-violation request. This test builds, locally in its own test file, a Flow with a regex-constrained `str` Input (and uses it for the regex-violation cases), and does NOT edit `tests/property/_publisher_strategies.py` or `tests/publisher_support.py`
     - **Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.7, 7.5, 11.2, 22.2**
 
-  - [-] 8.6 Write property test for exception frames (Property 10)
+  - [x] 8.6 Write property test for exception frames (Property 10)
     - **Property 10: No traceback frame of the publisher holds a value**
     - `tests/property/test_publisher_frames.py`; probes and bound sets with a cancellation, a `BaseException` from the Session, an exception injected into the test seam and a failing `parse_bindings`; the frame scanner and `traceback.format_exception` with chain
     - **Validates: Requirements 3.6, 3.9, 6.8, 7.6, 22.10**
@@ -255,7 +255,7 @@ Day one is tasks 1 to 4 (9.0 hours, the slice). Day two is tasks 5 and 6, then t
     - `tests/property/test_publisher_bindings.py`; `binding_envs()` over generated Flows, generated `GS_PUBLISH_FLOWS` values (valid, empty items, duplicates, unknown names, Flows left unpublished) and variables compared with a small independent model of Requirements 1.9 to 1.15 and 22 (including `flow_not_published`); an accepted run's registry holds exactly the selected Flows in loading order; accepted runs have no bound name in any schema, `tools/list` or OpenAPI document; stopped runs name the variable, Flow or family and the rule; no Leak_Form in startup stdout and stderr, in DEBUG records of startup and shutdown, or in `/health`; no session in either case
     - **Validates: Requirements 1.9, 1.10, 1.11, 1.12, 1.13, 1.14, 1.15, 22.1, 22.3, 22.4, 22.5, 22.6, 22.7, 22.8, 22.9, 22.10, 22.12, 7.8**
 
-- [ ] 9. Checkpoint - properties complete
+- [-] 9. Checkpoint - properties complete
   - Run `pytest tests/property --durations=10` and require that all 14 publisher property tests pass, that the publisher property modules take under 60 seconds together and the whole `tests/property` suite under 150 seconds with no network connection and no subprocess (limits raised from 25 and 115 seconds on 2026-11-17 by the user's decision, after the Property 12 and 13 measurements; this replaces the whole-suite limit of flow-runtime Requirement 19.9); never trim tests and never lower `max_examples` below 100 to save time. If over budget, report it to the user instead of trimming. Record the timings in the task notes.
   - Run the full `pytest -m "not integration"` and require no failure and no edit to a pre-existing test file.
   - Ensure all tests pass, ask the user if questions arise.

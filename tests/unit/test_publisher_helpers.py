@@ -30,6 +30,7 @@ from tests.publisher_support import (
     FakeHost,
     LogCapture,
     formatted_traceback,
+    mini_states,
     mcp_client,
     rest_client,
     scan_frames,
@@ -427,6 +428,36 @@ def test_scanner_ignores_frames_outside_the_publisher_and_follows_the_chain():
     except RuntimeError as outer:
         assert scan_frames(outer, ["~^!#"])
         assert "ValueError" in formatted_traceback(outer) and "RuntimeError" in formatted_traceback(outer)
+
+
+def test_scanner_ignores_an_empty_secret_box_merged_dict_only():
+    box = SecretBox.adopt({})
+    merged = box.merged({"k": "~^!#zz"})
+    # non-empty: flagged as a probe, and by identity with the recorded mapping
+    assert scan_frames(_raiser(PUB, "pass", box), ["~^!#"])
+    assert scan_frames(_raiser(PUB, "pass", box), [], mappings=[merged])
+    box.clear()  # the merged dict is the same object, now empty
+    assert merged == {}
+    assert scan_frames(_raiser(PUB, "pass", box), ["~^!#"], mappings=[merged]) == []
+    # the identity rule still holds outside a SecretBox, and for a non-empty dict
+    assert scan_frames(_raiser(PUB, "pass", merged), [], mappings=[merged])
+
+
+def test_scanner_treats_fake_host_objects_as_opaque():
+    host = FakeHost(mini_states())
+    session = host()
+    host._record(1, "string", ("~^!#zz",))  # the host's event log now holds a probe
+    assert scan_frames(_raiser(PUB, "pass", host), ["~^!#"]) == []
+    assert scan_frames(_raiser(PUB, "pass", session), ["~^!#"]) == []
+    assert scan_frames(_raiser(PUB, "pass", [("~^!#zz",)]), ["~^!#"])  # control: a plain list is walked
+
+
+def test_scanner_still_flags_a_screen_held_directly_in_a_publisher_frame():
+    from tests.flow_support import capture
+
+    screen = capture("tk5-logon")
+    assert scan_frames(_raiser("greenscreen.publisher.calls", "pass", screen), [])
+    assert scan_frames(_raiser("greenscreen.publisher.calls", "pass", FakeHost([screen])), []) == []  # in a Fake_Host: opaque
 
 
 def test_scanner_is_quiet_on_a_clean_frame():

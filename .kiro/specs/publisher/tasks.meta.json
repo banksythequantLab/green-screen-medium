@@ -25,13 +25,16 @@
       "lastRunTimestamp": 1794973682959
     },
     "8.6 Write property test for exception frames (Property 10)": {
-      "status": "failed",
-      "failingExample": "Explicit example scn=('seam',''): \"greenscreen.publisher.calls._execute local box._merged: the mapping given to run_flow\" (the same hit on 12 other explicit examples). Other hits: _run_slot local run.bound._data[...] (probe, cancel and thread-start paths), _Guarded.string local text (probe), parse_bindings local environ[..] (probe). Values withheld.",
-      "lastRunTimestamp": 1794973830747
+      "status": "passed",
+      "lastRunTimestamp": 1794974977175
     },
     "8.7 Write property test for binding variables (Property 14)": {
       "status": "passed",
       "lastRunTimestamp": 1794973859485
+    },
+    "7.8 Write property test for authentication (Property 13)": {
+      "status": "passed",
+      "lastRunTimestamp": 1794975182119
     }
   },
   "executionHistory": {
@@ -439,6 +442,16 @@
         "executionId": "75104af0-aa27-4ab1-adf6-d58de0754753",
         "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
         "timestamp": 1794968737621
+      },
+      {
+        "executionId": "289ccf26-6262-49f2-8c24-82a59fb2b3c6",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794975067161
+      },
+      {
+        "executionId": "289ccf26-6262-49f2-8c24-82a59fb2b3c6",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794975202853
       }
     ],
     "7.0 Fix the worker done event (defect found by Property 12)": [
@@ -470,6 +483,16 @@
         "executionId": "f68fe51c-ed1c-4139-82de-5db33cc40268",
         "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
         "timestamp": 1794972843228
+      },
+      {
+        "executionId": "289ccf26-6262-49f2-8c24-82a59fb2b3c6",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794975203150
+      },
+      {
+        "executionId": "289ccf26-6262-49f2-8c24-82a59fb2b3c6",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794975493149
       }
     ],
     "8.2 Write property test for no value in logs (Property 6)": [
@@ -482,6 +505,16 @@
         "executionId": "f68fe51c-ed1c-4139-82de-5db33cc40268",
         "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
         "timestamp": 1794972843535
+      },
+      {
+        "executionId": "289ccf26-6262-49f2-8c24-82a59fb2b3c6",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794975493517
+      },
+      {
+        "executionId": "289ccf26-6262-49f2-8c24-82a59fb2b3c6",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794975901970
       }
     ],
     "8.3 Write property test for no Host_Data (Property 7)": [
@@ -525,6 +558,11 @@
         "executionId": "3cc98c64-b827-468e-b4aa-58b4fcc03b71",
         "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
         "timestamp": 1794973579988
+      },
+      {
+        "executionId": "289ccf26-6262-49f2-8c24-82a59fb2b3c6",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794975066759
       }
     ],
     "8.7 Write property test for binding variables (Property 14)": [
@@ -549,6 +587,20 @@
         "executionId": "3cc98c64-b827-468e-b4aa-58b4fcc03b71",
         "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
         "timestamp": 1794973876669
+      }
+    ],
+    "8. Property tests, group B (about 3.5 h, day 3)": [
+      {
+        "executionId": "289ccf26-6262-49f2-8c24-82a59fb2b3c6",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794975066977
+      }
+    ],
+    "9. Checkpoint - properties complete": [
+      {
+        "executionId": "289ccf26-6262-49f2-8c24-82a59fb2b3c6",
+        "chatSessionId": "sess_66eb530f-27d5-4051-9bde-4aa1b9d38d07",
+        "timestamp": 1794975901642
       }
     ]
   }

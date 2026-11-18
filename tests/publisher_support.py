@@ -568,6 +568,21 @@ _SKIP_TYPES = (types.ModuleType, type, types.FunctionType, types.BuiltinFunction
                types.MethodType, types.CodeType, types.FrameType, types.TracebackType)
 
 
+# The Fake_Host classes of this file and the scripted session they build on.
+_FAKE_HOST_MODULES = frozenset({"tests.publisher_support", "tests.flow_support"})
+_FAKE_HOST_NAMES = frozenset({"FakeHost", "HostSession", "ScriptedSession", "ScriptedState"})
+
+
+def _is_empty_merged(owner: object, slot: str, kid: object) -> bool:
+    """True for the ``_merged`` dict of a SecretBox when it is empty at scan time."""
+    return (
+        type(owner).__name__ == "SecretBox"
+        and slot == "_merged"
+        and isinstance(kid, dict)
+        and not kid
+    )
+
+
 def _holds_probe(value: object, probes: Sequence[Any]) -> bool:
     if isinstance(value, str):
         return any(isinstance(p, str) and p in value for p in probes)
@@ -595,6 +610,8 @@ def _scan_value(
         return
     if type(value).__name__ in _OPAQUE_NAMES:
         return
+    if type(value).__module__ in _FAKE_HOST_MODULES and type(value).__name__ in _FAKE_HOST_NAMES:
+        return  # the Fake_Host is test scaffolding, not publisher code
     seen.add(id(value))
     kids: list[tuple[str, object]] = []
     if isinstance(value, dict):
@@ -609,7 +626,10 @@ def _scan_value(
         for klass in type(value).__mro__:
             for slot in getattr(klass, "__slots__", ()) or ():
                 if isinstance(slot, str) and hasattr(value, slot):
-                    kids.append((f".{slot}", getattr(value, slot)))
+                    kid = getattr(value, slot)
+                    if _is_empty_merged(value, slot, kid):
+                        continue  # an emptied SecretBox merged dict holds nothing
+                    kids.append((f".{slot}", kid))
         kids += [(f".{k}", v) for k, v in list(getattr(value, "__dict__", {}).items())]
     for label, kid in kids:
         _scan_value(kid, probes, mappings, depth - 1, seen, f"{path}{label}", out)
@@ -636,7 +656,10 @@ def scan_frames(
     value. ``probes`` are strings or ints. ``mappings`` are the objects handed to
     ``run_flow``; a local that IS one of them (identity) is flagged. A ``BoundValues``
     and a ``PublishedFlow`` are opaque: they are the permitted long-lived holders. A
-    ``Screen`` is flagged wherever it is found. Objects are walked only when their
+    ``Screen`` is flagged wherever it is found, also as a direct local. The ``_merged`` dict
+    of a ``SecretBox`` is ignored only while it is empty (a non-empty one is walked, and
+    flagged when it is, or holds, a recorded mapping or a probe). The Fake_Host objects
+    (``FakeHost``, ``HostSession`` and their scripted internals) are opaque. Objects are walked only when their
     class lives in ``greenscreen`` or ``tests`` (plus dict, list, tuple, set, frozenset),
     to depth 4, so a scan stays cheap.
     """

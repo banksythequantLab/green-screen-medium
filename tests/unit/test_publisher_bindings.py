@@ -242,3 +242,24 @@ def test_property_message_never_holds_a_value(env, published):
             # a value may coincide with fixed text only by chance; names are in the message by design
             if value not in name and value not in "name_format unknown_flow unknown_input value_invalid":
                 assert value not in message.replace(name, "")
+
+
+def test_parse_bindings_frame_does_not_keep_the_environment_mapping():
+    env = {"GS_BIND_DEMO_FLOW__USER_ID": FAKE, "GS_BIND_DEMO_FLOW__NOPE": FAKE}
+    loaded = {"demo-flow": DEMO, "other": OTHER}
+    try:
+        parse_bindings(env, loaded, list(loaded))
+    except StartupError as exc:
+        tb = exc.__traceback__
+    else:  # pragma: no cover
+        raise AssertionError("expected StartupError")
+    seen = 0
+    while tb is not None:
+        frame = tb.tb_frame
+        if frame.f_code.co_name == "parse_bindings":
+            seen += 1
+            local = frame.f_locals.get("environ")
+            assert local is not env
+            assert not local  # absent or emptied
+        tb = tb.tb_next
+    assert seen == 1
