@@ -15,9 +15,10 @@ from importlib import resources
 
 import pytest
 
+from greenscreen.publisher.ask.codes import ASK_ERROR_CODES, ASK_HTTP_STATUS
 from greenscreen.publisher.calls import ERROR_CODES, HTTP_STATUS
 
-PAGE_SIDE = {"no_response", "unreadable_reply", "unknown_code"}
+PAGE_SIDE = {"no_response", "unreadable_reply", "unknown_code", "ask_unavailable", "ask_reply_unreadable"}
 
 
 def _read(name: str) -> str:
@@ -37,12 +38,13 @@ def codes() -> dict:
 
 def test_error_code_keys_equal_error_codes(codes):
     assert len(ERROR_CODES) == 22
-    assert set(codes) - PAGE_SIDE == set(ERROR_CODES)
+    assert set(codes) - PAGE_SIDE == set(ERROR_CODES) | set(ASK_ERROR_CODES)
 
 
 def test_status_equals_http_status(codes):
-    for code in ERROR_CODES:
-        assert codes[code]["status"] == HTTP_STATUS[code], code
+    for code in set(ERROR_CODES) | set(ASK_ERROR_CODES):
+        expected = HTTP_STATUS[code] if code in ERROR_CODES else ASK_HTTP_STATUS[code]
+        assert codes[code]["status"] == expected, code
 
 
 def test_each_text_is_short_non_empty_string(codes):
@@ -82,6 +84,6 @@ def test_show_message_only_on_input_invalid(codes):
 
 def test_console_js_holds_no_error_code_literal():
     source = _read("console.js")
-    for code in sorted(ERROR_CODES):
+    for code in sorted(set(ERROR_CODES) | set(ASK_ERROR_CODES)):
         pattern = r"""(["'`])""" + re.escape(code) + r"""\1"""
         assert re.search(pattern, source) is None, code

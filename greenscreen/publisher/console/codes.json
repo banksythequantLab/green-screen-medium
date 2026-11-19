@@ -21,7 +21,18 @@
   "output_type": {"status": 502, "text": "An output was not of its declared type, so the flow stopped."},
   "screen_size": {"status": 502, "text": "The mainframe screen was not the expected size, so the flow stopped."},
   "session_error": {"status": 502, "text": "The mainframe session failed during the run."},
+  "question_invalid": {"status": 422, "text": "The question was not accepted. Use 1 to N characters of plain text."},
+  "daily_limit": {"status": 429, "text": "The daily limit of questions has been reached. The count resets at 00:00 UTC and whenever the server restarts."},
+  "tool_limit": {"status": 422, "text": "The question needed more steps on the mainframe than this server allows."},
+  "turn_limit": {"status": 422, "text": "The AI needed more rounds than this server allows."},
+  "ask_timeout": {"status": 504, "text": "The question ran out of time (the limit is 95 seconds at most) and was stopped. No mainframe step was cut off. Try a simpler question."},
+  "model_unreachable": {"status": 502, "text": "The AI service could not be reached, or it took too long to answer. Try again in a minute."},
+  "model_refused": {"status": 502, "text": "The AI service refused the request. The server settings may be wrong."},
+  "model_unusable": {"status": 502, "text": "The AI service answered in a way this server cannot use."},
+  "model_busy": {"status": 503, "text": "The AI service is busy. Try again in a minute."},
   "no_response": {"status": null, "text": "The publisher could not be reached. Check the network or the tunnel and try again."},
   "unreadable_reply": {"status": null, "text": "The reply did not come from the publisher (for example a proxy error page)."},
-  "unknown_code": {"status": null, "text": "The publisher returned an error that this page does not know."}
+  "unknown_code": {"status": null, "text": "The publisher returned an error that this page does not know."},
+  "ask_unavailable": {"status": null, "text": "Ask is not enabled on this server."},
+  "ask_reply_unreadable": {"status": null, "text": "The answer could not be read. Try again."}
 }

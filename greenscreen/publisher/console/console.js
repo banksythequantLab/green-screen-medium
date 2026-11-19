@@ -26,6 +26,14 @@ import {
   jsonRpcErrorText,
   toggleAllLabel,
   fitsInFirstScreen,
+  askExamples,
+  askStepToEntries,
+  askChain,
+  askRunLine,
+  askAnswerNotice,
+  buildAskBody,
+  askParse,
+  askCounterText,
 } from "./snippets.js";
 
 // ---- State (module scope, nothing on the window object) ----
@@ -41,6 +49,8 @@ let protocolVersion = null;
 let wire = null;
 let wireView = null;
 let runName = "";
+let askMax = null;
+let askExampleButtons = [];
 
 const MCP_STEP_TIMEOUT_MS = 15000;
 const FIT_LIMIT = 720;
@@ -54,11 +64,11 @@ const AUDIT_KEYS = [
   "status",
   "duration_seconds",
 ];
-const PAGE_SIDE_KEYS = ["no_response", "unreadable_reply", "unknown_code"];
+const PAGE_SIDE_KEYS = ["no_response", "unreadable_reply", "unknown_code", "ask_unavailable", "ask_reply_unreadable"];
 const ALLOWED_ATTRS = new Set([
   "id", "class", "type", "for", "name", "value", "autocomplete", "inputmode",
   "maxlength", "disabled", "role", "aria-live", "aria-label", "hidden", "tabindex",
-  "open", "aria-pressed",
+  "open", "aria-pressed", "aria-expanded", "aria-controls", "aria-labelledby",
 ]);
 
 // ---- 1. Key intake from the address fragment (runs before anything else) ----
@@ -88,7 +98,7 @@ takeKeyFromFragment();
 // ---- 2. The one function that reads the key ----
 
 async function apiFetch(path, init) {
-  const allowed = path === "/openapi.json" || /^\/flows\/[^/]+$/.test(path) || path === "/mcp";
+  const allowed = path === "/openapi.json" || /^\/flows\/[^/]+$/.test(path) || path === "/mcp" || path === "/ask";
   if (!allowed) {
     throw new Error("path not allowed");
   }
@@ -158,6 +168,9 @@ function forgetKey() {
   flows = [];
   clearChildren(refs.flows);
   clearResult();
+  refs.askInput.value = "";
+  askMax = null;
+  renderAsk();
   showKeyPanel(true);
 }
 
@@ -243,6 +256,12 @@ const refs = {
   via: document.querySelector(".call-via"),
   viaMcp: document.getElementById("via-mcp"),
   viaRest: document.getElementById("via-rest"),
+  askPanel: document.getElementById("ask-panel"),
+  askInput: document.getElementById("ask-input"),
+  askButton: document.getElementById("ask-button"),
+  askCount: document.getElementById("ask-count"),
+  askExamples: document.getElementById("ask-examples"),
+  askOut: document.getElementById("ask-out"),
 };
 
 function setStatus(text, busy) {
@@ -657,6 +676,8 @@ function finishResult() {
 async function loadListing() {
   setStatus("Loading the flow list…", true);
   clearResult();
+  askMax = null;
+  renderAsk();
   let response;
   try {
     response = await apiFetch("/openapi.json");
@@ -684,11 +705,17 @@ async function loadListing() {
     return;
   }
   flows = parseListing(doc);
+  askMax = askParse(doc);
   setStatus("", false);
   renderFlows();
-  const first = refs.flows.querySelector(".run");
-  if (first) {
-    first.focus();
+  renderAsk();
+  if (!refs.askPanel.hidden) {
+    refs.askInput.focus({ preventScroll: true });
+  } else {
+    const first = refs.flows.querySelector(".run");
+    if (first) {
+      first.focus();
+    }
   }
 }
 
@@ -701,6 +728,10 @@ function setRunning(value) {
       flow.runButton.disabled = value;
     }
   }
+  refs.askButton.disabled = value;
+  for (const button of askExampleButtons) {
+    button.disabled = value;
+  }
   renderCallVia();
 }
 
@@ -708,6 +739,7 @@ async function run(flow) {
   if (running) {
     return;
   }
+  clearAskOut();
   setRunning(true);
   setStatus("Calling the mainframe…", true);
   runName = flow.name;
@@ -975,8 +1007,229 @@ async function runMcp(flow) {
   }
 }
 
-// ---- Events and start ----
+// ---- Ask ----
 
+// The question limit, or null when the listing offers no usable one.
+function askLimit() {
+  return askMax === null ? null : askMax.maxQuestion;
+}
+
+function updateAskCount() {
+  refs.askCount.textContent = askCounterText(refs.askInput.value.length, askLimit());
+}
+
+function clearAskOut() {
+  clearChildren(refs.askOut);
+}
+
+// Shows or hides the Ask panel from the parsed listing; the layout class follows the panel.
+function renderAsk() {
+  const show = keyHeld && askMax !== null;
+  refs.askPanel.hidden = !show;
+  refs.layout.classList.toggle("has-ask", show);
+  clearChildren(refs.askExamples);
+  askExampleButtons = [];
+  if (!show) {
+    clearAskOut();
+    refs.askCount.textContent = "";
+    return;
+  }
+  refs.askInput.maxLength = askMax.maxQuestion;
+  for (const item of askExamples(flows, 3)) {
+    const button = el("button", { type: "button", class: "quiet" }, item.text);
+    button.disabled = running;
+    button.addEventListener("click", () => {
+      refs.askInput.value = item.text;
+      updateAskCount();
+      refs.askInput.focus({ preventScroll: true });
+    });
+    askExampleButtons.push(button);
+    const row = el("div", { class: "ask-example" }, button);
+    if (item.hint !== "") {
+      row.appendChild(el("span", { class: "ask-hint" }, item.hint));
+    }
+    refs.askExamples.appendChild(row);
+  }
+  refs.askButton.disabled = running;
+  updateAskCount();
+}
+
+// One Chain line: { item, panel }. A tool step that went through the MCP tool gets a toggle button
+// in the strip and its wire panel (hidden) for the container below the strip.
+function askLineItem(line, trace) {
+  const step = line.step !== null && Array.isArray(trace.steps) ? trace.steps[line.step] : null;
+  const entries = step ? askStepToEntries(step) : null;
+  if (entries === null) {
+    return { item: el("li", { class: "strip-stage" }, line.text), panel: null };
+  }
+  const sent = formatTranscriptEntry(entries.sent);
+  const received = formatTranscriptEntry(entries.received);
+  const toggleId = "ask-toggle-" + line.step;
+  const panelId = "ask-wire-" + line.step;
+  const button = el(
+    "button",
+    { type: "button", class: "ask-step-toggle", id: toggleId, "aria-expanded": "false", "aria-controls": panelId },
+    line.text,
+  );
+  const panel = el(
+    "section",
+    { class: "ask-wire", id: panelId, "aria-labelledby": toggleId, hidden: "" },
+    el("pre", { class: "wire-json", tabindex: "0" }, sent.text),
+    el("pre", { class: "wire-json", tabindex: "0" }, received.text),
+  );
+  button.addEventListener("click", () => {
+    const open = button.getAttribute("aria-expanded") !== "true";
+    button.setAttribute("aria-expanded", open ? "true" : "false");
+    panel.hidden = !open;
+  });
+  return { item: el("li", { class: "strip-stage ask-has-wire" }, button), panel };
+}
+
+// Returns { list, panels }; panels is null when no step has a wire panel.
+function askChainList(question, trace, answer, stopped) {
+  const list = el("ol", { class: "strip ask-chain" });
+  const panelNodes = [];
+  for (const line of askChain(question, trace, answer)) {
+    const built = askLineItem(line, trace);
+    list.appendChild(built.item);
+    if (built.panel !== null) {
+      panelNodes.push(built.panel);
+    }
+  }
+  if (stopped !== null) {
+    list.appendChild(el("li", { class: "strip-stage" }, "Stopped: " + stopped));
+  }
+  const panels = panelNodes.length > 0 ? el("div", { class: "ask-wire-panels" }, ...panelNodes) : null;
+  return { list, panels };
+}
+function askEntryText(key) {
+  const text = String(codes[key].text);
+  return askMax === null ? text : text.replace(/\bN\b/g, String(askMax.maxQuestion));
+}
+
+function showAskError(question, key, info) {
+  clearAskOut();
+  if (!hasEntry(key)) {
+    refs.askOut.appendChild(el("p", { class: "error-text" }, "Could not load the error table."));
+  } else {
+    const text = askEntryText(key);
+    refs.askOut.appendChild(el("p", { class: "error-code" }, key));
+    refs.askOut.appendChild(el("p", { class: "error-text" }, text));
+    if (typeof info.status === "number") {
+      refs.askOut.appendChild(el("p", { class: "error-detail" }, "HTTP status: " + info.status));
+    }
+    const retryText = retryAfterText(info.retryAfter);
+    if (retryText !== null) {
+      refs.askOut.appendChild(el("p", { class: "error-detail" }, retryText));
+    }
+    if (isPlain(info.trace) && Array.isArray(info.trace.steps)) {
+      const runLine = askRunLine(info.trace);
+      if (runLine !== "") {
+        refs.askOut.appendChild(el("p", { class: "ask-run-line" }, runLine));
+      }
+      const chain = askChainList(question, info.trace, "", text);
+      refs.askOut.appendChild(chain.list);
+      if (chain.panels !== null) {
+        refs.askOut.appendChild(chain.panels);
+      }
+    }
+  }
+  refs.askOut.focus({ preventScroll: true });
+}
+
+function showAskAnswer(question, body) {
+  clearAskOut();
+  const answerBox = el("div", { class: "ask-answer" }, el("p", { class: "ask-answer-text" }, body.answer));
+  const notice = askAnswerNotice(body.truncated);
+  if (notice !== "") {
+    answerBox.appendChild(el("p", { class: "ask-notice" }, notice));
+  }
+  const runLine = askRunLine(body.trace);
+  if (runLine !== "") {
+    answerBox.appendChild(el("p", { class: "ask-run-line" }, runLine));
+  }
+  refs.askOut.appendChild(answerBox);
+  const chain = askChainList(question, body.trace, body.answer, null);
+  refs.askOut.appendChild(chain.list);
+  if (chain.panels !== null) {
+    refs.askOut.appendChild(chain.panels);
+  }
+  refs.askOut.focus({ preventScroll: true });
+}
+
+function renderAskReply(question, status, retryAfter, body) {
+  const plain = isPlain(body);
+  if (status === 404 || status === 405) {
+    showAskError(question, "ask_unavailable", { status });
+  } else if (
+    status === 200 &&
+    plain &&
+    typeof body.answer === "string" &&
+    typeof body.truncated === "boolean" &&
+    isPlain(body.trace) &&
+    Array.isArray(body.trace.steps)
+  ) {
+    showAskAnswer(question, body);
+  } else if (plain && isPlain(body.error) && typeof body.error.code === "string") {
+    const key = isServerCode(body.error.code) ? body.error.code : "unknown_code";
+    showAskError(question, key, {
+      status,
+      retryAfter: status === 429 ? retryAfter : null,
+      trace: key === "unknown_code" ? null : body.error.trace,
+    });
+  } else {
+    showAskError(question, "ask_reply_unreadable", { status });
+  }
+}
+
+async function ask() {
+  if (running) {
+    return;
+  }
+  const question = refs.askInput.value.trim();
+  if (question === "") {
+    setStatus("Type a question first.", false);
+    return;
+  }
+  clearResult();
+  clearAskOut();
+  setRunning(true);
+  setStatus("Asking the mainframe…", true);
+  try {
+    let response;
+    let body = null;
+    try {
+      response = await apiFetch("/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: buildAskBody(question),
+      });
+      if (response.status === 401) {
+        const key = keyForStatus(401);
+        setStatus(hasEntry(key) ? String(codes[key].text) : "Could not load the error table.", false);
+        refs.keyInput.focus();
+        return;
+      }
+      const text = await response.text();
+      try {
+        body = JSON.parse(text);
+      } catch (error) {
+        body = null;
+      }
+    } catch (error) {
+      showAskError(question, "no_response", {});
+      return;
+    }
+    renderAskReply(question, response.status, response.headers.get("Retry-After"), body);
+  } finally {
+    setRunning(false);
+    if (refs.status.textContent === "Asking the mainframe…") {
+      setStatus("", false);
+    }
+  }
+}
+
+// ---- Events and start ----
 function connect() {
   const typed = refs.keyInput.value;
   refs.keyInput.value = "";
@@ -998,6 +1251,14 @@ function wireEvents() {
     if (event.key === "Enter") {
       event.preventDefault();
       connect();
+    }
+  });
+  refs.askButton.addEventListener("click", ask);
+  refs.askInput.addEventListener("input", updateAskCount);
+  refs.askInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+      event.preventDefault();
+      ask();
     }
   });
   refs.forget.addEventListener("click", () => {

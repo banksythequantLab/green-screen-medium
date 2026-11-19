@@ -48,7 +48,9 @@ def _result(outcome: CallOutcome) -> CallToolResult:
     )
 
 
-def build_mcp_server(service: CallService, registry: Registry) -> Server:
+def build_mcp_server(
+    service: CallService, registry: Registry, transport: str = "mcp"
+) -> Server:
     """Low-level Server with ``tools/list`` and ``tools/call`` only (Requirement 14.8)."""
     tools = ListToolsResult(
         tools=[
@@ -67,12 +69,12 @@ def build_mcp_server(service: CallService, registry: Registry) -> Server:
 
     async def on_call_tool(ctx: Any, params: CallToolRequestParams) -> CallToolResult:
         try:
-            found = service.precheck(params.name, "mcp")
+            found = service.precheck(params.name, transport)
             if isinstance(found, CallOutcome):
                 outcome = found
             else:
                 outcome = await service.execute(
-                    found, SecretBox.adopt(params.arguments or {}), "mcp"
+                    found, SecretBox.adopt(params.arguments or {}), transport
                 )
         except Exception:
             outcome = CallOutcome("internal_error", error_body("internal_error"))

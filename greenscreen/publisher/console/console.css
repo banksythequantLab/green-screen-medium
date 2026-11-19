@@ -694,6 +694,141 @@ button:disabled {
   }
 }
 
+/* Ask panel: the first block of the stage once Ask is available. */
+
+.has-ask .seance-art-wrap {
+  display: none;
+}
+
+.ask-panel {
+  margin: 0 0 1rem;
+}
+
+.ask-panel textarea {
+  display: block;
+  width: 100%;
+  min-height: 4.5rem;
+  padding: 0.4rem 0.6rem;
+  font: inherit;
+  color: var(--fg-main);
+  background-color: var(--bg-field);
+  border: 1px solid var(--ui-line);
+  border-radius: 0;
+  resize: vertical;
+  text-shadow: none;
+}
+
+.ask-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.ask-count {
+  margin: 0;
+  color: var(--fg-dim);
+  text-shadow: none;
+}
+
+.ask-examples {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.ask-example {
+  display: block;
+}
+
+.ask-hint {
+  display: block;
+  margin: 0.125rem 0 0;
+  color: var(--fg-dim);
+  text-shadow: none;
+  overflow-wrap: anywhere;
+}
+
+.ask-out {
+  margin-top: 1rem;
+}
+
+.ask-out:empty {
+  display: none;
+}
+
+.ask-answer-text {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  color: var(--fg-bright);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ask-run-line {
+  margin: 0 0 0.75rem;
+}
+
+.ask-chain {
+  margin-bottom: 0.75rem;
+}
+
+.ask-chain > .strip-stage {
+  display: flex;
+  align-items: baseline;
+  max-width: 100%;
+}
+
+.ask-chain > .strip-stage::before {
+  flex: none;
+}
+
+.ask-step-toggle {
+  min-height: 0;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: normal;
+  text-align: left;
+  text-shadow: inherit;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.ask-step-toggle:hover,
+.ask-step-toggle:active {
+  background: none;
+}
+
+.ask-step-toggle::before {
+  content: "+ ";
+}
+
+.ask-step-toggle[aria-expanded="true"]::before {
+  content: "- ";
+}
+
+.ask-wire-panels {
+  margin: 0 0 0.75rem;
+}
+
+.ask-wire {
+  margin: 0 0 0.5rem;
+  border-left: 3px solid var(--ui-glow);
+  padding-left: 0.5rem;
+}
+/* Stacked layout: the Ask panel leads, the side column follows. */
+
+@media (max-width: 56rem) {
+  .has-ask .stage {
+    order: -1;
+  }
+}
+
 /* Motion */
 
 @keyframes gs-flicker {

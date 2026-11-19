@@ -10,7 +10,7 @@ import json
 import logging
 import time
 from collections.abc import Callable, Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -31,6 +31,9 @@ from greenscreen.publisher.config import Settings
 from greenscreen.publisher.console import HEADERS, Asset
 from greenscreen.publisher.registry import PublishedFlow, Registry
 from greenscreen.publisher.vault import SecretBox
+
+if TYPE_CHECKING:  # the Ask package is imported only when Ask is on
+    from greenscreen.publisher.ask.service import AskReply, AskService
 
 __all__ = ["build_rest", "build_openapi", "read_json", "CrashGuard"]
 
@@ -63,6 +66,10 @@ def _response(outcome: CallOutcome) -> JSONResponse:
     status = 200 if outcome.code == "ok" else HTTP_STATUS[outcome.code]
     headers = dict(RESPONSE_HEADERS.get(outcome.code, {}))
     return JSONResponse(outcome.body, status_code=status, headers=headers)
+
+
+def _ask_reply(reply: "AskReply") -> JSONResponse:
+    return JSONResponse(reply.body, status_code=reply.status, headers=dict(reply.headers))
 
 
 def _is_json_media_type(value: str | None) -> bool:
@@ -201,11 +208,13 @@ def _package_version() -> str:
         return "0.0.0"
 
 
-def build_openapi(registry: Registry, version: str) -> dict:
+def build_openapi(registry: Registry, version: str, ask: "AskService | None" = None) -> dict:
     """The OpenAPI 3.1 document of the Published_Flows (Requirement 12).
 
     Pure function of the registry. Embedded schemas are the registry's own objects, so
     they equal the Schema_Generator output. Holds no value, default or example.
+    With ``ask`` set, ``/ask`` and its three schemas are added; with ``None`` the
+    document is exactly the one without Ask.
     """
     by_status: dict[int, list[str]] = {}
     for code, status in HTTP_STATUS.items():
@@ -268,12 +277,19 @@ def build_openapi(registry: Registry, version: str) -> dict:
             "security": [],
         }
     }
+    schemas: dict[str, dict] = {"ErrorBody": _ERROR_BODY_SCHEMA}
+    if ask is not None:
+        from greenscreen.publisher.ask.service import ask_openapi
+
+        path_item, ask_schemas = ask_openapi(ask.max_question_chars, ask.max_answer_chars)
+        paths["/ask"] = path_item
+        schemas.update(ask_schemas)
     return {
         "openapi": "3.1.0",
         "info": {"title": "Green Screen Medium publisher", "version": version},
         "paths": paths,
         "components": {
-            "schemas": {"ErrorBody": _ERROR_BODY_SCHEMA},
+            "schemas": schemas,
             "securitySchemes": {
                 "ApiKeyAuth": {"type": "apiKey", "in": "header", "name": "X-API-Key"},
                 "BearerAuth": {"type": "http", "scheme": "bearer"},
@@ -329,6 +345,7 @@ def build_rest(
     *,
     lifespan: Any = None,
     console: Sequence[Asset] = (),
+    ask: "AskService | None" = None,
 ) -> FastAPI:
     """The FastAPI application: Flow route, ``/health`` and the ``/mcp`` route."""
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
@@ -364,11 +381,27 @@ def build_rest(
             return _response(box)
         return _response(await service.execute(published, box, "rest"))
 
+    if ask is not None:
+
+        @app.post("/ask", response_model=None)
+        async def ask_route(request: Request) -> JSONResponse:
+            call = ask.begin()
+            if not _is_json_media_type(request.headers.get("content-type")):
+                return _ask_reply(call.reject("request_invalid"))
+            box = await read_json(request, limit)
+            if isinstance(box, CallOutcome):
+                return _ask_reply(call.reject(box.code))
+            try:
+                payload = dict(box.mapping())
+            finally:
+                box.clear()
+            return _ask_reply(await call.answer(payload))
+
     @app.get("/health", response_model=None)
     async def health() -> JSONResponse:
         return JSONResponse({"status": "ok", "flows": len(registry)})
 
-    document = build_openapi(registry, _package_version())
+    document = build_openapi(registry, _package_version(), ask)
 
     @app.get("/openapi.json", response_model=None)
     async def openapi_json() -> JSONResponse:

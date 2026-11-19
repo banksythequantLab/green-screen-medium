@@ -399,7 +399,7 @@ def test_result_focus_prevents_scroll_and_no_scroll_call_exists():
 
 def test_requests_stay_on_allowed_paths():
     text = _read("console.js")
-    allowed = ("/openapi.json", "/flows/", "/mcp", "/console/codes.json")
+    allowed = ("/openapi.json", "/flows/", "/mcp", "/console/codes.json", "/ask")
     calls = list(re.finditer(r"(?<![\w.])(?:api)?[Ff]etch\s*\(\s*([^,)]*)", text))
     literal_calls = 0
     for m in calls:

@@ -55,6 +55,7 @@ class Prepared:
     signatures: Sequence[Any]
     loaded_count: int  # Loaded_Flows, for "published N of M"
     console: tuple[Asset, ...] = ()  # empty unless the console is on and transport is http
+    ask: Any = None  # an AskPlan when Ask is on, else None
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,6 +69,7 @@ class PublisherApp:
 
     # Set by build_app through object.__setattr__-free closure: see _make_lifespan.
     _lifespan: Callable[[], contextlib.AbstractAsyncContextManager[None]]
+    ask: Any = None  # the AskService when Ask is on
 
 
 def prepare(environ: Mapping[str, str]) -> Prepared:
@@ -84,7 +86,12 @@ def prepare(environ: Mapping[str, str]) -> Prepared:
             console = load_assets()
         except ConsoleAssetError as exc:
             raise StartupError(f"console: missing_asset ({exc.file})") from None
-    return Prepared(settings, registry, bound, signatures, len(loaded), console)
+    ask_plan: Any = None
+    if settings.ask is not None:
+        from greenscreen.publisher.ask.service import plan_ask
+
+        ask_plan = plan_ask(registry, settings.ask)
+    return Prepared(settings, registry, bound, signatures, len(loaded), console, ask_plan)
 
 
 def limit_third_party_loggers() -> None:
@@ -101,6 +108,9 @@ def build_app(
     session_factory: SessionFactory | None = None,
     clock: Any = None,
     poll_interval: float = 0.1,
+    model_adapter: Any = None,
+    ask_clock: Any = None,
+    ask_utcnow: Callable[[], Any] | None = None,
 ) -> PublisherApp:
     settings = prepared.settings
     limit_third_party_loggers()
@@ -115,6 +125,35 @@ def build_app(
         poll_interval=poll_interval,
     )
     server = build_mcp_server(service, prepared.registry)
+    ask_service: Any = None
+    if prepared.ask is not None and settings.ask is not None:
+        from greenscreen.publisher.ask.openai_compat import OpenAIAdapter
+        from greenscreen.publisher.ask.service import AskService
+
+        # httpx2 and httpcore2 log URLs at DEBUG and INFO; keep them at WARNING.
+        for name in ("httpx2", "httpcore2"):
+            logging.getLogger(name).setLevel(logging.WARNING)
+        ask_settings = settings.ask
+        if model_adapter is not None:
+            double = model_adapter
+            open_adapter: Callable[[], Any] = lambda: contextlib.nullcontext(double)
+        else:
+            open_adapter = lambda: OpenAIAdapter(
+                ask_settings.base_url,
+                ask_settings.model,
+                ask_settings.llm_api_key,
+                reasoning_effort=ask_settings.reasoning_effort,
+            )
+        ask_server = build_mcp_server(service, prepared.registry, transport="ask")
+        ask_service = AskService(
+            ask=ask_settings,
+            plan=prepared.ask,
+            server=ask_server,
+            open_adapter=open_adapter,
+            closing=lambda: service.closing,
+            clock=ask_clock,
+            utcnow=ask_utcnow,
+        )
     manager = build_manager(server, settings)
 
     @contextlib.asynccontextmanager
@@ -137,6 +176,7 @@ def build_app(
         StreamableHTTPASGIApp(manager),
         lifespan=app_lifespan,
         console=prepared.console,
+        ask=ask_service,
     )
     inner: Any = rest
     if settings.transport != "stdio":
@@ -147,4 +187,4 @@ def build_app(
             exempt=PAIRS if prepared.console else frozenset(),
         )
     asgi = CrashGuard(inner)
-    return PublisherApp(asgi=asgi, service=service, server=server, _lifespan=lifespan)
+    return PublisherApp(asgi=asgi, service=service, server=server, ask=ask_service, _lifespan=lifespan)

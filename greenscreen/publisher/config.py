@@ -10,8 +10,9 @@ import ipaddress
 import math
 import re
 from collections.abc import Collection, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from greenscreen.connector.config import ConnectorConfig
 from greenscreen.connector.exceptions import ConfigurationError
@@ -27,6 +28,9 @@ __all__ = [
     "parse_publish_list",
     "parse_bindings",
     "is_loopback_host",
+    "AskSettings",
+    "REASONING_EFFORTS",
+    "is_ask_loopback_host",
 ]
 
 _INT_RE = re.compile(r"[0-9]+")
@@ -55,12 +59,48 @@ class Settings:
     flows_dir: Path | None
     publish_flows: str | None  # raw GS_PUBLISH_FLOWS; None when unset or zero-length
     enable_console: bool = False
+    ask: AskSettings | None = None
 
     def __repr__(self) -> str:
         return (
             f"Settings(transport={self.transport!r}, publish_host={self.publish_host!r}, "
             f"publish_port={self.publish_port})"
         )
+
+
+_ASK_LOOPBACK = frozenset({"127.0.0.1", "::1", "localhost"})
+_MODEL_RE = re.compile(r"[A-Za-z0-9._:/@-]{1,100}")
+_KEY_RE = re.compile(r"[\x21-\x7e]{1,512}")  # printable ASCII, no space
+_URL_CHARS_RE = re.compile(r"[\x21-\x7e]+")
+REASONING_EFFORTS = ("none", "minimal", "low", "medium", "high")
+
+
+def is_ask_loopback_host(host: str) -> bool:
+    """True only for ``127.0.0.1``, ``::1`` and ``localhost`` (brackets stripped)."""
+    h = host.strip()
+    if h.startswith("[") and h.endswith("]"):
+        h = h[1:-1]
+    return h.lower() in _ASK_LOOPBACK
+
+
+@dataclass(frozen=True, slots=True)
+class AskSettings:
+    base_url: str  # no trailing slash; the adapter appends /chat/completions
+    model: str
+    llm_api_key: str | None = field(repr=False)
+    reasoning_effort: str | None  # one of REASONING_EFFORTS or None; not secret
+    max_tool_calls: int
+    max_turns: int
+    timeout_seconds: float
+    model_timeout_seconds: float
+    flows: tuple[str, ...] | None
+    max_question_chars: int
+    max_answer_chars: int
+    max_result_chars: int
+    daily_limit: int
+
+    def __repr__(self) -> str:
+        return "AskSettings(configured)"  # no URL, no model, no key, no effort
 
 
 def _get(environ: Mapping[str, str], name: str) -> str | None:
@@ -167,6 +207,9 @@ def load_settings(environ: Mapping[str, str]) -> Settings:
     else:
         api_key = None  # stdio ignores the key (Requirement 13.10)
 
+    enable_ask = _bool(environ, "GS_ENABLE_ASK")  # always parsed
+    ask = _load_ask(environ) if enable_ask and transport == "http" else None
+
     return Settings(
         connector=connector,
         publish_host=publish_host,
@@ -182,7 +225,108 @@ def load_settings(environ: Mapping[str, str]) -> Settings:
         flows_dir=Path(flows_dir_text) if flows_dir_text else None,
         publish_flows=_get(environ, "GS_PUBLISH_FLOWS"),
         enable_console=enable_console,
+        ask=ask,
     )
+
+
+def _load_base_url(environ: Mapping[str, str]) -> tuple[str, bool]:
+    """Validate ``GS_LLM_BASE_URL``. Returns the rebuilt URL and whether the host is loopback."""
+    name = "GS_LLM_BASE_URL"
+    text = _get(environ, name)
+    if text is None:
+        raise StartupError(f"{name}: missing")
+    if _URL_CHARS_RE.fullmatch(text) is None:
+        raise StartupError(f"{name}: not_a_url")
+    try:
+        parts = urlsplit(text)
+        parts.port  # noqa: B018 - raises ValueError for a bad port
+        host = parts.hostname
+    except ValueError:
+        raise StartupError(f"{name}: not_a_url") from None
+    if parts.scheme not in ("http", "https") or not host:
+        raise StartupError(f"{name}: not_a_url")
+    if "@" in parts.netloc:
+        raise StartupError(f"{name}: credentials_in_url")
+    if "?" in text or "#" in text:
+        raise StartupError(f"{name}: query_in_url")
+    loopback = is_ask_loopback_host(host)
+    if parts.scheme == "http" and not loopback:
+        raise StartupError(f"{name}: https_required")
+    return f"{parts.scheme}://{parts.netloc}{parts.path.rstrip('/')}", loopback
+
+
+def _load_reasoning_effort(environ: Mapping[str, str]) -> str | None:
+    text = _get(environ, "GS_LLM_REASONING_EFFORT")
+    if text is None:
+        return None
+    if text not in REASONING_EFFORTS:  # exact, case-sensitive, no trimming
+        raise StartupError(
+            f"GS_LLM_REASONING_EFFORT: not_allowed ({', '.join(REASONING_EFFORTS)})"
+        )
+    return text
+
+
+def _load_ask(environ: Mapping[str, str]) -> AskSettings:
+    """Read the Ask variables in the fixed order of the design. Values never reach a message."""
+    base_url, loopback = _load_base_url(environ)
+
+    model = _get(environ, "GS_LLM_MODEL")
+    if model is None:
+        raise StartupError("GS_LLM_MODEL: missing")
+    if _MODEL_RE.fullmatch(model) is None:
+        raise StartupError("GS_LLM_MODEL: invalid_model_name")
+
+    key = _get(environ, "GS_LLM_API_KEY")
+    if key is None:
+        if not loopback:
+            raise StartupError("GS_LLM_API_KEY: missing")
+    elif _KEY_RE.fullmatch(key) is None:
+        raise StartupError("GS_LLM_API_KEY: invalid_key")
+
+    effort = _load_reasoning_effort(environ)
+
+    max_tool_calls = _int(environ, "GS_ASK_MAX_TOOL_CALLS", 6, 1, 20)
+    max_turns = _int(environ, "GS_ASK_MAX_TURNS", 8, 1, 30)
+    timeout = _seconds(environ, "GS_ASK_TIMEOUT_SECONDS", 90.0, 20.0, 95.0)
+    model_timeout = _seconds(environ, "GS_ASK_MODEL_TIMEOUT_SECONDS", 25.0, 1.0, 60.0)
+    max_question = _int(environ, "GS_ASK_MAX_QUESTION_CHARS", 500, 1, 2000)
+    max_answer = _int(environ, "GS_ASK_MAX_ANSWER_CHARS", 2000, 100, 20000)
+    max_result = _int(environ, "GS_ASK_MAX_RESULT_CHARS", 4000, 200, 20000)
+    daily = _int(environ, "GS_ASK_DAILY_LIMIT", 100, 1, 100000)
+    if 2 * model_timeout > timeout:
+        raise StartupError("GS_ASK_MODEL_TIMEOUT_SECONDS: model_timeout_too_long")
+    flows = _parse_name_list(_get(environ, "GS_ASK_FLOWS"), "GS_ASK_FLOWS")
+
+    return AskSettings(
+        base_url=base_url,
+        model=model,
+        llm_api_key=key,
+        reasoning_effort=effort,
+        max_tool_calls=max_tool_calls,
+        max_turns=max_turns,
+        timeout_seconds=timeout,
+        model_timeout_seconds=model_timeout,
+        flows=flows,
+        max_question_chars=max_question,
+        max_answer_chars=max_answer,
+        max_result_chars=max_result,
+        daily_limit=daily,
+    )
+
+
+def _parse_name_list(text: str | None, variable: str) -> tuple[str, ...] | None:
+    """Shared comma-list parser: ``empty_item``, then ``duplicate_name``."""
+    if not text:
+        return None
+    items = [item.strip() for item in text.split(",")]
+    if any(not item for item in items):
+        raise StartupError(f"{variable}: empty_item")
+    seen: set[str] = set()
+    for item in items:
+        if item in seen:
+            raise StartupError(f"{variable}: duplicate_name ({item})")
+        seen.add(item)
+    return tuple(items)
 
 
 def parse_publish_list(text: str | None) -> tuple[str, ...] | None:
@@ -192,17 +336,7 @@ def parse_publish_list(text: str | None) -> tuple[str, ...] | None:
     then ``duplicate_name``.  ``unknown_flow`` needs the Loaded_Flows and is
     checked by ``select_published``.
     """
-    if not text:
-        return None
-    items = [item.strip() for item in text.split(",")]
-    if any(not item for item in items):
-        raise StartupError("GS_PUBLISH_FLOWS: empty_item")
-    seen: set[str] = set()
-    for item in items:
-        if item in seen:
-            raise StartupError(f"GS_PUBLISH_FLOWS: duplicate_name ({item})")
-        seen.add(item)
-    return tuple(items)
+    return _parse_name_list(text, "GS_PUBLISH_FLOWS")
 
 
 _BIND_PREFIX = "GS_BIND_"

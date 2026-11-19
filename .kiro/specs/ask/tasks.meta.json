@@ -1,0 +1,878 @@
+{
+  "pbtResults": {
+    "2.18 Property 5: Ask off changes no existing response": {
+      "status": "passed",
+      "lastRunTimestamp": 1795112123208
+    },
+    "2.15 Property 2: a hostile model gets no further than the published tools": {
+      "status": "passed",
+      "lastRunTimestamp": 1795112251416
+    },
+    "2.16 Property 3: the trace is the allow-list projection and nothing else": {
+      "status": "failed",
+      "failingExample": "scenario=([('ambiguous_screen', {'error': {'kind': '', 'code': '', 'expected': [], 'step_index': 0, 'audit': [{}]}})], [], <random>, 0), secret_probe=';;;;'  -> trace step result {'error': {..., 'audit': [{}]}} fails AskTrace (audit item requires all seven members)",
+      "lastRunTimestamp": 1795112488264
+    }
+  },
+  "executionHistory": {
+    "1.1 Record the documentation checks and verify the starting tree": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110149045
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110157524
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110278903
+      }
+    ],
+    "2.1 Settings and validation in `config.py`, and `.env.example`": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110149188
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110281835
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110367684
+      }
+    ],
+    "2.2 Create the `ask` package with codes and the adapter interface": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110149318
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110282567
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110368071
+      }
+    ],
+    "2.3 The OpenAI-compatible adapter `openai_compat.py`": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110149527
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110371444
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110643078
+      }
+    ],
+    "2.4 The agent loop `agent.py`": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110149633
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110372046
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110643672
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795111992423
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795112054190
+      }
+    ],
+    "2.5 Add the `transport` keyword to `mcp_server.py`": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110149732
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110283079
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110368820
+      }
+    ],
+    "2.6 The service `service.py`": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110149916
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110646918
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110957756
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113391382
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113518603
+      }
+    ],
+    "2.7 `POST /ask` and the OpenAPI listing in `rest.py`": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110150029
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110965608
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795111106204
+      }
+    ],
+    "2.8 Wire `app.py` and `cli.py`": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110150148
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795111106868
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795111499329
+      }
+    ],
+    "2.9 Add the shared test helper `tests/ask_support.py`": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110150281
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110372898
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110644276
+      }
+    ],
+    "2.10 Config, flows, codes and startup tests": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110150397
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795111501897
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795112056368
+      }
+    ],
+    "2.11 Adapter and pin tests": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110150531
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110647579
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110962741
+      }
+    ],
+    "2.12 Agent, limits, hostile-model and timing tests": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110150660
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795111502811
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795112054793
+      }
+    ],
+    "2.13 Service, route, auth and OpenAPI tests": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110150784
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795111503796
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795112055593
+      }
+    ],
+    "2.14 Property 1: nothing outside the egress allow-list reaches the model": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110150929
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795112062732
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113519581
+      }
+    ],
+    "2.15 Property 2: a hostile model gets no further than the published tools": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110151126
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795112063050
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113520689
+      }
+    ],
+    "2.16 Property 3: the trace is the allow-list projection and nothing else": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110151256
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795112063560
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113521513
+      }
+    ],
+    "2.17 Property 4: no question, answer, model text or tool data in any log record": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110151375
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795112064010
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113522230
+      }
+    ],
+    "2.18 Property 5: Ask off changes no existing response": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110151490
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795112064610
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113523111
+      }
+    ],
+    "3. Checkpoint: the server side is green (about 0.5 h; no live host, no real model, no browser; Windows, Node on PATH)": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110151607
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795114069616
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795114844170
+      }
+    ],
+    "4.1 Add the Ask entries to `codes.json` and edit `tests/unit/test_console_codes.py`": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110151708
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795117457694
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795117533598
+      }
+    ],
+    "4.2 Extend `snippets.js` with the six Ask functions": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110151812
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795117458031
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795117534369
+      }
+    ],
+    "4.3 Node tests for the Ask functions and the parity tests": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110151915
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795117538315
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795117834691
+      }
+    ],
+    "4.4 The Ask panel markup and styles": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110152025
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795117458793
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795117535020
+      }
+    ],
+    "4.5 The page script in `console.js`": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110152137
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795117539057
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795117833936
+      }
+    ],
+    "4.6 Update the allowed-path test and add the Ask static scans": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110152250
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795117837158
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795118237999
+      }
+    ],
+    "5.1 Final run, git checks, try-out text and viewer strings": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110152358
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795118244689
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795119181783
+      }
+    ],
+    "6.1 `TOOL_TAIL` 10.0, the worst-case record, the refusal and the Fixed_Hints (`service.py`, `app.py`, `cli.py`)": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110152472
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113531205
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113738867
+      }
+    ],
+    "6.2 Empty and blank tool-call arguments are `{}` (`agent.py`)": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110152591
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113531765
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113739547
+      }
+    ],
+    "6.3 Confirm that `reasoning` and unknown reply members are never read or forwarded (`openai_compat.py`, `agent.py`)": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110152704
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113744840
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113779426
+      }
+    ],
+    "6.4 `.env.example` comment (`.env.example`)": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110152827
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113532360
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113741097
+      }
+    ],
+    "6.5 Plain-words server message for a model timeout (`codes.py`)": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110152938
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113533558
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113742093
+      }
+    ],
+    "6.6 Timing, configuration and hint tests (`test_ask_timing.py`, `test_ask_config.py`, `test_ask_flows.py`)": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110153059
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113782631
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113965858
+      }
+    ],
+    "6.7 Empty-argument and reply-member tests (`test_ask_agent.py`, `test_ask_adapter.py`)": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110153180
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113783632
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113966770
+      }
+    ],
+    "6.8 Property tests with a hostile `reasoning` member (`test_ask_egress.py`, `test_ask_no_leak_logs.py`)": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110153315
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113969491
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795114064750
+      }
+    ],
+    "7. Checkpoint: the server-side amendments are green (about 0.5 h; no live host, no real model, no browser; Windows, Node on PATH)": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110153437
+      },
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795114844666
+      }
+    ],
+    "8.1 `model_unreachable` plain-words text (`codes.json`, `test_ask_codes_json.py`)": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110153559
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795119195494
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795119359054
+      }
+    ],
+    "8.2 Plain-text answers and the `summariseRun` parity re-check (`test_ask_assets.py`, `test_ask_snippets.py`, `test_ask_trace_parity.py`)": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110153668
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795119195841
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795119360091
+      }
+    ],
+    "9.1 Final run, git checks and report": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110153769
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795119362900
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795119921952
+      }
+    ],
+    "1. Library documentation checks and pre-flight (about 0.75 h; record only; no live host, no real model, no browser; Windows)": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795110279139
+      }
+    ],
+    "2. Server side with the fake adapter (about 26.25 h; no live host, no real model, no browser; Windows)": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795113523552
+      }
+    ],
+    "6. Amendments to the server side (about 9.0 h; no live host, no real model, no browser; Windows). Do not start before the reviewer says so. These tasks edit the Ask files created by tasks 2 and 4 (all new in this feature) and no pre-existing test file. Re-check the `anyio` row of the design's library table before 6.1.": [
+      {
+        "executionId": "99049acc-c37b-45f2-9af0-d947f3c571d5",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795114065080
+      }
+    ],
+    "10.1 Version-independent depth scan and the new check order (Finding 13 (a); Decision 33; Requirement 8, criterion 3)": [
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795116532542
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795116621322
+      }
+    ],
+    "10.2 Tighter system prompt, one Refusal_Sentence, pinned phrases (Finding 13 (b); Decision 34; Requirement 18, criteria 1 to 3 and 9)": [
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795116624242
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795116713105
+      }
+    ],
+    "10.3 `plain_answer`, its wiring, and its tests (Finding 13 (c); Decisions 28 and 35; Requirement 18, criteria 4 to 8; Requirement 3, criterion 10)": [
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795116715992
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795116827048
+      }
+    ],
+    "10.4 Server checkpoint: full suite and report (about 0.5 h; Windows, Node on PATH)": [
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795116832004
+      },
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795117453066
+      }
+    ],
+    "10. Reviewer fixes after the real run (about 5.0 h; no live host, no real model, no browser; Windows, Python 3.11.9). Run FIRST, before tasks 4, 5, 8 and 9. Source: Finding 13 of the requirements (the reviewer's run on Linux, Python 3.14.4, 3243 passed, 1 failed, 119 skipped). Production files touched: `greenscreen/publisher/ask/agent.py`, `codes.py`, and the new `argscan.py` and `plaintext.py` (and `prompt.py` only if `agent.py` would pass 400 lines). Test files touched are the Ask test files of this feature only. No other production file, no existing non-Ask test file, no `pyproject.toml`, no `.kiro/steering`. Re-check the `json` and `re` standard-library rows of the design's documentation table before 10.1 and append a dated line (page, Python version, date) to the design's \"Library documentation checks\"; the Python 3.14 behaviour of `json.loads` is the reviewer's observation and is not re-run here (only 3.11.9 is installed).": [
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795117453445
+      }
+    ],
+    "4. The page (about 12.0 h; no live host, no real model, no browser; Windows, Node on PATH). Starts only after task 10 (10.4) is green; the page uses the server behaviour of task 10 (stripped answers, the Refusal_Sentence).": [
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795118238529
+      }
+    ],
+    "5. Final checkpoint and report (about 1.0 h; no live host, no real model, no browser; Windows, Node on PATH)": [
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795119182065
+      }
+    ],
+    "8. Page amendments (about 1.25 h; no live host, no real model, no browser; Windows, Node on PATH). Starts only after tasks 10 and 4 are done.": [
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795119360335
+      }
+    ],
+    "9. Final run for the amendments (about 0.75 h; no live host, no real model, no browser; Windows, Node on PATH)": [
+      {
+        "executionId": "47dc5b17-f96b-403c-ba07-00b20ad0fc78",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795119922066
+      }
+    ],
+    "11.1 `snippets.js`: `askParse` and `askCounterText`, with Node tests including the real shape": [
+      {
+        "executionId": "49da83bb-d958-4b83-9b09-f407d760bcbf",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795120941676
+      },
+      {
+        "executionId": "49da83bb-d958-4b83-9b09-f407d760bcbf",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795121057949
+      }
+    ],
+    "11.2 `console.js`: use the pure functions, focus after connecting, and the chain markup": [
+      {
+        "executionId": "49da83bb-d958-4b83-9b09-f407d760bcbf",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795121058680
+      },
+      {
+        "executionId": "49da83bb-d958-4b83-9b09-f407d760bcbf",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795121138683
+      }
+    ],
+    "11.3 `console.css` (and `index.html` if needed): layout, arrow, hint": [
+      {
+        "executionId": "49da83bb-d958-4b83-9b09-f407d760bcbf",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795121139447
+      },
+      {
+        "executionId": "49da83bb-d958-4b83-9b09-f407d760bcbf",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795121183259
+      }
+    ],
+    "11.4 Static scans and CSS tests: add new tests, edit existing ones only where they pin the old layout (each edit flagged)": [
+      {
+        "executionId": "49da83bb-d958-4b83-9b09-f407d760bcbf",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795121183938
+      },
+      {
+        "executionId": "49da83bb-d958-4b83-9b09-f407d760bcbf",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795121522439
+      }
+    ],
+    "11.5 Final run, git checks and report": [
+      {
+        "executionId": "49da83bb-d958-4b83-9b09-f407d760bcbf",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795121523249
+      },
+      {
+        "executionId": "cd0396eb-e4f1-4ea9-b4c9-f8a402958d60",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795123611351
+      },
+      {
+        "executionId": "cd0396eb-e4f1-4ea9-b4c9-f8a402958d60",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795123615265
+      },
+      {
+        "executionId": "cd0396eb-e4f1-4ea9-b4c9-f8a402958d60",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795124146331
+      }
+    ],
+    "11. Page fixes after the reviewer's browser pass (about 7.25 h; no live host, no real model, no browser; Windows, Node on PATH). Source: Finding 14 of the requirements and the design section \"Page fixes after the reviewer's browser pass\" (the markup contract and the CSS contract live there; read it first). Run after tasks 4, 5, 8 and 9. Page files and tests only: `greenscreen/publisher/console/snippets.js`, `console.js`, `console.css` (and `index.html` only if 11.3 finds a need; none expected) and the Ask test files. No server file, no `pyproject.toml`, no `.kiro/steering`, no commit. Re-check the MDN `focus` and `<button aria-expanded>` rows before 11.2 and append a dated line to the design's \"Library documentation checks\".": [
+      {
+        "executionId": "cd0396eb-e4f1-4ea9-b4c9-f8a402958d60",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795124146467
+      }
+    ]
+  }
+}

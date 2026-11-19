@@ -40,6 +40,13 @@ _EXTRA_FIELDS = (
     "step_index",
     "close_failed",
     "session_clean",
+    "ask_id",
+    "model_turns",
+    "tool_calls",
+    "model_ms",
+    "truncated",
+    "worst_case_seconds",
+    "largest_tool_seconds",
 )
 
 
@@ -97,7 +104,7 @@ def _install_logging() -> None:
 def _scrub_environment() -> None:
     """Remove GS_API_KEY and every Binding_Variable (Requirement 15.8)."""
     for name in list(os.environ):
-        if name == "GS_API_KEY" or name.startswith(BIND_PREFIX):
+        if name in ("GS_API_KEY", "GS_LLM_API_KEY") or name.startswith(BIND_PREFIX):
             os.environ.pop(name, None)
 
 
@@ -284,6 +291,15 @@ def _report_startup(prepared: Any) -> None:
     )
     if prepared.console:
         _LOG.info("console enabled")
+    if prepared.ask is not None:
+        _LOG.info("ask enabled")
+        _LOG.info(
+            "ask worst case",
+            extra={
+                "worst_case_seconds": prepared.ask.worst_case_seconds,
+                "largest_tool_seconds": prepared.ask.largest_tool_seconds,
+            },
+        )
 
 
 def main() -> int:

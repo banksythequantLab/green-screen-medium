@@ -646,3 +646,206 @@ export function jsonRpcErrorText(code) {
       return "Unknown error code";
   }
 }
+
+// ---------------------------------------------------------------------------
+// Ask (task 4.2). Pure functions; none takes the API credential or a response.
+// ---------------------------------------------------------------------------
+
+export const ASK_REFUSAL = "I can only answer questions about this mainframe, using its tools, and I cannot answer that.";
+
+const ASK_NAME = /^[a-zA-Z0-9_-]{1,64}$/;
+
+export function buildAskBody(question) {
+  return '{"question":' + JSON.stringify(String(question)) + "}";
+}
+
+// flows: listing items {name, blurb or description, inputs}. Returns up to three {text, hint}.
+export function askExamples(flows, limit) {
+  const found = [];
+  const most = Number.isSafeInteger(limit) ? Math.min(Math.max(limit, 0), 3) : 0;
+  if (!Array.isArray(flows)) {
+    return found;
+  }
+  for (const flow of flows) {
+    if (found.length >= most) {
+      break;
+    }
+    if (!isObject(flow) || typeof flow.name !== "string" || !ASK_NAME.test(flow.name)) {
+      continue;
+    }
+    const inputs = Array.isArray(flow.inputs) ? flow.inputs : [];
+    if (inputs.some((input) => !isObject(input) || input.required === true || input.secret === true)) {
+      continue;
+    }
+    const words = typeof flow.description === "string" ? flow.description : typeof flow.blurb === "string" ? flow.blurb : "";
+    const hint = words.replace(/[^\x20-\x7E]/g, " ").replace(/ +/g, " ").trim().slice(0, 100).trim();
+    found.push({ text: "Run " + flow.name + " and tell me what it returns.", hint });
+  }
+  return found;
+}
+
+function traceSteps(trace) {
+  return isObject(trace) && Array.isArray(trace.steps) ? trace.steps : [];
+}
+
+function isToolStep(step) {
+  return isObject(step) && step.type === "tool";
+}
+
+// For a tool step that was not rejected: {sent, received}; otherwise null.
+export function askStepToEntries(step) {
+  if (!isToolStep(step) || step.code === "rejected") {
+    return null;
+  }
+  const params = { name: step.tool, arguments: isObject(step.arguments) ? step.arguments : {} };
+  const sent = {
+    direction: "sent",
+    method: "tools/call",
+    text: JSON.stringify({ jsonrpc: "2.0", id: step.id, method: "tools/call", params }),
+  };
+  const received = {
+    direction: "received",
+    method: "tools/call",
+    status: 200,
+    text: "",
+    message: {
+      jsonrpc: "2.0",
+      id: step.id,
+      result: { isError: step.ok !== true, structuredContent: step.result },
+    },
+  };
+  return { sent, received };
+}
+
+// The audit rows of one tool step: the success audit, or the error audit.
+function stepAudit(step) {
+  const result = isObject(step) && isObject(step.result) ? step.result : {};
+  if (Array.isArray(result.audit)) {
+    return result.audit;
+  }
+  return isObject(result.error) && Array.isArray(result.error.audit) ? result.error.audit : [];
+}
+
+function countsText(audit) {
+  const counts = summariseRun(audit);
+  const steps = String(counts.steps);
+  const screens = String(counts.screens);
+  return steps + plural(steps, " step", " steps") + " on " + screens + plural(screens, " screen", " screens");
+}
+
+function askedText(question) {
+  const text = String(question).replace(/[\x00-\x1f\x7f-\x9f]/g, " ").replace(/\s+/g, " ").trim();
+  const points = Array.from(text);
+  return "You asked: " + (points.length > 200 ? points.slice(0, 200).join("") + "\u2026" : text);
+}
+
+function toolNames(steps, turn) {
+  const names = [];
+  for (const step of steps) {
+    if (isToolStep(step) && step.turn === turn) {
+      const shown = clean(step.tool, 40);
+      if (!names.includes(shown)) {
+        names.push(shown);
+      }
+    }
+  }
+  return names;
+}
+
+function toolLine(step) {
+  const name = clean(step.tool, 40);
+  if (step.code === "rejected") {
+    return "refused tool call " + safeCount(step.id) + ": " + clean(step.reason, 60);
+  }
+  const audit = stepAudit(step);
+  if (step.ok === true) {
+    return "MCP tool " + name + ": " + (audit.length > 0 ? countsText(audit) : "ok");
+  }
+  const failed = "failed (" + codeText(step.code) + ")";
+  return "MCP tool " + name + ": " + (audit.length > 0 ? failed + ", " + countsText(audit) : failed);
+}
+
+// Returns the ordered Chain lines {text, step}; step is the index of the Trace_Step or null.
+export function askChain(question, trace, answer) {
+  const lines = [{ text: askedText(question), step: null }];
+  const steps = traceSteps(trace);
+  const refused = typeof answer === "string" && answer.trim() === ASK_REFUSAL;
+  let toolSeen = false;
+  steps.forEach((step, index) => {
+    if (!isObject(step)) {
+      return;
+    }
+    if (step.type === "model") {
+      const turn = safeCount(step.turn);
+      if (step.outcome === "tool_calls") {
+        const names = toolNames(steps, step.turn);
+        const shown = names.slice(0, 3).join(", ");
+        const more = names.length > 3 ? " +" + (names.length - 3) + " more" : "";
+        lines.push({
+          text: finish("model turn " + turn + ": asked for " + (names.length === 1 ? "tool " : "tools ") + shown + more),
+          step: null,
+        });
+      } else if (step.outcome === "answer") {
+        const tail = toolSeen ? "answered" : "answered without a tool";
+        lines.push({ text: finish("model turn " + turn + ": " + tail + (refused ? " (refused)" : "")), step: null });
+      }
+    } else if (isToolStep(step)) {
+      toolSeen = true;
+      lines.push({ text: finish(toolLine(step)), step: index });
+    }
+  });
+  return lines;
+}
+
+// "N step(s) on M distinct screen(s)" over every tool step's audit, or "" when there is none.
+export function askRunLine(trace) {
+  const audit = [];
+  for (const step of traceSteps(trace)) {
+    if (isToolStep(step)) {
+      audit.push(...stepAudit(step));
+    }
+  }
+  if (audit.length === 0) {
+    return "";
+  }
+  const counts = summariseRun(audit);
+  const steps = String(counts.steps);
+  const screens = String(counts.screens);
+  return steps + plural(steps, " step", " steps") + " on " + screens + " distinct" + plural(screens, " screen", " screens");
+}
+
+export function askAnswerNotice(truncated) {
+  return truncated === true ? "The answer was cut to the length limit." : "";
+}
+
+// Returns { maxQuestion } when the listing document offers POST /ask with a question limit
+// that is a safe integer from 1 to 2000, else null. Never throws.
+export function askParse(openapi) {
+  if (!isObject(openapi) || !isObject(openapi.paths) || !isObject(openapi.paths["/ask"])) {
+    return null;
+  }
+  const post = openapi.paths["/ask"].post;
+  if (!isObject(post)) {
+    return null;
+  }
+  const body = post.requestBody;
+  const content = isObject(body) && isObject(body.content) ? body.content["application/json"] : null;
+  const schema = isObject(content) ? content.schema : null;
+  const props = isObject(schema) && isObject(schema.properties) ? schema.properties.question : null;
+  const limit = isObject(props) ? props.maxLength : null;
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 2000) {
+    return null;
+  }
+  return { maxQuestion: limit };
+}
+
+// "65 / 500" from two numbers; the empty string for anything else. Never throws.
+export function askCounterText(used, max) {
+  if (!Number.isSafeInteger(used) || used < 0) {
+    return "";
+  }
+  if (!Number.isSafeInteger(max) || max < 1 || max > 2000) {
+    return "";
+  }
+  return used + " / " + max;
+}
