@@ -1,0 +1,26 @@
+data:    SAVEOLD                                                                      
+data:    SHUTDOWN                                                                     
+data:    SIMUPRIM                                                                     
+data:    SLIMXREF                                                                     
+data:    SMPLIST                                                                      
+data:    SPZAP001                                                                     
+data:    SPZAP002                                                                     
+data:    SPZAP003                                                                     
+data:    SUPERLST                                                                     
+data:    TAPEMAP                                                                      
+data:    TESTALG                                                                      
+data:    TESTCOB                                                                      
+data:    TESTCOB2                                                                     
+data:    TESTFORT                                                                     
+data:    TESTGCC                                                                      
+data:    TESTJCC                                                                      
+data:    TESTPASC                                                                     
+data:    TESTPL1                                                                      
+data:    TESTRPG                                                                      
+data:    TESTSIMU                                                                     
+data:    TESTSORT                                                                     
+data:    TESTWATF                                                                     
+data:    TSOBATCH                                                                     
+data:  ***                                                                            
+U F U C(127.0.0.1) I 2 24 80 23 5 0x0 0.000
+ok

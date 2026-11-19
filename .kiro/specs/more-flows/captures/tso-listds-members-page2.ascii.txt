@@ -1,0 +1,26 @@
+data:    ARCHDEL                                                                      
+data:    ARCHLIST                                                                     
+data:    ARCHLOAD                                                                     
+data:    ARCHNOTE                                                                     
+data:    ARCHUNL                                                                      
+data:    BAT#EDIT                                                                     
+data:    BSPHRCMD                                                                     
+data:    BSPOSCMD                                                                     
+data:    BSPVTMWT                                                                     
+data:    BYPASSNQ                                                                     
+data:    CHGPWD                                                                       
+data:    CLEANPDS                                                                     
+data:    CLIPDASD                                                                     
+data:    COMPPROC                                                                     
+data:    COMPRESS                                                                     
+data:    CONFIGSE                                                                     
+data:    COPY001                                                                      
+data:    CREDITS                                                                      
+data:    D$C3270                                                                      
+data:    D$DISASM                                                                     
+data:    DEFALIAS                                                                     
+data:    DEFPAGE                                                                      
+data:    DEFSWAP                                                                      
+data:  ***                                                                            
+U F U C(127.0.0.1) I 2 24 80 23 5 0x0 0.000
+ok

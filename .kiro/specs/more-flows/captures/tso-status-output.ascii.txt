@@ -1,0 +1,26 @@
+data: STATUS                                                                          
+data:  JOB HERC01(TSU00080) EXECUTING                                                 
+data:  READY                                                                          
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+U F U C(127.0.0.1) I 2 24 80 3 0 0x0 0.000
+ok

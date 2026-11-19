@@ -223,3 +223,54 @@ connection each time. No capture holds the password (checked in plain and hex fo
   - The publisher logs `session_clean=false` for every stop that skips the logoff
     steps: `unknown_screen`, `ambiguous_screen`, `timeout`, `run_timeout`,
     `session_error`, a call timeout, a cancelled call and shutdown teardown.
+
+## Verified 2026-11-19: TSO commands at READY (captures in /.kiro/specs/more-flows/captures)
+
+Recorded with s3270 4.3 (`-model 3279-2`, 24x80) on the demo host, user id from the
+environment. The captures stay under the spec folder until a spec promotes them into
+/captures, because a test pins the names allowed there. Path used: bundled logon to the ISPF primary option menu, `X` + Enter to
+leave ISPF, which gives `READY` on row 0 with the cursor at row 1 col 0. Then, for each
+command: Clear, type the command, Enter. After the commands: Clear, `LOGOFF`, Enter,
+which returned the logon screen. None of these commands changes anything on the host.
+
+What Clear does at READY: the screen becomes blank and stays a TSO input screen. The
+typed command is echoed on row 0 from col 0. Output starts on row 1, each output line
+begins at col 1 (col 0 is blank), and the last line is ` READY` with the cursor on the
+row after it, col 0. Without Clear the echo and output are appended below whatever was
+already on the screen (capture not kept; observed once: rows 0 to 5 old output, row 6
+echo, row 7 output, row 8 READY), so row positions are only fixed after Clear.
+
+| Command | Output observed (rows after the echo on row 0) | Capture |
+|---|---|---|
+| `TIME` | Row 1: ` TIME-09:36:45 PM. CPU-00:00:00 SERVICE-7578 SESSION-00:00:06 NOVEMBER 19,2026`. Row 2: ` READY`. The SERVICE number varies in width, so the date does not start at a fixed column. | `tso-time-output` |
+| `LISTCAT` | Row 1: ` IN CATALOG:SYS1.UCAT.TSO`. Rows 2 to 8: one data set name per row at col 1 (seven names, all starting with the user id). Then ` READY`. | `tso-listcat-output` |
+| `LISTDS '<name>'` | Row 1: the name. Row 2: ` --RECFM-LRECL-BLKSIZE-DSORG`. Row 3: the four values, for example `   FB    80    27920   PO`. Row 4: ` --VOLUMES--`. Row 5: the volume, for example `   TSO001`. Row 6: ` READY`. | `tso-listds-output` |
+| `LISTDS '<name>'` for a name that does not exist | Row 1: the name. Row 2: ` DATA SET '<name>' NOT IN CATALOG`. Row 3: ` READY`. | `tso-listds-not-in-catalog` |
+| `LISTDS '<name>' MEMBERS` | As `LISTDS`, then ` --MEMBERS--` on row 6 and one member name per row at col 2. | `tso-listds-members` and `-page2` to `-page7` |
+| `STATUS` | Row 1: ` JOB <userid>(TSU000nn) EXECUTING`. Row 2: ` READY`. The job number changes with every logon. | `tso-status-output` |
+
+Paging: when output fills the screen, row 23 shows ` ***` with the cursor at row 23 col 5
+and the keyboard waits. Enter shows the next screen, which starts at row 0 with no echo
+line. The last screen ends with ` READY`. `LISTDS 'SYS2.JCLLIB' MEMBERS` took seven
+screens (about 140 members). `LISTCAT LEVEL(SYS2)` took three.
+
+Other facts:
+- The seven data sets of the demo user id are partitioned and have no members:
+  `LISTDS ... MEMBERS` on them shows ` --MEMBERS--` followed directly by ` READY`.
+  `SYS2.JCLLIB` is a catalogued library with many members and is readable by the demo id.
+- Member names contain `$`, `#` and `@` (`$$$INDEX`, `BAT#EDIT`, `APPL@ALL`).
+- The host clock is not the wall clock: `TIME` showed 09:36 PM when the box clock said
+  3:36 PM Eastern, the same day.
+- No capture in this set holds the password; the password field is not on any of these
+  screens.
+
+### Rules that follow
+- A Flow that reads command output at READY sends Clear before typing the command, so
+  that the echo is on row 0 and the output starts on row 1.
+- A Flow that takes a data set name from a caller validates it before typing: letters,
+  digits, `.`, `$`, `#`, `@`, at most 44 characters, and no quote. The name is typed
+  between single quotes. Anything else could end the quoted name and add TSO operands.
+- A Flow must handle the ` ***` pause, or use a command whose output cannot reach row 23.
+- Not verified: `LISTCAT` for a user id with more than 21 data sets, any command that
+  writes, any command run from inside ISPF, and what the screen shows when a command
+  name is misspelled at READY after Clear.

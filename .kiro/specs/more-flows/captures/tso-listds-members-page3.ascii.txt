@@ -1,0 +1,26 @@
+data:    DELAY                                                                        
+data:    DELUSER                                                                      
+data:    DISASM                                                                       
+data:    DISKMAP                                                                      
+data:    DUMPT                                                                        
+data:    DUMPTNUC                                                                     
+data:    EMAIL                                                                        
+data:    EREP                                                                         
+data:    EREP0000                                                                     
+data:    EREP0010                                                                     
+data:    IEBCOPY                                                                      
+data:    IEBDG                                                                        
+data:    IEBGENER                                                                     
+data:    IEBPTPCH                                                                     
+data:    IEBUPDTE                                                                     
+data:    IEFBR14                                                                      
+data:    IEHINITT                                                                     
+data:    IEHLIST                                                                      
+data:    IEHMOVE                                                                      
+data:    INTRDR                                                                       
+data:    JCCCL                                                                        
+data:    LINK                                                                         
+data:    LISTIDR                                                                      
+data:  ***                                                                            
+U F U C(127.0.0.1) I 2 24 80 23 5 0x0 0.000
+ok

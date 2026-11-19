@@ -1,0 +1,26 @@
+data: LISTCAT                                                                         
+data:  IN CATALOG:SYS1.UCAT.TSO                                                       
+data:  HERC01.CMDPROC                                                                 
+data:  HERC01.EXEC                                                                    
+data:  HERC01.ISP.PLIB                                                                
+data:  HERC01.ISP.PROF                                                                
+data:  HERC01.TEST.ASM                                                                
+data:  HERC01.TEST.CNTL                                                               
+data:  HERC01.TEST.LOADLIB                                                            
+data:  READY                                                                          
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+U F U C(127.0.0.1) I 2 24 80 10 0 0x0 0.000
+ok

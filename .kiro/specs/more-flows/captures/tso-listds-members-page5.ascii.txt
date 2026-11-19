@@ -1,0 +1,26 @@
+data:    PRIMSIMD                                                                     
+data:    PRIMSIMU                                                                     
+data:    PROGADD                                                                      
+data:    PROGCHG                                                                      
+data:    PROGDEL                                                                      
+data:    PROGLST                                                                      
+data:    PROTADD                                                                      
+data:    PROTCHG                                                                      
+data:    PROTDEL                                                                      
+data:    PROTLST                                                                      
+data:    PTPCH001                                                                     
+data:    PTPCH002                                                                     
+data:    PUNPDSXM                                                                     
+data:    RD#PDSXM                                                                     
+data:    READOMAT                                                                     
+data:    RECEIVE                                                                      
+data:    RECV370P                                                                     
+data:    RECV370S                                                                     
+data:    RENMEMBR                                                                     
+data:    REST@ALL                                                                     
+data:    REVLMOD                                                                      
+data:    RUNICOM                                                                      
+data:    RUSERMOD                                                                     
+data:  ***                                                                            
+U F U C(127.0.0.1) I 2 24 80 23 5 0x0 0.000
+ok

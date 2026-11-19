@@ -1,0 +1,26 @@
+data: LISTDS 'HERC01.NOPE'                                                            
+data:  HERC01.NOPE                                                                    
+data:  DATA SET 'HERC01.NOPE' NOT IN CATALOG                                          
+data:  READY                                                                          
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+U F U C(127.0.0.1) I 2 24 80 4 0 0x0 0.000
+ok

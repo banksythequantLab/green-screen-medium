@@ -1,0 +1,26 @@
+data:    LISTLOAD                                                                     
+data:    LISTPDS                                                                      
+data:    LISTVTOC                                                                     
+data:    MINIUNZP                                                                     
+data:    MINIZIPP                                                                     
+data:    MINIZIPS                                                                     
+data:    OFFLOAD                                                                      
+data:    PDSLOAD                                                                      
+data:    PDSUPDTE                                                                     
+data:    PJCLADD                                                                      
+data:    PRIM@BMP                                                                     
+data:    PRIMALGO                                                                     
+data:    PRIMASM                                                                      
+data:    PRIMCOB1                                                                     
+data:    PRIMCOB2                                                                     
+data:    PRIMCOB3                                                                     
+data:    PRIMFORG                                                                     
+data:    PRIMFORH                                                                     
+data:    PRIMFORW                                                                     
+data:    PRIMGCC                                                                      
+data:    PRIMJCC                                                                      
+data:    PRIMPL1                                                                      
+data:    PRIMPSCL                                                                     
+data:  ***                                                                            
+U F U C(127.0.0.1) I 2 24 80 23 5 0x0 0.000
+ok

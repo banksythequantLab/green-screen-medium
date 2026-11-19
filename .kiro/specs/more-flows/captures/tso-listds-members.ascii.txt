@@ -1,0 +1,26 @@
+data: LISTDS 'SYS2.JCLLIB' MEMBERS                                                    
+data:  SYS2.JCLLIB                                                                    
+data:  --RECFM-LRECL-BLKSIZE-DSORG                                                    
+data:    FB    80    27920   PO                                                       
+data:  --VOLUMES--                                                                    
+data:    TK5RES                                                                       
+data:  --MEMBERS--                                                                    
+data:    $$$INDEX                                                                     
+data:    $HISTORY                                                                     
+data:    ADDALIAS                                                                     
+data:    ADDUSER                                                                      
+data:    ADDUSERP                                                                     
+data:    ADDUSRON                                                                     
+data:    ALGSAMP1                                                                     
+data:    ALGSAMP2                                                                     
+data:    ALGSAMP3                                                                     
+data:    ALGSAMP4                                                                     
+data:    ALLALIAS                                                                     
+data:    AMASPZAP                                                                     
+data:    AMDPRDMP                                                                     
+data:    APPL@ALL                                                                     
+data:    ARCHALT                                                                      
+data:    ARCHDEF                                                                      
+data:  ***                                                                            
+U F U C(127.0.0.1) I 2 24 80 23 5 0x0 0.000
+ok
