@@ -79,9 +79,10 @@ Result: no existing test needs to change. A test that does fail is a defect to r
 - **Codes_Table**: The Console_Asset `codes.json`: one entry per Error_Code with its HTTP status and its plain-words text, plus the page-side conditions of Requirement 8, criterion 5.
 - **Error_Code**: As in the publisher Glossary: one of the 22 values of `ERROR_CODES` in `greenscreen/publisher/calls.py` (13 Reason_Codes and 9 Publisher_Codes).
 - **Console_CSP**: The `Content-Security-Policy` header value of Requirement 2, criterion 5.
-- **Snippets_Module**: The Console_Asset `snippets.js`, a pure module that builds the `curl` text and the MCP config text.
+- **Snippets_Module**: The Console_Asset `snippets.js`, a pure module that builds the `curl` text and the MCP config text, and formats the audit lines and the `Retry-After` text.
 - **Placeholder_Key**: The literal text `<YOUR_API_KEY>`.
 - **Theme_Tokens**: The CSS custom properties of `console.css` whose names start with `--fg-`, `--bg-` or `--ui-`.
+- **Seance_Art**: The static ASCII picture of a seance table, a crystal ball and two candles in `index.html` (Requirement 11, criteria 10 to 18).
 - **Contrast_Test**: The test of Requirement 11, criterion 5 that computes WCAG contrast ratios from the Theme_Tokens.
 - **Tunnel_Allow_List**: The list of exact paths that the operator opens in the tunnel (section "Routes").
 - **Test_Suite**: The pytest and Hypothesis tests under `tests/`.
@@ -187,6 +188,8 @@ Result: no existing test needs to change. A test that does fail is a defect to r
 5. WHEN the call returns, THE Console_Page SHALL enable the Run buttons again and show the result (Requirement 7) or the error (Requirement 8).
 6. THE Console SHALL add no execution path: no server route other than `POST /flows/{name}` runs a Flow, and the Console_Switch SHALL NOT change the status, headers or body of any response of `POST /flows/{name}`.
 7. THE Test_Suite SHALL contain a property test (one `@given` test, first line `# Feature: console, Property 2: The console changes no existing response`) that, for generated Flows, Input values and Fake_Host behaviours, runs the same request against two applications built from the same environment except `GS_ENABLE_CONSOLE`, and asserts that the status, the response headers other than those of Requirement 2, criterion 5, and the body of `POST /flows/{name}`, `GET /openapi.json`, `GET /health` and a `POST /mcp` `tools/list` are equal.
+8. WHEN a call has returned and the page has put its result or error into the result region, THE Console_Page SHALL move keyboard focus to the result region with `focus({ preventScroll: true })` and SHALL call no other scroll function (`scrollIntoView`, `scrollTo`, `scrollBy`, `window.scroll`) and assign no `location.hash`. THE page scroll position (`window.scrollX` and `window.scrollY`) SHALL be the same immediately after the focus move as immediately before it, so that a page at the top stays at the top and the masthead stays on screen at 1280x720.
+9. THE Test_Suite SHALL scan `console.js` statically: every `.focus(` call on the result region passes the literal `{ preventScroll: true }`, and none of the scroll names of criterion 8 appears. The scroll position itself is checked by hand (manual checklist step 15).
 
 ### Requirement 7: Showing the result and the audit trail
 
@@ -196,14 +199,30 @@ Result: no existing test needs to change. A test that does fail is a defect to r
 
 1. WHEN the response is HTTP 200 with a Success_Body, THE Console_Page SHALL show the Flow name, each output as a name and a value in the order of `outputs`, the elapsed time, and the audit trail.
 2. THE Console_Page SHALL measure the elapsed time in the browser from just before the `fetch` call to just after the response headers arrive and show it as seconds with one decimal and the label `Elapsed (as seen by this browser)`. THE Console_Page SHALL NOT claim it is the host's time.
-3. THE Console_Page SHALL show the audit trail as an ordered list in the order of the `audit` array, one item per entry, each item showing: the `step_index`, the `kind`, the `phase` when it is `finally`, the `iteration` when it is not `null`, the `signature` as the recognized screen name when it is not `null`, the `status`, and `duration_seconds` with two decimals.
+3. THE Console_Page SHALL show the audit trail as an ordered list in the order of the `audit` array, with one item per entry and no entry left out. THE Console_Page SHALL read exactly the seven members of `AUDIT_KEYS` from each entry into a plain row, and SHALL build the text of each item with the function `auditLine(row)` of the Snippets_Module. The text is the following words joined by one space, in this order:
+   - the `step_index` (always);
+   - the `kind` (always);
+   - the `signature`, only when it is not `null`;
+   - the status word for `status` (always): `OK` for `ok`, `SKIPPED` for `skipped`, `FAILED` for `failed`, `UNKNOWN` for any other value;
+   - `duration_seconds` as seconds with two decimals followed by `s` (for example `0.40s`), only when it is a finite number whose two-decimal text, read as a number, is greater than 0 (so `0`, `0.004` and a negative value show nothing);
+   - the word `finally`, only when `phase` is `finally`;
+   - `pass N`, only when `iteration` is not `null`, with N the iteration.
+
+   For example `12 expect tso-password-prompt OK`. Of the seven members, `step_index`, `kind` and `status` are always displayed; `signature`, `duration_seconds`, `phase` and `iteration` are displayed only under the conditions above; the page still reads all seven and no other member. A value is coerced before display: `step_index` and `iteration` as a safe integer (or `?`), `kind` as text cut to 40 characters, `signature` as text cut to 80 characters.
 4. THE Console_Page SHALL mark a `failed` entry and a `skipped` entry with a word as well as a style (not by colour alone).
 5. WHEN the response is an Error_Body of a Flow stop and carries an `audit` array, THE Console_Page SHALL show the same audit list above the error, so that the judge sees where the Flow stopped, and SHALL show the `step_index`, the `kind` and the `expected` screen names when present.
 6. THE Console_Page SHALL read from each audit entry only the seven member names of `AUDIT_KEYS` (`step_index`, `kind`, `phase`, `iteration`, `signature`, `status`, `duration_seconds`) and SHALL ignore every other member.
 7. THE Console_Page SHALL NOT read, store or display the member `summary` of an Error_Body or any member it does not display by this requirement.
 8. THE Console_Page SHALL NOT show or request any hidden-field value, screen cell or screen text. THE server SHALL send none that it does not send to every REST client today (Finding 3), and the Console SHALL add no response member.
-9. THE Test_Suite SHALL keep Properties 3 and 8 of the publisher spec (`tests/property/test_publisher_parity.py`, `tests/property/test_publisher_audit_summary.py`) unchanged and passing. They are the secrecy proof of the audit projection and already generate hostile Probe_Values and the residual-password screen. THE Test_Suite SHALL contain a static test that `console.js` contains the seven member names and no other audit member name.
+9. THE Test_Suite SHALL keep Properties 3 and 8 of the publisher spec (`tests/property/test_publisher_parity.py`, `tests/property/test_publisher_audit_summary.py`) unchanged and passing. They are the secrecy proof of the audit projection and already generate hostile Probe_Values and the residual-password screen. THE Test_Suite SHALL contain a static test that `console.js` contains the seven member names and no other audit member name, and the scan of criterion 11 for the error-body member `summary`.
 10. THE Console SHALL add no projection of audit records on the server (Finding 1).
+11. THE Test_Suite SHALL scan `console.js` for any read of the `summary` member of an Error_Body (criterion 7), using the word `summary` by its plain name and no spelling trick. The scan SHALL remove these four allowed forms and then SHALL fail, with the file, the line and the text, if the word `summary` (any letter case) remains anywhere in the file, including comments:
+    - the tag name as the first argument of a DOM helper: `el("summary"` or `createElement("summary"`;
+    - the member of the OpenAPI operation object, written `operation.summary`, where the receiver is exactly the identifier `operation` (not preceded by an identifier character, a dot or `?`);
+    - the class name string `"flow-summary"`.
+
+    Therefore `error.summary`, `err?.summary`, `body["summary"]`, `info.error.summary`, `x.operation.summary`, a destructuring pattern that names `summary`, and a variable named `summary` all fail. The scan SHALL also fail on a string literal `"sum"` or `'sum'` followed by `+`, so that the word cannot be built from parts. THE Test_Suite SHALL hold a self-check of the scan: a fixture list of source lines that must pass and lines that must fail (design, "Summary scan"), run against the scan function itself, so that a scan that matches nothing cannot pass.
+12. THE Console_Page SHALL show each audit line in the form of criterion 3 so that the audit trail of a 39-step run fits in two columns of the stage at 1280x720 with no wrapped line for the lines of the demo Flow (design, "Audit line width"). The widths are an estimate from the font and column sizes; the reviewer confirms them in a browser (Requirement 16).
 
 ### Requirement 8: Every error code in plain words
 
@@ -240,7 +259,7 @@ Result: no existing test needs to change. A test that does fail is a defect to r
    | `screen_size` | 502 | The mainframe screen was not the expected size, so the flow stopped. |
    | `session_error` | 502 | The mainframe session failed during the run. |
 
-4. WHEN the page shows an Error_Body, THE Console_Page SHALL look up `error.code` in the Codes_Table and show: the code, the HTTP status, the plain-words text, and, for `input_invalid` only, the server's `error.message` (which names the input and the rule and holds no value, publisher Requirement 4.2). For a 429 the page SHALL also show `Retry-After` seconds when the header is present.
+4. WHEN the page shows an Error_Body, THE Console_Page SHALL look up `error.code` in the Codes_Table and show: the code, the HTTP status, the plain-words text, and, for `input_invalid` only, the server's `error.message` (which names the input and the rule and holds no value, publisher Requirement 4.2). For a 429 the page SHALL also show the `Retry-After` line built by `retryAfterText(value)` of the Snippets_Module from the header value (`null` when the header is absent). The rule: IF the value is 1 to 6 ASCII digits, THEN the line is `Retry after: 1 second` when the number is 1 (also for `01`), and `Retry after: N seconds` for every other number with N written without leading zeros (so `0` gives `Retry after: 0 seconds`, `007` gives `Retry after: 7 seconds`). IF the value is anything else (absent, empty, a date, a sign, a decimal point, spaces, more than 6 digits), THEN no line is shown.
 5. THE Codes_Table SHALL also hold entries, with their own keys that are not Error_Codes, for the cases where no Error_Body arrives: `no_response` (the `fetch` call failed, for example a network error or a tunnel that is down), `unreadable_reply` (a response that is not a JSON Error_Body or Success_Body, for example an HTML error page from a proxy; the page shows the HTTP status and these words) and `unknown_code` (a JSON Error_Body whose `code` is not in the table). THE Console_Page SHALL show the status and the matching text for each, and SHALL NOT show the body of an unreadable reply.
 6. THE Console_Page SHALL load the Codes_Table from `/console/codes.json` and SHALL hold no copy of the codes or texts in `console.js`.
 7. THE Test_Suite SHALL contain a test that loads `codes.json` from the installed package and asserts: the set of Error_Code keys equals `ERROR_CODES` exactly; each `status` equals `HTTP_STATUS[code]`; each `text` is a non-empty string of at most 200 characters; the `busy` text holds `busy` and `try again` (case-insensitive); the `unauthorized` text holds `key`; the keys `no_response`, `unreadable_reply` and `unknown_code` exist and are not Error_Codes; and the table holds no key `cancelled`. Because the test reads `ERROR_CODES` and `HTTP_STATUS` from the production module, a code added to the publisher without an entry fails the test, so the page and the publisher cannot drift.
@@ -293,6 +312,15 @@ Result: no existing test needs to change. A test that does fail is a defect to r
 7. THE Console_Page SHALL NOT use JavaScript to animate, and SHALL NOT use any animation that flashes more than three times in one second.
 8. THE Console_Page SHALL set `<html lang="en">`, a `<title>`, a `<meta name="viewport" content="width=device-width, initial-scale=1">` and `<meta charset="utf-8">`, and SHALL keep each piece of its copy short (no paragraph over 40 words).
 9. THE Test_Suite SHALL check the static rules of this requirement (criteria 2, 3 and 8) over `index.html` and `console.css`. The keyboard walk-through and the screen-reader behaviour are verified by hand by the reviewer, and the design lists the steps.
+10. THE Console_Page SHALL show the Seance_Art (an ASCII picture of a seance table with a crystal ball and two candles) as static text in `index.html`, inside `main.stage`, as one `<div class="seance-art-wrap">` that holds one `<pre class="seance-art">`. No script writes, moves or changes it, and `console.js`, `snippets.js`, `codes.json` and `favicon.svg` stay unchanged.
+11. THE wrapper SHALL carry `role="img"` and `aria-label="A crystal ball on a seance table"`, and the `<pre>` inside it SHALL carry `aria-hidden="true"`, so that assistive technology announces one short label and does not read the characters. The label text SHALL appear exactly once in `index.html`. The `<pre>` SHALL have no attribute other than `class` and `aria-hidden`, and no element inside the wrapper SHALL be focusable (no `tabindex`, link, button or input), so the keyboard order of Requirement 11, criterion 3 does not change.
+12. THE Seance_Art SHALL use only the characters 0x20 to 0x7E and the line feed that separates rows (no tab, no box-drawing character, no other Unicode), SHALL have at most 60 columns and at most 20 rows, and SHALL have no blank row. IF a character that HTML treats as markup (`&`, `<`, `>`) is ever used, THEN it SHALL be written as an entity; the art of the design uses none, and the backslash, double quote and apostrophe need no escaping in text content.
+13. THE Seance_Art SHALL be coloured only by static `<span>` elements inside the `<pre>`, each with exactly one attribute, `class`, whose value is `seance-ball` or `seance-dim`; spans SHALL NOT be nested; every character of the art that is not a space SHALL be inside a span; no `style` attribute and no script-built markup SHALL be used. `console.css` SHALL colour `seance-dim` with `var(--fg-dim)` and `seance-ball` with `var(--fg-bright)` and a glow of `var(--ui-glow)`, and SHALL add no Theme_Token and no colour literal (Requirement 11, criterion 5 still holds).
+14. THE Seance_Art SHALL be visible while the result region is empty, that is while `div.layout` does not have the class `has-result`, including on the key screen and after the key is accepted, and SHALL be hidden with `display: none` when `div.layout` has `has-result`, and below a viewport width of 68rem (which includes the one-column breakpoint of 56rem), where the stage is too narrow for 56 columns. It SHALL NOT wrap, scroll or clip.
+15. THE `<pre>` SHALL use `white-space: pre`, a font size of at least 1rem and the inherited monospace stack. At 1280x720 the Seance_Art SHALL be at most 400 CSS pixels high, SHALL stay inside `main.stage` (the key panel is in `aside.side`), and SHALL NOT move the key panel, any Run button or the status line out of view or cause a horizontal scrollbar.
+16. IF the ball has a glow pulse, THEN it SHALL change only `text-shadow` blur radius, SHALL have a period of at least 4 seconds, SHALL NOT change the colour or opacity of any glyph, and SHALL be disabled by the existing single `prefers-reduced-motion: reduce` block (WCAG 2.3.1: far below three flashes per second).
+17. THE Seance_Art is decorative and hidden from assistive technology, so Requirement 11, criterion 5 applies to it as a conservative bound: the Contrast_Test SHALL also compute the ratio of `--fg-dim` and `--fg-bright` against `--bg-void` and `--bg-scan` (the backdrop of the stage) and fail below 4.5:1, and `--ui-glow` against both and fail below 3:1.
+18. THE Test_Suite SHALL check criteria 10 to 17 statically in a new test file beside `tests/unit/test_console_assets.py`. No existing test is edited, and the existing scans, the Contrast_Test and the reduced-motion test SHALL pass with no change of intent.
 
 ### Requirement 12: Packaging
 
@@ -339,6 +367,7 @@ Result: no existing test needs to change. A test that does fail is a defect to r
    - the Claude Code command, split by POSIX shell rules, is the fixed argument list `claude mcp add --transport http greenscreen <origin>/mcp --header "X-API-Key: <YOUR_API_KEY>"`, and no typed Secret_Input text appears in it.
 6. THE Test_Suite SHALL implement the assertions of criterion 5 as a Hypothesis property test (one `@given` test, `max_examples` of at least 100, first line `# Feature: console, Property 3: Snippets survive a POSIX shell`) WHERE one `node` process can serve a whole batch of generated cases (cases written to its standard input as JSON, results read from its standard output). THE design SHALL state whether the property form or example-based tests were chosen and why.
 7. THE Test_Suite SHALL print no Secret_Input value in a failure message.
+8. THE Snippets_Module SHALL also export the two pure text functions `auditLine(row)` (Requirement 7, criterion 3) and `retryAfterText(value)` (Requirement 8, criterion 4), under the same no-import, no-global rules as criterion 1. THE Test_Suite SHALL run them under `node` with example cases (including `0.00` omission, `finally`, `pass N`, `UNKNOWN`, `Retry after: 1 second`, `0 seconds`, `007`, `1.5`, an HTTP date, `null`), skipped with the fixed reason of criterion 4 when `node` is absent. No new asset, route or Hypothesis property is added for this.
 
 ### Requirement 15: Cache-Control on the console routes only
 
@@ -360,6 +389,7 @@ Result: no existing test needs to change. A test that does fail is a defect to r
 1. THE design SHALL contain a section `Manual browser checklist` with one numbered step per item and the expected result of each step.
 2. THE checklist SHALL cover: the key entered through the field; the key passed through a `#key=` link with the address bar cleaned afterwards; a wrong key; a successful run; a 429 produced by running from two tabs; a keyboard-only pass of the whole page; reduced motion turned on in the operating system; both copy buttons; and the browser developer console showing no CSP violation and no error.
 3. THE reviewer SHALL run the checklist, and the executor's final report SHALL list it as not run by the executor.
+4. THE checklist SHALL also cover the Seance_Art (design, steps 18 to 20): visible with no horizontal scrollbar before any run at 1280x720 with the key panel and Run button in view; hidden after a run and back after Forget key; hidden in a window narrower than 68rem; announced by a screen reader as one image with the label of Requirement 11, criterion 11.
 
 ### Requirement 17: Design size and task order
 
@@ -443,7 +473,15 @@ These need the reviewer's decision or could not be reconciled from the code. Eac
 14. **`HEAD` and `OPTIONS` on the console routes.** Left to the framework default (Requirement 2, criterion 9). The tunnel may probe with `HEAD /`; if so, the reviewer may want `HEAD` allowed explicitly (and added to the exempt pairs).
 15. **Where the wheel test lives.** A new test next to the existing one, without editing the existing body (Requirement 12, criterion 3). The reviewer may prefer a new file; no behaviour differs.
 
+## Review record
+
+- The reviewer ran manual browser checklist steps 1 to 12 in headless Chrome 157 at 1280x720 against the live host: pass, no CSP violation, no script error.
+- Linux suite: 2416 passed, 0 failed, 15 Node tests skipped (no Node on that machine).
+- Polish after that run (Requirements 6.8, 6.9, 7.3, 7.11, 7.12, 8.4, 14.8): no scroll on focus, denser audit lines, singular `1 second`, and a narrower `summary` scan. Checklist steps 13 and 14 (tunnel, CDN) were not part of that run.
+
 ## What was not verified
+
+- Superseded in part by the Review record above: steps 1 to 12 of the checklist ran in headless Chrome 157. Still not run: checklist steps 13 to 17, other browsers, screen readers.
 
 - No browser was run. The behaviour of `history.replaceState`, the CSP in a real browser, ES module loading under `script-src 'self'`, focus order, screen readers and `prefers-reduced-motion` are not verified by this stage. The design plans static tests and a manual checklist for the reviewer.
 - Whether `HEAD /` or `OPTIONS /` is answered by the framework once a `GET /` route exists was not checked (decision 14).

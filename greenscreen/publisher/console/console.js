@@ -8,6 +8,8 @@ import {
   buildClaudeCodeCommand,
   buildCurl,
   buildMcpConfig,
+  auditLine,
+  retryAfterText,
 } from "./snippets.js";
 
 // ---- State (module scope, nothing on the window object) ----
@@ -32,10 +34,6 @@ const ALLOWED_ATTRS = new Set([
   "id", "class", "type", "for", "name", "value", "autocomplete", "inputmode",
   "maxlength", "disabled", "role", "aria-live", "aria-label", "hidden", "tabindex",
 ]);
-// Tag and member names for the flow description, written in two parts so that a
-// plain-text scan for the error-body member of that name stays clean.
-const DETAILS_HEAD_TAG = "sum" + "mary";
-const FLOW_TEXT_KEY = "sum" + "mary";
 
 // ---- 1. Key intake from the address fragment (runs before anything else) ----
 
@@ -149,8 +147,8 @@ function parseListing(doc) {
     if (!match || !item || !item.post) {
       continue;
     }
-    const post = item.post;
-    const content = post.requestBody && post.requestBody.content;
+    const operation = item.post;
+    const content = operation.requestBody && operation.requestBody.content;
     const schema = content && content["application/json"] && content["application/json"].schema;
     const properties = schema && schema.properties && typeof schema.properties === "object" ? schema.properties : {};
     const requiredList = schema && Array.isArray(schema.required) ? schema.required : [];
@@ -171,7 +169,7 @@ function parseListing(doc) {
       }
       inputs.push(input);
     }
-    const text = typeof post[FLOW_TEXT_KEY] === "string" ? post[FLOW_TEXT_KEY] : "";
+    const text = typeof operation.summary === "string" ? operation.summary : "";
     found.push({ name: match[1], blurb: text, inputs });
   }
   return found;
@@ -291,7 +289,7 @@ function renderFlows() {
       "article",
       { class: "flow" },
       el("h2", { class: "flow-name" }, flow.name),
-      el("p", { class: "flow-" + FLOW_TEXT_KEY }, flow.blurb),
+      el("p", { class: "flow-summary" }, flow.blurb),
       fieldsBox,
       flow.runButton,
       renderSnippets(flow),
@@ -315,7 +313,7 @@ function collectInputs(flow) {
 
 function renderSnippets(flow) {
   flow.blocks = [];
-  const wrap = el("details", { class: "snippets" }, el(DETAILS_HEAD_TAG, null, "Use this flow from other tools"));
+  const wrap = el("details", { class: "snippets" }, el("summary", null, "Use this flow from other tools"));
   const labels = ["curl command", "MCP client config (Kiro shape)", "Claude Code command"];
   labels.forEach((label) => {
     const pre = el("pre", { tabindex: "0" });
@@ -377,23 +375,8 @@ function auditList(audit) {
     for (const key of AUDIT_KEYS) {
       row[key] = source[key];
     }
-    const words = ["step " + safeText(row.step_index, 10), safeText(row.kind, 40)];
-    if (row.signature !== null && row.signature !== undefined) {
-      words.push("screen " + safeText(row.signature, 80));
-    }
-    const state = row.status === "ok" ? "OK" : row.status === "skipped" ? "SKIPPED" : row.status === "failed" ? "FAILED" : "UNKNOWN";
-    words.push(state);
-    if (typeof row.duration_seconds === "number" && Number.isFinite(row.duration_seconds)) {
-      words.push(row.duration_seconds.toFixed(2) + " s");
-    }
-    if (row.phase === "finally") {
-      words.push("finally");
-    }
-    if (row.iteration !== null && row.iteration !== undefined) {
-      words.push("pass " + safeText(row.iteration, 10));
-    }
     const cls = row.status === "ok" ? "audit-ok" : row.status === "skipped" ? "audit-skipped" : row.status === "failed" ? "audit-failed" : "audit-ok";
-    list.appendChild(el("li", { class: cls }, words.join(" · ")));
+    list.appendChild(el("li", { class: cls }, auditLine(row)));
   }
   return list;
 }
@@ -436,8 +419,9 @@ function showError(key, extra) {
     if (typeof info.status === "number") {
       refs.result.appendChild(el("p", { class: "error-detail" }, "HTTP status: " + info.status));
     }
-    if (typeof info.retryAfter === "string" && /^\d{1,6}$/.test(info.retryAfter)) {
-      refs.result.appendChild(el("p", { class: "error-detail" }, "Retry after: " + info.retryAfter + " seconds"));
+    const retryText = retryAfterText(info.retryAfter);
+    if (retryText !== null) {
+      refs.result.appendChild(el("p", { class: "error-detail" }, retryText));
     }
     const error = info.error;
     if (error && typeof error === "object") {
@@ -474,7 +458,7 @@ function showError(key, extra) {
 
 function finishResult() {
   refs.layout.classList.add("has-result");
-  refs.result.focus();
+  refs.result.focus({ preventScroll: true });
 }
 
 // ---- Listing ----

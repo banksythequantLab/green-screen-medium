@@ -307,7 +307,94 @@ def test_console_js_has_seven_audit_names_and_no_summary_member():
         "duration_seconds",
     ):
         assert f'"{member}"' in text, f"console.js: audit member '{member}' is missing"
-    _assert_none("console.js", "no 'summary'", r"summary", re.I)
+    found = summary_violations(text)
+    assert not found, f"console.js: rule 'summary only in the allowed forms' broken at line(s) {[line for line, _ in found]}"
+
+
+# The remove-the-allowed-forms scan of the design's "Summary scan" (Decision D12).
+_SUMMARY_SPLIT = re.compile(r"""["']sum["']\s*\+""")
+_SUMMARY_ALLOWED = (
+    re.compile(r"""\bel\(\s*"summary\""""),
+    re.compile(r"""\bcreateElement\(\s*"summary\""""),
+    re.compile(r"""(?<![\w$.?])operation\.summary\b"""),
+    re.compile(r'"flow-summary"'),
+)
+
+
+def summary_violations(text: str) -> list[tuple[int, str]]:
+    """Return (line number, matched text) for every use of `summary` outside the allowed forms."""
+    found: list[tuple[int, str]] = [
+        (_line_of(text, m.start()), m.group(0)) for m in _SUMMARY_SPLIT.finditer(text)
+    ]
+    rest = text
+    for pattern in _SUMMARY_ALLOWED:
+        rest = pattern.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), rest)
+    found += [(_line_of(rest, m.start()), m.group(0)) for m in re.finditer(r"summary", rest, re.I)]
+    return sorted(found)
+
+
+SUMMARY_PASS = (
+    'el("summary", null, "Use this flow")',
+    'document.createElement("summary")',
+    'const t = typeof operation.summary === "string" ? operation.summary : "";',
+    'el("p", { class: "flow-summary" }, t)',
+)
+SUMMARY_FAIL = (
+    "error.summary",
+    "err?.summary",
+    "body.summary",
+    "info.error.summary",
+    'body["summary"]',
+    "body['summary']",
+    "body[`summary`]",
+    "const { summary } = error;",
+    "const { error: { summary } } = body;",
+    "const summary = 1;",
+    "function f(summary) {}",
+    "x.operation.summary",
+    "operation2.summary",
+    "operation?.summary",
+    '"sum" + "mary"',
+    "'sum' + 'mary'",
+    "// reads the summary",
+    'el("summary", null, x); body.summary',
+)
+
+
+@pytest.mark.parametrize("line", SUMMARY_PASS)
+def test_summary_scan_accepts_the_allowed_forms(line):
+    assert summary_violations(line) == []
+
+
+@pytest.mark.parametrize("line", SUMMARY_FAIL)
+def test_summary_scan_rejects_every_other_form(line):
+    assert summary_violations(line), "the scan let a forbidden form through"
+
+
+def test_summary_scan_reports_the_line_number():
+    assert [n for n, _ in summary_violations('el("summary", null, x)\nbody.summary\n')] == [2]
+
+
+SCROLL_NAMES = (
+    ("scrollIntoView", r"scrollIntoView"),
+    ("scrollTo(", r"scrollTo\s*\("),
+    ("scrollBy(", r"scrollBy\s*\("),
+    ("window.scroll", r"window\s*\.\s*scroll"),
+    ("location.hash assignment", r"location\s*\.\s*hash\s*=(?!=)"),
+)
+
+
+def test_result_focus_prevents_scroll_and_no_scroll_call_exists():
+    text = _read("console.js")
+    calls = list(re.finditer(r"refs\.result\.focus\(([^)]*)\)", text))
+    assert calls, "console.js: no focus call on the result region"
+    for m in calls:
+        assert re.sub(r"\s+", " ", m.group(1)).strip() == "{ preventScroll: true }", (
+            f"console.js: rule 'result focus passes preventScroll' broken at line {_line_of(text, m.start())}"
+        )
+    for label, pattern in SCROLL_NAMES:
+        found = _hits("console.js", pattern)
+        assert not found, f"console.js: forbidden '{label}' at line(s) {[line for line, _ in found]}"
 
 
 def test_requests_stay_on_allowed_paths():

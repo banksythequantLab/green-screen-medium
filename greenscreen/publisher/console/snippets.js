@@ -63,3 +63,35 @@ export function buildClaudeCodeCommand(origin) {
     " --header 'X-API-Key: " + PLACEHOLDER_KEY + "'"
   );
 }
+
+// One audit line from a row of the seven audit members. Words are joined by one space.
+export function auditLine(row) {
+  const source = row !== null && typeof row === "object" ? row : {};
+  const whole = (value) => (Number.isSafeInteger(value) ? String(value) : "?");
+  const words = [whole(source.step_index), String(source.kind).slice(0, 40)];
+  if (source.signature !== null && source.signature !== undefined) {
+    words.push(String(source.signature).slice(0, 80));
+  }
+  const status = source.status;
+  words.push(status === "ok" ? "OK" : status === "skipped" ? "SKIPPED" : status === "failed" ? "FAILED" : "UNKNOWN");
+  const seconds = source.duration_seconds;
+  if (typeof seconds === "number" && Number.isFinite(seconds) && Number(seconds.toFixed(2)) > 0) {
+    words.push(seconds.toFixed(2) + "s");
+  }
+  if (source.phase === "finally") {
+    words.push("finally");
+  }
+  if (source.iteration !== null && source.iteration !== undefined) {
+    words.push("pass " + whole(source.iteration));
+  }
+  return words.join(" ");
+}
+
+// "Retry after: 1 second" or "Retry after: N seconds"; null unless the text is 1 to 6 ASCII digits.
+export function retryAfterText(value) {
+  if (typeof value !== "string" || !/^[0-9]{1,6}$/.test(value)) {
+    return null;
+  }
+  const count = Number(value);
+  return "Retry after: " + count + (count === 1 ? " second" : " seconds");
+}

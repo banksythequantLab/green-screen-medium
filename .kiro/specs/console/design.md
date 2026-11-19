@@ -27,6 +27,8 @@ The page side is plain HTML, CSS and ES modules. No framework, no build step, no
 | `pyproject.toml` | One `package-data` key. |
 | `.env.example` | One commented `GS_ENABLE_CONSOLE=` line with a one-line comment. |
 
+Task 7 (the seance art) later adds static markup to `index.html` and rules to `console.css` only; see "Seance art (task 7)".
+
 Not changed: the Flow runtime, Connector, recognizer, `calls.py`, `mcp_server.py`, `registry.py`, `vault.py`, any response body, `.kiro/steering`, any existing test body.
 
 ### Conventions for the executor
@@ -50,6 +52,15 @@ The fifteen decisions of the requirements are carried over unchanged. This desig
 | D7 | `codes.json` entries may carry `"show_message": true` (only `input_invalid` does). | Requirement 8.4 shows the server message for `input_invalid` only, and Requirement 8.8 forbids code-name literals in `console.js`. The flag moves the rule into data. |
 | D8 | The `#key=` fragment is parsed by prefix and `decodeURIComponent`, not with `URLSearchParams`. | `URLSearchParams` turns `+` into a space, which corrupts a key that contains `+`. |
 | D9 | Property 3 starts one short-lived `node` process per Hypothesis example. | Simple, no process lifecycle in the test. Measured at about 110 ms per spawn on the author's machine, so about 11 s for 100 examples. |
+| D10 | The audit-line and `Retry-After` text builders (`auditLine`, `retryAfterText`) live in `snippets.js`, not in a new `audit.js`. | `console.js` runs `start()` and touches `document` and `location` at import, so Node cannot load it. `snippets.js` is already the one Node-testable module. A new asset would add a route, a tunnel entry, a loader row, a CSP-checked file and packaging test changes for two small pure functions. No new asset, route or package-data change. |
+| D11 | The result region is focused with `focus({ preventScroll: true })`. | The default focus scrolls the element into view and pushed the masthead off screen in the reviewer's run. |
+| D12 | The scan for the error-body `summary` is a remove-the-allowed-forms scan, not a list of forbidden receivers. | A list of receiver names misses a new variable name. Removing the three allowed forms and failing on any remaining `summary` is closed by default. |
+| D13 | The Seance_Art is named by `role="img"` and `aria-label` on a wrapper `<div>`, and the `<pre>` inside it carries `aria-hidden="true"`. Not "`aria-hidden` plus a visually hidden label". | `role="img"` makes the children presentational by definition, but browse-mode support for descendants such as a `<pre>` is uneven, and some screen readers still read the text. `aria-hidden` on the `<pre>` closes that gap, and `aria-label` on a `role="img"` `<div>` is a plain, well-supported name. Putting `role="img"` on the `<pre>` itself would drop its text from the accessibility tree but give the spans no safe place. The alternative needs a new visually-hidden CSS class and a second element; this one needs neither. |
+| D14 | The art is coloured by static `<span class="seance-ball">` and `<span class="seance-dim">` elements, one per run of non-space characters, with the spaces between runs outside the spans. | Classes only: no `style` attribute, no script-built markup, and the colour comes from existing Theme_Tokens. Spans add no padding, margin, border or font-weight, so a monospace row keeps its columns. |
+
+### Review record (before the polish of task 6)
+
+The reviewer ran manual browser checklist steps 1 to 12 in headless Chrome 157 at 1280x720 against the live host: pass, no CSP violation, no script error. The Linux suite gave 2416 passed, 0 failed, with 15 Node tests skipped because that machine has no Node. Steps 13 and 14 (tunnel, CDN) were not part of that run. Four polish items followed from it: no scroll on focus (D11), denser audit lines (D10, "Audit line width"), `1 second` in the singular, and a `summary` scan that uses the plain name (D12, "Summary scan").
 
 ### What was checked while writing this design
 
@@ -103,7 +114,9 @@ Dated lines appended by task 1.1 (2026-11-18). Nothing in this list changes a de
 - Checked 2026-11-18: https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/writeText, Baseline widely available since March 2020, secure contexts only, `NotAllowedError` when refused. The table row stands; the page still catches every failure.
 - Checked 2026-11-18: https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@media/prefers-reduced-motion, Baseline since 2020, not re-fetched in this task; the table row of the same day is the evidence and it stands.
 - Checked 2026-11-18: https://hypothesis.readthedocs.io/en/latest/changelog.html, installed 6.170.15 (released 2026-11-06, the latest entry on the page), no library change is needed for a `@given` test that starts one `subprocess` per example. This is a note only. The page was not searched for subprocess guidance, and the per-example cost stays the measured figure of Decision D9.
+- Checked 2026-11-18 in task 6.1 (date from the system clock, page re-fetched): https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/focus, living standard (the fetched page states no version and cites the HTML Standard `dom-focus-dev`). `focus(options)` takes an optional object; `preventScroll` is a boolean, the default `false` scrolls the document to bring the element into view, and `true` means no scrolling. The page's own example focuses an off-screen button with `{ preventScroll: true }`. The page also lists `focusVisible`, which this design does not use. The result region already has `tabindex="-1"` in `index.html` (line 32), so it is focusable by script; `index.html` is not changed.
 - Installed versions on 2026-11-18 from `python -m pip list`: `fastapi` 0.163.2, `starlette` 1.6.0, `uvicorn` 0.38.0, `httpx2` 2.16.2 (the repository's HTTP test client; `httpx` 0.28.1 is also installed), `hypothesis` 6.170.15, `pytest` 9.1.1, `anyio` 4.16.0, `setuptools` 69.5.1; `node --version` v24.19.0; Python 3.11.9. Every version equals the one recorded in "What was checked while writing this design"; no version differs.
+- Checked 2026-11-18 in task 7.1: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/img_role, living standard (page states no version; cites WAI-ARIA `#img`). `role="img"` marks content to be read as one image and an accessible name is required: `aria-label` when no visible label exists. Descendants become presentational. The page's own examples put `aria-label` on a `div` or `span` holding text such as ASCII art (the "Table flip" example), which matches D13. The page warns that some browser and screen reader pairs read the label twice; the `aria-hidden="true"` on the `<pre>` is kept as decided. The wrapper stays exposed.
 
 ## Architecture
 
@@ -292,7 +305,7 @@ let running = false;
 2. `apiFetch(path, init)`: **the one function that reads `apiKey`** and the only place the text `X-API-Key` appears. It adds the header to a copy of `init.headers` and calls `fetch(path, ...)` (same origin, relative URL). Allowed paths are `/openapi.json` and `/flows/<name>`. A `401` response calls `forgetKey()` before the caller sees it.
 3. `loadCodes()`: plain `fetch("/console/codes.json")` with no key.
 4. `forgetKey()`: assigns `apiKey = null`, `keyHeld = false`, clears the flow list and result, shows the key panel.
-5. `parseListing(document)`: pure. For each `[path, item]` of `Object.entries(doc.paths)` where the path matches `^/flows/([^/]+)$` and `item.post` exists, read `summary` and the request schema at `requestBody.content["application/json"].schema`. For each property: `name`, `type` (`"integer"` or anything else treated as text), `description`, `maxLength` when it is a number, `secret = (writeOnly === true)`, `required` from the schema's `required` array. Nothing else is read.
+5. `parseListing(document)`: pure. For each `[path, item]` of `Object.entries(doc.paths)` where the path matches `^/flows/([^/]+)$` and `item.post` exists, read `operation.summary` (the OpenAPI operation object, held in a variable named exactly `operation`) and the request schema at `requestBody.content["application/json"].schema`. For each property: `name`, `type` (`"integer"` or anything else treated as text), `description`, `maxLength` when it is a number, `secret = (writeOnly === true)`, `required` from the schema's `required` array. Nothing else is read.
 6. DOM helpers: `el(tag, attrs, ...children)`. Text goes in with `textContent` or `createTextNode`. `attrs` is limited to a fixed set of names (`id`, `class`, `type`, `for`, `name`, `value`, `autocomplete`, `inputmode`, `maxlength`, `disabled`, `role`, `aria-live`, `aria-label`, `hidden`); a name outside the set throws during development. Never `innerHTML`, never `style`, never `on*`.
 7. `renderFlows()`, `renderResult()`, `renderSnippets()`, `copy()`, `run()`, event wiring, then `start()`.
 
@@ -312,9 +325,30 @@ let running = false;
 | `body.error.code` is a key of the table | that entry |
 | `body.error.code` is a string not in the table | table entry `unknown_code` |
 
-For an error entry the page shows the code text from the body (only when it is a key of the table, so no server string is invented), `resp.status`, the entry's `text`, and `body.error.message` when the entry has `show_message`. For `resp.status === 429` it also shows `Retry-After` when it is a short run of digits. When `body.error.audit` is an array it shows the audit list above the error, and `step_index`, `kind` and `expected` (a list of strings, joined with commas) when present. `summary` is never read.
+For an error entry the page shows the code text from the body (only when it is a key of the table, so no server string is invented), `resp.status`, the entry's `text`, and `body.error.message` when the entry has `show_message`. For `resp.status === 429` it also shows the line from `retryAfterText(response.headers.get("Retry-After"))` when that is not `null`: `Retry after: 1 second` for 1, `Retry after: N seconds` for any other run of 1 to 6 digits (`0` gives `0 seconds`, `007` gives `7 seconds`), and no line for anything else (absent, empty, date, sign, decimal, more than 6 digits). The function is `retryAfterText(value) { if (typeof value !== "string" || !/^[0-9]{1,6}$/.test(value)) return null; const n = Number(value); return "Retry after: " + n + (n === 1 ? " second" : " seconds"); }`. When `body.error.audit` is an array it shows the audit list above the error, and `step_index`, `kind` and `expected` (a list of strings, joined with commas) when present. `summary` is never read.
 
-**Audit list.** An `<ol>` in array order. The code reads exactly these members, from a constant array: `step_index`, `kind`, `phase`, `iteration`, `signature`, `status`, `duration_seconds`. Each item reads, for example, `step 3 · expect · screen tk5-logon · OK · 0.40 s`, with ` · finally` when `phase` is `finally`, ` · pass N` when `iteration` is not null, and the words `OK`, `SKIPPED` or `FAILED` for `status`. Values are coerced (`String`, `Number.isFinite`) before display. Failure and skip are shown with words, and the stylesheet adds a second cue, so colour is never the only signal.
+**Focus after a call.** `finishResult()` adds `has-result` to the layout and then calls `refs.result.focus({ preventScroll: true })`. No `scrollIntoView`, `scrollTo`, `scrollBy`, `window.scroll` or `location.hash` assignment appears in the file. The scroll position is therefore unchanged by the focus move, and a page at the top stays at the top.
+
+**Audit list.** An `<ol>` in array order, one `<li>` per entry, none dropped. `console.js` copies exactly the seven members of the constant `AUDIT_KEYS` (`step_index`, `kind`, `phase`, `iteration`, `signature`, `status`, `duration_seconds`) from each entry into a plain row, and calls `auditLine(row)` from `snippets.js`; it reads nothing else from an entry. The function returns the words joined by single spaces, in this order: `step_index`; `kind`; `signature` when not null; the status word (`OK`, `SKIPPED`, `FAILED`, or `UNKNOWN` for any other value); `duration_seconds` as `N.NNs` only when it is a finite number and `Number(value.toFixed(2)) > 0`; `finally` only when `phase` is `finally`; `pass N` only when `iteration` is not null. Example: `12 expect tso-password-prompt OK`; with time, `12 expect tso-password-prompt OK 0.40s`. Displayed always: index, kind, status. Displayed conditionally: signature, duration, phase, iteration. Read always: all seven. Coercion: `step_index` and `iteration` display only as a safe integer (else `?`), `kind` is cut to 40 characters and `signature` to 80. The `<li>` class (`audit-ok`, `audit-skipped`, `audit-failed`) is chosen in `console.js` from `row.status`; the stylesheet adds a mark (check, dash, cross) and bold for failed, so colour is never the only cue, and the word is in the text.
+
+**Summary scan.** `console.js` uses the plain word `summary` in exactly three places: `el("summary", ...)` for the `<details>` heading, `operation.summary` in `parseListing`, and the class string `"flow-summary"` (the stylesheet already styles `.flow-summary`). The constants `DETAILS_HEAD_TAG` and `FLOW_TEXT_KEY` (`"sum" + "mary"`) are removed, and `post[FLOW_TEXT_KEY]` becomes `operation.summary`. The scan (a pure function `summary_violations(text) -> list[(line_number, text)]` in `tests/unit/test_console_assets.py`) works in this order: (1) find every `"sum"` or `'sum'` literal followed by `+` and report it; (2) remove the allowed forms with these patterns: `\bel\(\s*"summary"`, `\bcreateElement\(\s*"summary"`, `(?<![\w$.?])operation\.summary\b` and the literal `"flow-summary"`; (3) report every remaining match of `summary` (case-insensitive) with its line. It does not strip comments, so a comment that says `summary` fails too (the same rule as `sessionStorage`). The real file must give an empty list. The self-check fixture is a parametrized list run against the same function:
+
+| Source line | Expected |
+|---|---|
+| `el("summary", null, "Use this flow")` | pass |
+| `document.createElement("summary")` | pass |
+| `const t = typeof operation.summary === "string" ? operation.summary : "";` | pass |
+| `el("p", { class: "flow-summary" }, t)` | pass |
+| `error.summary`, `err?.summary`, `body.summary`, `info.error.summary` | fail |
+| `body["summary"]`, `body['summary']`, `` body[`summary`] `` | fail |
+| `const { summary } = error;`, `const { error: { summary } } = body;` | fail |
+| `const summary = 1;`, `function f(summary) {}` | fail |
+| `x.operation.summary`, `operation2.summary`, `operation?.summary` | fail |
+| `"sum" + "mary"`, `'sum' + 'mary'` | fail |
+| `// reads the summary` | fail |
+| `el("summary", null, x); body.summary` (one line, one good and one bad use) | fail |
+
+`operation?.summary` fails because the allowed form is the literal `operation.summary`, which it does not match. A scan that returned an empty list for everything would fail every "fail" row, so the self-check cannot pass vacuously.
 
 **Snippets.** `renderSnippets(flow)` runs on render and on every `input` event of that flow's fields. It calls the three pure builders with `location.origin` and the current values. Each block has a `<pre>` (focusable with `tabindex="0"`) and a Copy button. `copy()` tries `navigator.clipboard.writeText(text)` inside `try`; if `navigator.clipboard` is missing or the promise rejects, it selects the `<pre>` content with a `Range` and writes `Press Ctrl+C to copy.` to the status region. The MCP area also shows the line `Tool name: <flow name>` (page text, not part of the copied JSON) and one note: "MCP clients differ in how they name these settings. The first block is the shape Kiro reads; the second is the Claude Code command."
 
@@ -345,6 +379,8 @@ export function bodyText(inputs, maskSecrets)       // the JSON object text
 export function buildCurl(origin, flowName, inputs)
 export function buildMcpConfig(origin)              // JSON text, parses with JSON.parse
 export function buildClaudeCodeCommand(origin)      // shell text
+export function auditLine(row)                      // one audit line, see "Audit list"
+export function retryAfterText(value)               // "Retry after: 1 second" | "... N seconds" | null
 ```
 
 `inputs` is a list of `{name, type, secret, required, value}` where `value` is the typed text.
@@ -355,6 +391,8 @@ export function buildClaudeCodeCommand(origin)      // shell text
 - `buildClaudeCodeCommand` returns `claude mcp add --transport http greenscreen '<origin>/mcp' --header 'X-API-Key: <YOUR_API_KEY>'`.
 
 The page's request body is `bodyText(flow.inputs, false)` (Decision D6), imported from the same module.
+
+`auditLine` and `retryAfterText` are pure text functions (Decision D10). They obey the same rules as the rest of the file: no `import`, none of the forbidden global names (the word `console` must not appear, even in a comment), no parameter named like a key. `auditLine` takes the plain row of seven members and never the raw entry. Neither function touches the DOM.
 
 ### 11. `codes.json`
 
@@ -373,6 +411,26 @@ The 429 text (`busy`) stays: "The mainframe is busy with another call. Wait a mo
 The look is CSS only: near-black green background, phosphor-green text with a soft `text-shadow` glow, a monospace stack of system fonts (`ui-monospace, "Cascadia Mono", Consolas, Menlo, "DejaVu Sans Mono", monospace`), panels with a thin green border, and a faint scanline made by a `repeating-linear-gradient` between `--bg-void` and `--bg-scan`. The seance is in the copy and two slow effects: a barely visible flicker on the title and a blinking block cursor after the tagline (`Seance for dead mainframe screens.`, five words). Neither effect hides any control or adds an interaction step. Both are inside `@media (prefers-reduced-motion: no-preference)`-equivalent structure: the animation rules are written normally and a single `@media (prefers-reduced-motion: reduce)` block sets `animation: none` and `transition: none` on `*`, `*::before` and `*::after`. The cursor blinks once per second (two luminance changes per second), under the limit of three flashes per second.
 
 Every colour is a six-digit hex token on `:root`. Elsewhere the file uses only `var(--fg-…)`, `var(--bg-…)` and `var(--ui-…)`, `transparent` and `currentColor`. Focus: `:focus-visible { outline: 3px solid var(--ui-focus); outline-offset: 2px; }`. There is no `@font-face`, `@import` or `url(`.
+
+### Audit line width (task 6.2)
+
+Estimated from the stylesheet and font metrics. Not measured in a browser; checklist step 16 measures it.
+
+Inputs. Body text is 1rem = 16px. The monospace stack renders at about 0.55em (Consolas) to 0.602em (DejaVu Sans Mono, Menlo); the worst case 0.602em gives `1ch` = 9.63px. Layout at 1280px wide: padding 1.25rem on each side (40px), side column 17rem (272px, `has-result`), gap 1.25rem (20px), so the stage is 948px; the result panel has 2px borders and 1.25rem padding (44px), so the column box is 904px (889px if a 15px scrollbar is present).
+
+Styles set by task 6.2: `.audit { column-width: 26rem; column-gap: 1.5rem; }` and `.audit > li { padding: 0.125rem 0 0.125rem 1.25rem; }` (the mark sits in that left padding). At 904px the browser makes two columns (three would need 3 × 416 + 2 × 24 = 1296px) and each is (904 − 24) / 2 = 440px wide, so a line has 440 − 20 = 420px = 43.6ch. With a scrollbar: (889 − 24) / 2 = 432.5px, a line has 412.5px = 42.8ch.
+
+Longest line. Format `NN kind signature STATUS`, duration omitted when it rounds to 0.00. Kinds are `expect`, `type`, `key`, `extract`, `handle` (longest 7 characters, `extract`, which carries no signature). Signatures in `tk5-system-info`: the longest used by a `handle` step is `tso-input-not-recognized` (24 characters); `tso-reconnect-password-prompt` (29) is used by an `expect` step in the recovery path.
+
+| Line | Length in ch | Fits in 42.8ch? |
+|---|---|---|
+| `12 expect tso-password-prompt OK` | 32 | yes |
+| `12 expect tso-password-prompt OK 0.40s` | 38 | yes |
+| `38 handle ispf-primary-menu OK finally` | 38 | yes |
+| `12 handle tso-input-not-recognized SKIPPED` (longest of the normal run, if a skipped handle keeps its signature) | 2 + 1 + 6 + 1 + 24 + 1 + 7 = 42 | yes, with 0.8ch to spare (1.6ch at 1280px with no scrollbar) |
+| `12 expect tso-reconnect-password-prompt FAILED` (recovery path stopped) | 2 + 1 + 6 + 1 + 29 + 1 + 6 = 46 | no, wraps once (`overflow-wrap: anywhere` keeps it inside the column) |
+
+So the normal 39-step run is expected to show no wrapped line at 1280x720; a stopped recovery run may wrap one line. The old format (`step 3 · expect · screen tk5-logon · OK · 0.40 s` and longer) was about 55 to 75ch and wrapped in the 26rem column. Height: 39 lines in two columns is 20 lines × (1.45 × 16px + 4px) ≈ 544px.
 
 ## Data Models
 
@@ -477,9 +535,11 @@ Property tests use Hypothesis (already in `dev`), one `@given` test per property
 | 3.1 to 3.6 | `tests/unit/test_console_auth.py`: default empty set behaves as today; six pairs passed when on; disabled auth applies the Host rule to the console routes; Flow routes, `/openapi.json`, `/docs`, `/mcp` still `unauthorized` with the console on; the exact-comparison cases (`/console/console.css/`, `/console/`, `//`, a query string in the path). |
 | 3.7 (Property 1) | `tests/property/test_console_auth.py`. Strategy: methods from `GET`, `HEAD`, `OPTIONS`, `POST`, `PUT`, `DELETE`, `PATCH`, lower-case and random tokens; paths built from the six exact paths, mutations of them (trailing slash, case change, `%` sequences, `//`, `..` segments, a prefix or suffix) and arbitrary text; header sets from `key_headers(api_key)` in `_publisher_strategies.py` limited to its invalid cases. The test calls the ASGI stack with a hand-built scope, not an HTTP client, so that the path reaches the middleware as generated (a client may normalise dot segments). Oracle: set membership of the pair. |
 | 4 to 7, 9.6 to 9.8 | Static: `test_console_assets.py` (below). Browser: the manual checklist. Server side of 4.5: Property 2. |
-| 5.10, 7.9 (last part), 10.3 to 10.7, 14.2 | `test_console_assets.py`: scans of `console.js` and `snippets.js`, with file, line and name in the failure message. Forbidden: `localStorage`, `sessionStorage`, `document.cookie`, `console.` (any use), `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `eval(`, `new Function`, `javascript:`, string-argument `setTimeout`/`setInterval`, `setAttribute` of `style` or `on*`. Rules: `history.replaceState` appears before the first `fetch(`; every occurrence of `apiKey` that is not an assignment lies inside the body of `apiFetch`; `X-API-Key` appears exactly once in `console.js`; `snippets.js` has no `import`, none of the names of Requirement 14.1, no parameter named like a key, and contains `<YOUR_API_KEY>` and `<SECRET>`, no `http://` or `https://` literal; `console.js` contains the seven audit member names, never `summary`. |
+| 5.10, 7.9 (last part), 10.3 to 10.7, 14.2 | `test_console_assets.py`: scans of `console.js` and `snippets.js`, with file, line and name in the failure message. Forbidden: `localStorage`, `sessionStorage`, `document.cookie`, `console.` (any use), `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `eval(`, `new Function`, `javascript:`, string-argument `setTimeout`/`setInterval`, `setAttribute` of `style` or `on*`. Rules: `history.replaceState` appears before the first `fetch(`; every occurrence of `apiKey` that is not an assignment lies inside the body of `apiFetch`; `X-API-Key` appears exactly once in `console.js`; `snippets.js` has no `import`, none of the names of Requirement 14.1, no parameter named like a key, and contains `<YOUR_API_KEY>` and `<SECRET>`, no `http://` or `https://` literal; `console.js` contains the seven audit member names and passes `summary_violations` (see "Summary scan"); every `.focus(` on `refs.result` passes `{ preventScroll: true }` and none of `scrollIntoView`, `scrollTo(`, `scrollBy(`, `window.scroll`, `location.hash =` appears. |
 | 8.1 to 8.3, 8.7 | `test_console_assets.py`: loads `codes.json` from the package; the set of keys minus the three page-side keys equals `ERROR_CODES` (imported from `greenscreen.publisher.calls`); each `status` equals `HTTP_STATUS[code]`; each `text` is a non-empty string of at most 200 characters; `busy` text holds `busy` and `try again`, `unauthorized` text holds `key`; no key `cancelled`; `show_message` is true for `input_invalid` only. |
 | 8.8 | Same file: none of the 22 code names appears in `console.js`. |
+| 7.3, 7.11, 8.4, 14.8 | `tests/unit/test_console_assets.py` (the scan test and the self-check of `summary_violations`, edited in place; this is the one existing test file this spec edits). `tests/unit/test_console_format.py` (new, `needs_node`): runs `auditLine` and `retryAfterText` in one `node` process and compares with a small Python reference: `12 expect tso-password-prompt OK`; `0` and `0.004` and `-0.5` omit the duration, `0.006` gives `0.01s`, `1.234` gives `1.23s`; `phase` `finally` and `iteration` 3 append `finally` and `pass 3`; null signature is left out; `status` `weird` gives `UNKNOWN`; `step_index` `"x"` gives `?`; a 500-character `kind` is cut to 40; `Retry after: 1 second` for `1` and `01`, `0 seconds` for `0`, `7 seconds` for `007`, `Retry after: 120 seconds` for `120`; `null` for `null`, empty, `1.5`, `-1`, `Wed, 21 Oct 2026 07:28:00 GMT`, ` 3`, `1234567`. Skips without `node`. |
+| 12 (layout) | `tests/unit/test_console_audit_layout.py` (new, no browser): `console.css` has `.audit` with `column-width` between 22rem and 28rem, `column-gap` of at most 1.5rem, `list-style: none`, and `.audit > li` with a left padding of at most 1.25rem. These pin the numbers of "Audit line width"; the fit itself is checklist step 16. |
 | 9.1 to 9.5, 14.5, 14.6 (Property 3) | `tests/property/test_console_snippets.py`, see "Node test". |
 | 10.1, 10.2, 10.8 | `test_console_routes.py`: app with a generated API key and Bound_Values; each console route with and without a key; the existing `LogCapture` and `leak_forms` helpers show no Leak_Form in any body, header or log record; no `Call_Log_Record` is written. |
 | 11.2, 11.3, 11.6, 11.8, 11.9 | `test_console_assets.py` over `index.html` and `console.css` (no `@font-face`, `@import`, `url(`; labelled static input; no `tabindex` above 0; `lang`, title, viewport, charset; no paragraph over 40 words; every `animation`/`transition`/`@keyframes` accompanied by a `prefers-reduced-motion: reduce` block that sets both to `none`). |
@@ -533,6 +593,11 @@ For the reviewer. The executor does not run it and reports it as not run. Use a 
 12. Check that the Console (developer tools) has no CSP violation and no error after steps 1 to 11.
 13. **Deploy time, tunnel.** Open only these paths in the tunnel: `GET /`, `GET /console/console.css`, `/console/console.js`, `/console/snippets.js`, `/console/codes.json`, `/console/favicon.svg`, `GET /openapi.json`, `POST /flows/tk5-system-info`, `/mcp`, `/health`. Keep `/docs` closed. Expected: the page works through the public host name and `location.origin` in the snippets is the public name.
 14. **Deploy time, CDN or edge injection.** View the page source through the public name and compare it with the packaged `index.html`; check the Console for CSP violations. Expected: no added script, no rewritten file, `Cache-Control: no-store, no-transform` still present on the six routes. If the edge injects anything (scripts, analytics, minification), the page breaks under the CSP; turn the injecting feature off for these paths.
+15. **Scroll position (polish).** At 1280x720, with the page at the top, read `window.scrollY` in the developer tools, press Run, wait for the result, read it again. Expected: both are 0 (the same value), the masthead is still on screen, and focus is on the result region (`document.activeElement.id` is `result`).
+16. **Audit density (polish).** Run the demo Flow so that the trail has 39 entries at 1280x720. Expected: the trail is in two columns, every line is one text line (no wrapped line), each line reads like `12 expect tso-password-prompt OK`, no duration is shown for entries under 0.005 s, and each failed or skipped entry shows its word. If a line wraps, report its text and the measured column width.
+17. **Retry after (polish).** Reproduce a 429 as in step 7. Expected: `Retry after: 1 second` when the header is 1 and `Retry after: N seconds` otherwise; no line if the header is absent or not digits.
+
+Review record: steps 1 to 12 passed in headless Chrome 157 at 1280x720 against the live host (no CSP violation, no script error). Steps 13 and 14 were not run. Steps 15 to 17 are new.
 
 ## Risks, open items and what was not verified
 
@@ -552,7 +617,7 @@ For the reviewer. The executor does not run it and reports it as not run. Use a 
 
 **Not verified**
 
-- Nothing in a browser: `history.replaceState`, the CSP with a module script and its static `import`, focus order, `Clipboard.writeText`, `prefers-reduced-motion`, screen readers.
+- Checklist steps 1 to 12 were run by the reviewer in headless Chrome 157 and passed (see "Review record"). Not run: steps 13 to 17, other browsers, a headed browser, screen readers. The audit line widths of "Audit line width" are an estimate until step 16.
 - `HEAD` and `OPTIONS` over a real uvicorn socket, and the console-on with auth-disabled combination (read, not run).
 - The Claude Desktop, Cursor and VS Code configuration shapes against vendor pages; the Kiro and Claude Code shapes were read from the vendors' pages but not run in those products.
 - `fetch` details beyond basic use, from documentation.
@@ -561,6 +626,146 @@ For the reviewer. The executor does not run it and reports it as not run. Use a 
 - Node on other versions. Only v24.19.0 was run; the `data:` URL import and `--input-type=module` are documented for older supported versions but were not run there.
 
 **Task order input (Requirement 17.2).** Server first, then a checkpoint, then the page: (1) setting and `.env.example`; (2) loader, route registration, headers, `Prepared.console`; (3) auth exemption and `build_app` wiring; (4) startup record; (5) packaging key; (6) their tests and Properties 1 and 2; checkpoint: whole suite green; (7) `snippets.js`, `codes.json` and their tests (Property 3); (8) `index.html`, `console.css`, `console.js`, `favicon.svg` and the static tests; (9) manual checklist handed to the reviewer.
+
+## Seance art (task 7)
+
+A static picture for the screen a visitor sees before any Flow has run. It touches `index.html` and `console.css` only. `console.js` needs no change: `finishResult` already adds `has-result` to `div.layout` and `clearResult` (called by Forget key) already removes it, so the art disappears after the first result and returns after Forget key by CSS alone. Library documentation for the ARIA choice: not fetched in this design stage (no web access used). The WAI-ARIA `img` role (children presentational) and `aria-label` naming are stated here from the specification as the author knows it; task 7.1 records the page, version and date it reads before writing the markup, as the Conventions require.
+
+### Accessibility decision (D13)
+
+One wrapper `<div class="seance-art-wrap" role="img" aria-label="A crystal ball on a seance table">` containing `<pre class="seance-art" aria-hidden="true">`. Assistive technology meets one image with a short name and skips the characters. `role="img"` alone is not trusted to hide the `<pre>` text in every browse mode, so `aria-hidden` is added on the `<pre>`; the wrapper itself stays exposed because it carries the name. No visually hidden class and no new CSS for it. No `tabindex`, link, button or input is inside, so the keyboard order (key panel, inputs, Run, Copy buttons, result) is unchanged. When `display: none` applies, the wrapper leaves the accessibility tree too.
+
+### The art (verbatim, 17 rows, 56 columns, ASCII 0x20 to 0x7E)
+
+Columns are numbered from 0. The picture is symmetric about column 29. The ball is rows 1 to 7, the stand rows 8 to 10, the candles at columns 10 to 13 and 45 to 48 (rows 8 to 12), the table top row 11, the cloth rows 12 to 14 and the legs rows 15 and 16. It contains no `&`, `<`, `>` or tab. The backslash, double quote and apostrophe need no escaping in text content.
+
+```
+                    .        *        .
+               *        _.-"""""-._        .
+                     .-' .  *    . '-.
+          .         /  *    .-.    .  \         *
+                   |  .   ( o o )   *  |
+                   |   *   \ ~ /  .    |
+                    \ .     '-'     * /
+                      '-._  .  * _.-'
+           (           _.'-.....-'._           )
+           )\         /_____________\         /(
+          (__)       '==============='       (__)
+           ||    .-----------------------.    ||
+     ______||__/                           \__||______
+    /                                                 \
+   /___________________________________________________\
+       ||                                         ||
+       ||                                         ||
+```
+
+Row widths (columns used): 39, 44, 38, 49, 40, 40, 39, 37, 48, 48, 49, 48, 54, 55, 56, 52, 52. The widest row is 56 columns (limit 60); there are 17 rows (limit 20) and none is blank.
+
+### Span structure (D14)
+
+Each row is plain leading spaces, then one span per run of non-space characters. The spaces between two runs on the same row are outside the spans; spaces inside a run are inside its span. No span is nested, none has an attribute other than `class`, and every non-space character is inside a span. `seance-ball` covers rows 1 to 7 (the ball, with its inner sparkles and the little face). `seance-dim` covers everything else: the sparkles outside the ball, the stand, the candles, the table. Rows 1 and 3 have a dim run on each side of the ball run (three spans); rows 2 and 4 to 7 have one ball span; rows 0 and 8 to 16 have one dim span each.
+
+The markup that task 7.1 writes into `main.stage`, after the result section. The `<pre>` start tag is followed at once by the first row (a line feed right after `<pre>` would be dropped by the parser, so none is written), and the last row is followed at once by `</pre>`:
+
+```
+<div class="seance-art-wrap" role="img" aria-label="A crystal ball on a seance table">
+<pre class="seance-art" aria-hidden="true">                    <span class="seance-dim">.        *        .</span>
+               <span class="seance-dim">*</span>        <span class="seance-ball">_.-"""""-._</span>        <span class="seance-dim">.</span>
+                     <span class="seance-ball">.-' .  *    . '-.</span>
+          <span class="seance-dim">.</span>         <span class="seance-ball">/  *    .-.    .  \</span>         <span class="seance-dim">*</span>
+                   <span class="seance-ball">|  .   ( o o )   *  |</span>
+                   <span class="seance-ball">|   *   \ ~ /  .    |</span>
+                    <span class="seance-ball">\ .     '-'     * /</span>
+                      <span class="seance-ball">'-._  .  * _.-'</span>
+           <span class="seance-dim">(           _.'-.....-'._           )</span>
+           <span class="seance-dim">)\         /_____________\         /(</span>
+          <span class="seance-dim">(__)       '==============='       (__)</span>
+           <span class="seance-dim">||    .-----------------------.    ||</span>
+     <span class="seance-dim">______||__/                           \__||______</span>
+    <span class="seance-dim">/                                                 \</span>
+   <span class="seance-dim">/___________________________________________________\</span>
+       <span class="seance-dim">||                                         ||</span>
+       <span class="seance-dim">||                                         ||</span></pre>
+</div>
+```
+
+With the tags removed the text of the `<pre>` is exactly the art above, so the spans cannot move a column.
+
+### CSS (task 7.2)
+
+```css
+.seance-art-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 0;
+  color: var(--fg-dim);
+  text-shadow: none;
+}
+.seance-art {
+  margin: 0;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.2;
+  white-space: pre;
+}
+.seance-dim  { color: var(--fg-dim); text-shadow: none; }
+.seance-ball { color: var(--fg-bright); text-shadow: 0 0 4px var(--ui-glow);
+               animation: gs-pulse 6s ease-in-out infinite; }
+@keyframes gs-pulse {
+  0%, 100% { text-shadow: 0 0 4px var(--ui-glow); }
+  50%      { text-shadow: 0 0 9px var(--ui-glow); }
+}
+.has-result .seance-art-wrap { display: none; }
+@media (max-width: 68rem) { .seance-art-wrap { display: none; } }
+```
+
+The block goes before the "Motion" comment, except `@keyframes gs-pulse`, which goes with the other keyframes. Nothing is added to the reduced-motion block: its `*, *::before, *::after { animation: none !important }` rule already covers `.seance-ball`, and the existing test still finds exactly one `prefers-reduced-motion` block. `font-family: inherit` replaces the browser's default `<pre>` font (13px monospace); `font-size: 1rem` keeps the project's 16px floor. No `font-weight` and no `letter-spacing` on any seance rule, so spans cannot change glyph widths. The names `gs-pulse` and the rule `animation` do not contain `blink`, so the blink-period test does not see them.
+
+### Glow pulse: why it is safe
+
+The pulse changes only the blur radius of `text-shadow` on the ball, from 4px to 9px and back, over 6 s (about 0.17 Hz, against the limit of three flashes per second in WCAG 2.3.1). The glyph colour and opacity never change, so there is no luminance flash; the extra glow is a halo of the same green. Under `prefers-reduced-motion: reduce` it is off and the ball keeps the static 4px glow. The test requires a period of at least 4 s and a blur amplitude of at most 8px.
+
+### Layout and size at 1280x720
+
+- The art lives in `main.stage` (grid column 2). The key panel and the Run buttons live in `aside.side` (column 1). The grid has `align-items: start`, so nothing in the side column moves when the stage content grows.
+- Height of the art: 17 rows x (16px font x 1.2 line-height = 19.2px) = 326.4px, plus 0.5rem padding top and bottom (16px) = 342.4px. The test bound is 400px.
+- Position: masthead = 12px + 33.6px (title, 1.75rem x 1.2) + 12px + 1px border = 58.6px (82px if the tagline wraps to a second row); layout top padding 16px; status line 24px + 12px margin. So the art starts at 110.6px (about 134px worst case) and ends at 453px (about 476px worst case). The viewport is 720px, so at least 244px stay free below the art, and the key panel starts at 74.6px, untouched.
+- Width: the stage at 1280px is 1280 - 40 (layout padding) - 416 (side column 26rem) - 20 (gap) = 804px. 56 columns at the widest assumed monospace advance (0.602em = 9.63px) need 539px, at Consolas (0.55em) 493px. Narrower windows: the stage is `v - 476`px wide, so 539px is reached at v = 1015px (1030px with a 15px scrollbar). The rule hides the art at `max-width: 68rem` (1088px), which leaves at least 58px of margin and also covers the one-column breakpoint of 56rem. This is wider than the "one-column breakpoint only" the brief named, and the reason is this computation: between 896px and about 1015px the art would otherwise overflow the stage. The fits are estimates from font metrics, not a browser measurement (checklist step 18).
+- The art is centred with `justify-content: center` on the wrapper, and the `<pre>` is its own flex item, so it never wraps (`white-space: pre`) and never needs a scrollbar at 1089px and wider.
+
+### Contrast
+
+The art is decorative and hidden from assistive technology, so WCAG 1.4.3 does not require a ratio for it. The design applies the stricter text bound anyway: `--fg-dim` against `--bg-void` is 10.48 and against `--bg-scan` 10.04; `--fg-bright` against them is 18.43 and 17.66 (table "Palette and contrast"); `--ui-glow` (a non-text halo) is 15.10 and 14.46 against the same backgrounds, and the 3:1 non-text bound applies to it. The new test recomputes these two backdrops, which are the ones behind the stage, from `console.css`.
+
+### Tests (task 7.3)
+
+A new file, `tests/unit/test_console_seance.py`, reads `index.html` and `console.css` from the installed package and imports the CSS helpers (`_contrast`, `_tokens`, `_split_root`, `_declarations`, `_reduce_block`) from `tests.unit.test_console_css` without editing it. No existing test file is edited. Checks:
+
+| Check | What the test asserts |
+|---|---|
+| Label | The text `A crystal ball on a seance table` occurs exactly once in `index.html`, as the `aria-label` of a `<div class="seance-art-wrap" role="img">`. |
+| Placement | That div is a descendant of `<main class="stage">`, and there is exactly one `<pre class="seance-art">`, a direct child of the div. |
+| Attributes | The `<pre>` has exactly the attributes `class` and `aria-hidden="true"`. No `style` attribute anywhere in the wrapper. |
+| Spans | The `<pre>` holds only `<span>` elements, none nested, each with exactly one attribute `class` equal to `seance-ball` or `seance-dim`. Both classes occur. |
+| Coverage | Every non-space character of the `<pre>` text lies inside a span (text outside spans is spaces and line feeds only). |
+| ASCII | Every character of the `<pre>` text is 0x20 to 0x7E or a line feed; no tab. The raw source of the `<pre>` is also ASCII. |
+| Size | After removing at most one trailing line feed: at most 20 rows, at most 60 columns, no blank row, no row ending in a space, 17 rows and a widest row of 56 (the pinned art). |
+| Subject | The art holds the ball (`( o o )`), exactly two `(__)` candle holders and the table top (`.-----`). |
+| No focus | No `tabindex`, `<a`, `<button` or `<input` between the wrapper's start and end tags. |
+| Hidden after a result | `console.css` has a rule whose selector is `.has-result .seance-art-wrap` with `display: none`. |
+| Hidden when narrow | A `@media (max-width: Nrem)` block with N at least 56 holds a `.seance-art-wrap` rule with `display: none`. |
+| No wrap, size | `.seance-art` has `white-space: pre`, a font size of at least 1rem, and rows x font-size x line-height + wrapper padding is at most 400px (computed). |
+| Colour | Every colour-bearing declaration in the `.seance-*` rules is `var(--fg-dim)`, `var(--fg-bright)`, `var(--ui-glow)` or `none`; `.seance-dim` uses `--fg-dim` and `.seance-ball` uses `--fg-bright`. The existing colour-literal scan still passes. |
+| Contrast | `--fg-dim` and `--fg-bright` are at least 4.5 against `--bg-void` and `--bg-scan`, and `--ui-glow` at least 3, computed from the tokens. |
+| Motion | `animation` appears only in the `.seance-ball` rule; its period is at least 4 s; `@keyframes gs-pulse` holds only `text-shadow` declarations whose blur radii differ by at most 8px; the single reduced-motion block still sets `animation: none` and `transition: none` on `*`, `*::before`, `*::after`. |
+
+The existing scans of `index.html` (no inline style, no `on*`, no `<form>`, no absolute URL, paragraph length, labelled inputs, polite regions) run over the new markup unchanged. The existing blink, contrast and reduced-motion tests are not edited and must still pass.
+
+### Checklist steps (reviewer)
+
+18. At 1280x720, load `/` before any run. Expected: the art shows centred in the stage with no horizontal scrollbar, the key panel and the Run button are in view, and `window.scrollY` is 0.
+19. Run a Flow, then press Forget key. Expected: the art disappears when the result appears and is back after Forget key. Resize the window below 1088px wide: the art is hidden, with no horizontal scrollbar at any width.
+20. With a screen reader, move through the page before any run. Expected: one image announced as "A crystal ball on a seance table", the characters are not read, and Tab never lands on the art.
 
 ## CSS hooks (added by task 4.3)
 
@@ -572,4 +777,5 @@ For the reviewer. The executor does not run it and reports it as not run. Use a 
 - **Success result**: `section.result` gets the class `result-success` and contains `h2.result-title`, `dl.outputs` (one `div` per output with `dt` name and `dd` value), `p.elapsed`, `h3.audit-title`, `ol.audit`. Each `li` gets one of `audit-ok`, `audit-skipped` or `audit-failed`. The stylesheet adds a mark (check, dash or cross) and, for failed, bold text, so colour is never the only cue.
 - **Error result**: `section.result` gets the class `result-error` and contains `h2.result-title`, `p.error-code`, `p.error-text`, zero or more `p.error-detail` (status, `Retry-After`, step, expected, server message), the optional audit (`h3.audit-title`, `ol.audit`) and, for a listing error, `button.quiet` (Retry). The cross before `.result-error .result-title` comes from CSS.
 - **Generic**: `button.run` is the primary action, `button.quiet` is a secondary one. The attribute `hidden` hides any element. Use `.panel` and `.panel-title` for any extra boxed block.
-- **Reading order at 1280x720**: with a typical 4-output, 20-step result the stage is about 950px wide, outputs sit in one row at 2rem, and `ol.audit` flows into two 26rem columns. This was estimated from the sizes in the stylesheet, not measured in a browser.
+- **Seance art (task 7)**: `main.stage` ends with `div.seance-art-wrap` (`role="img"`, `aria-label`) holding `pre.seance-art` (`aria-hidden="true"`), which holds static `span.seance-ball` and `span.seance-dim` only (see "Seance art"). The wrapper is hidden by `.has-result .seance-art-wrap` and by `@media (max-width: 68rem)`. The ball glow animation is `gs-pulse`. No JS hook: `console.js` neither reads nor writes these classes.
+- **Reading order at 1280x720**: with a typical 4-output, 20-step result the stage is about 950px wide, outputs sit in one row at 2rem, and `ol.audit` flows into two columns of about 440px (see "Audit line width"). This was estimated from the sizes in the stylesheet, not measured in a browser.

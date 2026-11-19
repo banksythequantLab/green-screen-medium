@@ -2,13 +2,13 @@
 
 ## Overview
 
-Build the console described in `requirements.md` and `design.md` in this folder: six static files served by the Publisher in HTTP mode, a `GS_ENABLE_CONSOLE` switch, one exact-pair exemption in `AuthMiddleware`, fixed security headers on the six routes, and a plain HTML, CSS and ES-module page. The work has two halves with a checkpoint between them. Tasks 1 and 2 finish the server side with placeholder assets and have it green (Requirement 17.2). Task 3 is the checkpoint. Task 4 writes the page and replaces the placeholders. Task 5 is the final check and report. Section "Reviewer-only items" lists what the executor does not run.
+Build the console described in `requirements.md` and `design.md` in this folder: six static files served by the Publisher in HTTP mode, a `GS_ENABLE_CONSOLE` switch, one exact-pair exemption in `AuthMiddleware`, fixed security headers on the six routes, and a plain HTML, CSS and ES-module page. The work has two halves with a checkpoint between them. Tasks 1 and 2 finish the server side with placeholder assets and have it green (Requirement 17.2). Task 3 is the checkpoint. Task 4 writes the page and replaces the placeholders. Task 5 is the final check and report. Tasks 1 to 5 are done: the reviewer ran checklist steps 1 to 12 in headless Chrome 157 at 1280x720 against the live host (pass, no CSP violation, no script error) and the Linux suite gave 2416 passed, 0 failed, 15 Node tests skipped (no Node on that machine). Task 6 is a small polish after that run (no scroll on focus, denser audit lines, `1 second`, a plain-name `summary` scan); it touches page files and their tests only. Task 7 adds a static ASCII seance table with a crystal ball to the screen before any Flow has run (Requirement 11, criteria 10 to 18; design "Seance art (task 7)"); it touches `index.html`, `console.css` and one new test file only. Section "Reviewer-only items" lists what the executor does not run.
 
 The production files touched are `greenscreen/publisher/config.py`, `auth.py`, `rest.py`, `app.py`, `cli.py` (startup report only), the new package `greenscreen/publisher/console/`, `pyproject.toml` (one `package-data` key) and `.env.example` (one commented name). Every path is repo-relative. The executor works on Windows with Python 3.11.9. No task needs the live host or a browser. Every task is verified on Windows only; what Windows cannot show is listed in Notes.
 
 ### Estimates and order
 
-Two-day budget, about 19 hours of work.
+Two-day budget, about 19 hours of work for tasks 1 to 5, plus about 2.5 hours for the polish of task 6.
 
 | # | Top-level task | Hours |
 |---|---|---|
@@ -17,7 +17,9 @@ Two-day budget, about 19 hours of work.
 | 3 | Checkpoint: server side green | 0.5 |
 | 4 | Page: snippets, codes, CSS, HTML, JS, Node test with Property 3, static scans, contrast test | 9.0 |
 | 5 | Final checkpoint and report | 0.75 |
-| | **Total** | **19.15** |
+| 6 | Polish after the reviewer's browser run | 2.5 |
+| 7 | Seance art: markup, CSS, tests, final run | 2.0 |
+| | **Total** | **23.65** |
 
 If time runs short, cut in this order and report each cut: the contrast test details of 4.9 (keep the token check), the optional `Retry` polish in 4.5, then the example-based extras of 4.7 (keep Property 3). Nothing in tasks 1 to 3 is cut.
 
@@ -188,7 +190,63 @@ If time runs short, cut in this order and report each cut: the contrast test det
     - Ensure all tests pass, ask the user if questions arise.
     - _Requirements: 13.1, 13.2, 13.6, 16.3, 17.2, 17.3, 17.4_
 
+- [x] 6. Polish after the reviewer's browser run (about 2.5 h; no live host, no browser; Windows, Node on PATH)
+  - [x] 6.1 Update `console.js` and `snippets.js`
+    - Re-read the design sections "Focus after a call", "Audit list", "Summary scan", "Audit line width" and Decisions D10 to D12 first. Re-open https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/focus, and replace the "date to be confirmed" line in the design's "Library documentation checks" with the page, version note and the date you read it (edit `design.md` only for that line).
+    - `snippets.js`: add `export function auditLine(row)` and `export function retryAfterText(value)` exactly as the design's "Audit list" and Requirement 8.4 define them (words joined by one space; duration only when finite and `Number(value.toFixed(2)) > 0`, written `N.NNs`; `finally`, `pass N`, `UNKNOWN`, `?` and the 40 and 80 character cuts; `retryAfterText` returns `null` unless the text is 1 to 6 ASCII digits). No `import`, no forbidden global name, the word `console` nowhere (not even in a comment), no parameter named like a key, no `http://` or `https://`.
+    - `console.js`: import the two functions with the existing `snippets.js` import; build each audit row from the seven `AUDIT_KEYS` only and call `auditLine(row)` (keep the class choice from `row.status`); replace the `"Retry after: " + ... + " seconds"` line by `retryAfterText(info.retryAfter)` and show nothing when it returns `null`; change `finishResult` to `refs.result.focus({ preventScroll: true })`; remove `DETAILS_HEAD_TAG` and `FLOW_TEXT_KEY`, write `el("summary", ...)`, `operation.summary` (rename the variable that holds `item.post` to `operation`) and the class string `"flow-summary"`; make sure no `scrollIntoView`, `scrollTo`, `scrollBy`, `window.scroll` or `location.hash =` appears; remove `safeText` if nothing else uses it. Do not change `index.html`, `codes.json`, the routes or `pyproject.toml`.
+    - Run `node --check` on a copy of `console.js` outside the repo, if `node` is present.
+    - _Requirements: 6.8, 7.3, 7.11, 8.4, 14.8_
+
+  - [x] 6.2 Update `console.css` for the two-column density
+    - Read the design section "Audit line width" first. In `.audit` set `column-width: 26rem` (unchanged) and `column-gap: 1.5rem`; in `.audit > li` set the left padding to `1.25rem` (keep `break-inside: avoid`, add `overflow-wrap: anywhere`); keep the mark at `left: 0`. The narrow-screen block (`@media (max-width: 56rem)`, `column-width: 18rem`) stays. No colour literal outside `:root`, no new animation, no font-size below 1rem.
+    - Compute and write into the design, under "Audit line width", the measured line length in `ch` of the longest line of the demo Flow's 39-step trail against the column width (the table already holds the estimate; confirm it still matches the final CSS, or correct the numbers). Record the figures you used. Do not claim a browser measurement.
+    - _Requirements: 7.12, 11.4, 11.5, 11.6_
+
+  - [x] 6.3 Update and add tests
+    - `tests/unit/test_console_assets.py` (the one existing test file this spec edits): replace the plain `summary` check in `test_console_js_has_seven_audit_names_and_no_summary_member` by the pure function `summary_violations(text)` of the design's "Summary scan" and a call that asserts an empty list for the real `console.js`; add a parametrized self-check over the design's fixture table (pass rows and fail rows) against the same function; add the focus scan of Requirement 6.9. Keep the other assertions of that test and every other test in the file unchanged.
+    - `tests/unit/test_console_format.py` (new, marked `needs_node`, importing `NODE` and `needs_node` from `tests/console_node.py` without editing it): one helper runs `auditLine` and `retryAfterText` for a list of cases in a single `node` process with the same `data:` URL import and standard-input pattern as `run_snippets` (no file written, `timeout=30`), and the tests compare with the examples of the design's test table and a small Python reference. Skip reason: `node is not on PATH; the Snippets_Module was not executed`.
+    - `tests/unit/test_console_audit_layout.py` (new, no browser): the `console.css` checks of the design's test table (column width 22rem to 28rem, gap at most 1.5rem, `list-style: none`, `.audit > li` left padding at most 1.25rem).
+    - The existing scans over `snippets.js` (names of Requirement 14.1, no `import`, no host literal, contains `<YOUR_API_KEY>` and `<SECRET>`) must still pass with the two new functions; if one fails, fix `snippets.js`, not the test.
+    - _Requirements: 6.9, 7.3, 7.11, 7.12, 8.4, 14.8_
+
+  - [x] 6.4 Final run and report
+    - Prepend `C:\Program Files\nodejs` to `PATH` for the shell that runs the tests (`$env:Path = "C:\Program Files\nodejs;" + $env:Path`), record `node --version`, and run `python -m pytest -m "not integration" -p no:cacheprovider`. Expected: 0 failed, no Node test skipped. Record passed, skipped, failed, deselected and times, against the Linux result 2416 passed, 0 failed, 15 skipped (Node absent) and the earlier Windows baseline of task 5.
+    - Git checks: `git diff --name-only` lists only `greenscreen/publisher/console/console.js`, `snippets.js`, `console.css`, `tests/unit/test_console_assets.py`, the three spec files and, if they were already pending, the files that task 5 reported; new untracked files are `tests/unit/test_console_format.py` and `tests/unit/test_console_audit_layout.py`; `git diff --exit-code -- .kiro/steering` is clean; no other existing test file is modified; `git diff --cached --name-only` prints nothing; no new commit. `index.html`, `codes.json`, `favicon.svg`, `pyproject.toml` and every `greenscreen/publisher/*.py` are unchanged. Search the six assets for `PLACEHOLDER` and for the words `sum" + "mary`: none.
+    - Final report: counts before and after, files changed and added, the statement that only `test_console_assets.py` was edited among existing tests, the library documentation line written, and what is not verified: checklist steps 15 to 17 (scroll position, audit width at 1280x720, `1 second`) are for the reviewer, and the widths are an estimate.
+    - Ensure all tests pass, ask the user if questions arise.
+    - _Requirements: 13.1, 13.6, 16.3, 17.3_
+
+- [x] 7. Seance art (about 2 h; no live host, no browser; Windows, Node on PATH)
+  - [x] 7.1 Add the art, wrapper and spans to `index.html`
+    - Read Requirement 11 criteria 10 to 13 and the design section "Seance art (task 7)" first. Before writing the markup, check the current documentation for the ARIA `img` role and `aria-label` naming (page, version or date) and append a dated line to the design's "Library documentation checks" (edit `design.md` for that line only).
+    - Edit `greenscreen/publisher/console/index.html` only. Inside `<main class="stage">`, after the `<section class="result" ...>` element, paste the markup of the design verbatim: `<div class="seance-art-wrap" role="img" aria-label="A crystal ball on a seance table">` holding `<pre class="seance-art" aria-hidden="true">` with the 17 rows and the static `<span class="seance-ball">` and `<span class="seance-dim">` spans. The first row follows the `<pre>` start tag with no line feed, and `</pre>` follows the last row with no line feed. No other change in the file.
+    - Check the pasted rows against the design: 17 rows, widest row 56 columns, ASCII only (0x20 to 0x7E), no tab, no blank row, spaces intact. No `style` attribute, no `tabindex`, no link, button or input inside the wrapper, no script change.
+    - _Requirements: 11.10, 11.11, 11.12, 11.13_
+
+  - [x] 7.2 Add the rules to `console.css`
+    - Read the design's "CSS", "Glow pulse", "Layout and size at 1280x720" and "Contrast" parts first.
+    - Edit `greenscreen/publisher/console/console.css` only: add `.seance-art-wrap`, `.seance-art` (`font-family: inherit`, `font-size: 1rem`, `line-height: 1.2`, `white-space: pre`, `margin: 0`), `.seance-dim` and `.seance-ball` as in the design; `@keyframes gs-pulse` beside the other keyframes (period 6 s, `text-shadow` blur 4px to 9px only); `.has-result .seance-art-wrap { display: none; }`; and `@media (max-width: 68rem) { .seance-art-wrap { display: none; } }`. Colours only through `var(--fg-dim)`, `var(--fg-bright)` and `var(--ui-glow)`. No new token, colour literal, `font-weight`, `letter-spacing`, `url(` or font. Do not edit the reduced-motion block: it already disables `.seance-ball`.
+    - Write into the design, under "Layout and size at 1280x720", the figures actually in the final CSS (rows x font-size x line-height + padding). Correct the numbers if they differ from 342.4px; do not claim a browser measurement.
+    - _Requirements: 11.13, 11.14, 11.15, 11.16, 11.17_
+
+  - [x] 7.3 Add the seance tests
+    - Create `tests/unit/test_console_seance.py` with the checks of the design's table "Tests (task 7.3)": label exactly once on a `div.seance-art-wrap[role=img]`; wrapper inside `main.stage`; one `pre.seance-art` with only `class` and `aria-hidden="true"`; spans only, not nested, one `class` attribute each with one of the two names; every non-space character inside a span; ASCII only; at most 20 rows and 60 columns, no blank row, no trailing space, 17 rows and a widest row of 56; ball, two `(__)` and table top present; nothing focusable inside; CSS hides under `.has-result` and under a `max-width` block of at least 56rem; `white-space: pre`, font size at least 1rem, computed height at most 400px; colour values only from the three tokens; contrast of the two text tokens at least 4.5 and of `--ui-glow` at least 3 on `--bg-void` and `--bg-scan`; the pulse is only on `.seance-ball`, at least 4 s, `text-shadow` only with blur difference at most 8px, and the reduced-motion block unchanged in effect.
+    - Import the CSS helpers from `tests.unit.test_console_css` and the page reading style from `tests/unit/test_console_assets.py` without editing either. Failure messages name the check and the line or row, never a long dump.
+    - Run `python -m pytest tests/unit/test_console_seance.py tests/unit/test_console_assets.py tests/unit/test_console_css.py tests/unit/test_console_audit_layout.py -p no:cacheprovider`. All pass, and no existing test is edited. If an existing scan fails because of the new markup, stop and report the test and the cause; do not change the test.
+    - _Requirements: 11.10, 11.11, 11.12, 11.13, 11.14, 11.15, 11.16, 11.17, 11.18_
+
+  - [x] 7.4 Final run and report
+    - Prepend `C:\Program Files\nodejs` to `PATH` for the shell (`$env:Path = "C:\Program Files\nodejs;" + $env:Path`), record `node --version`, and run `python -m pytest -m "not integration" -p no:cacheprovider`. Expected: 0 failed, no Node test skipped. Record passed, skipped, failed, deselected and times against the result of task 6.4.
+    - Git checks: `git diff --name-only` shows, for production files, only `greenscreen/publisher/console/index.html` and `greenscreen/publisher/console/console.css` from this task (plus `design.md` from 7.1 and 7.2, and any file earlier tasks already reported as pending). `console.js`, `snippets.js`, `codes.json`, `favicon.svg`, `pyproject.toml` and every `greenscreen/publisher/*.py` are unchanged: `git diff --exit-code` on each. The only new untracked file from this task is `tests/unit/test_console_seance.py`. `git diff --exit-code -- .kiro/steering` is clean, no existing test file is modified by this task, `git diff --cached --name-only` prints nothing, no new commit.
+    - Wheel check: the existing wheel test passes and still lists exactly the seven files under `greenscreen/publisher/console/`. Search the six assets for `PLACEHOLDER`: none.
+    - Final report: counts before and after, files changed and added, the statement that no existing test file was edited, the documentation line written, and what is not verified: checklist steps 18 to 20 (art fit and scrollbar at 1280x720, hide after a run and below 68rem, screen-reader announcement) are for the reviewer, and the heights and widths are an estimate from font metrics.
+    - Ensure all tests pass, ask the user if questions arise.
+    - _Requirements: 11.18, 16.3, 16.4, 17.3_
+
 ## Reviewer-only items (the executor does NOT run these; no checkbox)
+
+Status: steps 1 to 12 below were run by the reviewer in headless Chrome 157 at 1280x720 against the live host and passed (no CSP violation, no script error). Steps 13 and 14 were not run. Steps 15 to 17 are new for task 6.
 
 These items need a real browser, a tunnel or a vendor product. The executor lists them in the final report as "not run by the executor" (Requirement 16.3) and does not tick anything here.
 
@@ -210,6 +268,12 @@ Use a real browser with the developer tools open (Console and Network tabs). Sta
 12. Check that the Console (developer tools) has no CSP violation and no error after steps 1 to 11.
 13. Deploy time, tunnel. Open only these paths in the tunnel: `GET /`, `GET /console/console.css`, `/console/console.js`, `/console/snippets.js`, `/console/codes.json`, `/console/favicon.svg`, `GET /openapi.json`, `POST /flows/tk5-system-info`, `/mcp`, `/health`. Keep `/docs` closed. Expected: the page works through the public host name and `location.origin` in the snippets is the public name.
 14. Deploy time, CDN or edge injection. View the page source through the public name and compare it with the packaged `index.html`; check the Console for CSP violations. Expected: no added script, no rewritten file, `Cache-Control: no-store, no-transform` still present on the six routes. If the edge injects anything (scripts, analytics, minification), turn the injecting feature off for these paths.
+15. Scroll position (task 6). At 1280x720 with the page at the top, read `window.scrollY`, press Run, wait for the result, read it again. Expected: both 0, the masthead still on screen, `document.activeElement.id` is `result`.
+16. Audit density (task 6). Run the demo Flow so that the trail has 39 entries at 1280x720. Expected: two columns, no wrapped line, lines like `12 expect tso-password-prompt OK`, no duration for entries under 0.005 s, a word for every failed or skipped entry. If a line wraps, report its text and the column width.
+17. Retry after (task 6). Reproduce a 429 as in step 7. Expected: `Retry after: 1 second` for 1, `Retry after: N seconds` otherwise, no line for an absent or non-digit header.
+18. Seance art (task 7). At 1280x720 load `/` before any run. Expected: the art is centred in the stage, no horizontal scrollbar, the key panel and Run button in view, `window.scrollY` is 0.
+19. Seance art (task 7). Run a Flow, then press Forget key. Expected: the art disappears with the result and returns after Forget key; below 1088px window width it is hidden, with no horizontal scrollbar at any width.
+20. Seance art (task 7). With a screen reader, read the page before any run. Expected: one image, "A crystal ball on a seance table", no characters read, and Tab never lands on the art.
 
 ### Other reviewer items
 
@@ -220,7 +284,7 @@ Use a real browser with the developer tools open (Console and Network tabs). Sta
 
 ### Unverified items the final report must list
 
-- Nothing was run in a browser: `history.replaceState`, the CSP with a module script and its static `import`, focus order, `Clipboard.writeText`, `prefers-reduced-motion`, screen readers.
+- Checklist steps 1 to 12 ran in headless Chrome 157 (reviewer, passed). Still not run in a browser by anyone: steps 13 to 17. The older line follows for the record. Nothing was run in a browser by the executor: `history.replaceState`, the CSP with a module script and its static `import`, focus order, `Clipboard.writeText`, `prefers-reduced-motion`, screen readers.
 - `HEAD` and `OPTIONS` over a real uvicorn socket, and the console-on with `GS_AUTH_DISABLED=true` combination over a real socket (tests use an in-process ASGI transport).
 - MCP configuration shapes for Claude Desktop, Cursor and VS Code: not checked on vendor pages. The page names only Kiro and Claude Code. Kiro and Claude Code shapes were read from vendor pages, not run in those products.
 - `fetch` behaviour beyond basic use, from documentation only.
@@ -231,6 +295,8 @@ Use a real browser with the developer tools open (Console and Network tabs). Sta
 
 - Windows cannot show: a real browser, the CSP in a browser, a real socket for `HEAD` and `OPTIONS`, a tunnel, a CDN, Node versions other than the installed one.
 - Property tests: Properties 1, 2 and 3 are sub-tasks 2.11, 2.12 and 4.7. Each is one `@given` test with at least 100 examples and the first-line comment the requirements name.
+- Task 7 writes `index.html` (7.1) and `console.css` (7.2) in the same wave because they are different files; 7.3 reads both and creates the only new test file; 7.4 runs last. Steps 18 to 20 of the checklist are for the reviewer.
+- Task 6 writes `console.js` and `snippets.js` (6.1), `console.css` (6.2) and tests (6.3); 6.3 reads the files of 6.1 and 6.2, so it is in a later wave. `test_console_assets.py` is edited by 6.3 only.
 - Dependency graph rules: `rest.py`, `app.py`, `cli.py`, `auth.py`, `config.py` are each written by one task. The placeholder files of 2.2 are rewritten only in wave 6 to 8 by 4.1 (`snippets.js`), 4.2 (`codes.json`), 4.3 (`console.css`, `favicon.svg`), 4.4 (`index.html`) and 4.5 (`console.js`). Every new test file has one writing task. Checkpoints and top-level tasks are left out of the graph.
 
 ## Task Dependency Graph
@@ -248,7 +314,13 @@ Use a real browser with the developer tools open (Console and Network tabs). Sta
     { "id": 7, "tasks": ["4.4", "4.6", "4.7"] },
     { "id": 8, "tasks": ["4.5", "4.9"] },
     { "id": 9, "tasks": ["4.8"] },
-    { "id": 10, "tasks": ["5.1"] }
+    { "id": 10, "tasks": ["5.1"] },
+    { "id": 11, "tasks": ["6.1", "6.2"] },
+    { "id": 12, "tasks": ["6.3"] },
+    { "id": 13, "tasks": ["6.4"] },
+    { "id": 14, "tasks": ["7.1", "7.2"] },
+    { "id": 15, "tasks": ["7.3"] },
+    { "id": 16, "tasks": ["7.4"] }
   ]
 }
 ```

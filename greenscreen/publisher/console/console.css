@@ -406,13 +406,13 @@ button:disabled {
   padding: 0;
   list-style: none;
   column-width: 26rem;
-  column-gap: 2rem;
+  column-gap: 1.5rem;
   color: var(--fg-main);
 }
 
 .audit > li {
   break-inside: avoid;
-  padding: 0.125rem 0 0.125rem 1.75rem;
+  padding: 0.125rem 0 0.125rem 1.25rem;
   position: relative;
   overflow-wrap: anywhere;
 }
@@ -488,6 +488,45 @@ button:disabled {
   }
 }
 
+/* Seance art: static picture before any Flow has run. */
+
+.seance-art-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 0;
+  color: var(--fg-dim);
+  text-shadow: none;
+}
+
+.seance-art {
+  margin: 0;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.2;
+  white-space: pre;
+}
+
+.seance-dim {
+  color: var(--fg-dim);
+  text-shadow: none;
+}
+
+.seance-ball {
+  color: var(--fg-bright);
+  text-shadow: 0 0 4px var(--ui-glow);
+  animation: gs-pulse 6s ease-in-out infinite;
+}
+
+.has-result .seance-art-wrap {
+  display: none;
+}
+
+@media (max-width: 68rem) {
+  .seance-art-wrap {
+    display: none;
+  }
+}
+
 /* Motion */
 
 @keyframes gs-flicker {
@@ -508,6 +547,15 @@ button:disabled {
   }
   50%, 100% {
     opacity: 0;
+  }
+}
+
+@keyframes gs-pulse {
+  0%, 100% {
+    text-shadow: 0 0 4px var(--ui-glow);
+  }
+  50% {
+    text-shadow: 0 0 9px var(--ui-glow);
   }
 }
 
