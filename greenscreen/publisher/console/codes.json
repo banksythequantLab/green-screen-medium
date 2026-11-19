@@ -1,1 +1,27 @@
-{}
+{
+  "unauthorized": {"status": 401, "text": "The API key is missing or wrong. Enter the key again."},
+  "request_invalid": {"status": 400, "text": "The publisher could not read this request. Reload the page and try again."},
+  "request_too_large": {"status": 413, "text": "The request was too large for the publisher."},
+  "unknown_flow": {"status": 404, "text": "This flow is not published. Reload the list."},
+  "input_invalid": {"status": 422, "text": "An input value was not accepted. The message below says which input and which rule.", "show_message": true},
+  "busy": {"status": 429, "text": "The mainframe is busy with another call. Wait a moment and try again."},
+  "shutting_down": {"status": 503, "text": "The publisher is shutting down. Try again in a minute."},
+  "host_unavailable": {"status": 502, "text": "The publisher could not open a session to the mainframe."},
+  "call_timeout": {"status": 504, "text": "The call took too long and was stopped. The mainframe session may still be signed on."},
+  "internal_error": {"status": 500, "text": "The publisher failed while running the flow."},
+  "timeout": {"status": 504, "text": "The mainframe was too slow to answer a step."},
+  "run_timeout": {"status": 504, "text": "The mainframe was too slow for the whole run."},
+  "unknown_screen": {"status": 502, "text": "The mainframe showed a screen this flow does not know, so the flow stopped without guessing."},
+  "ambiguous_screen": {"status": 502, "text": "The mainframe showed a screen that matches more than one known screen, so the flow stopped."},
+  "unexpected_screen": {"status": 502, "text": "The mainframe showed a known screen the flow did not expect at this step, so the flow stopped."},
+  "loop_limit": {"status": 502, "text": "A repeated step reached its limit, so the flow stopped."},
+  "bad_target": {"status": 502, "text": "A step needed an input field that was not on the screen, so the flow stopped."},
+  "secret_target": {"status": 502, "text": "A step tried to type a secret into a field that must not receive it, so the flow stopped."},
+  "hidden_output": {"status": 502, "text": "An output would have been read from a hidden field, so the flow stopped."},
+  "output_type": {"status": 502, "text": "An output was not of its declared type, so the flow stopped."},
+  "screen_size": {"status": 502, "text": "The mainframe screen was not the expected size, so the flow stopped."},
+  "session_error": {"status": 502, "text": "The mainframe session failed during the run."},
+  "no_response": {"status": null, "text": "The publisher could not be reached. Check the network or the tunnel and try again."},
+  "unreadable_reply": {"status": null, "text": "The reply did not come from the publisher (for example a proxy error page)."},
+  "unknown_code": {"status": null, "text": "The publisher returned an error that this page does not know."}
+}

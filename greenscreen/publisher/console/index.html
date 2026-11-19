@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- PLACEHOLDER: replaced in task 4.4 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -10,8 +9,29 @@
 <link rel="stylesheet" href="/console/console.css">
 </head>
 <body>
-<h1>Green Screen Medium</h1>
-<p>PLACEHOLDER</p>
+<header class="masthead">
+<h1 class="title">Green Screen Medium</h1>
+<p class="tagline">Seance for dead mainframe screens.</p>
+</header>
+<div class="layout">
+<aside class="side">
+<section class="key-panel" aria-labelledby="key-title">
+<h2 class="panel-title" id="key-title">API key</h2>
+<label for="key-input">Enter the API key</label>
+<div class="key-row">
+<input type="password" id="key-input" name="api-key" autocomplete="off">
+<button type="button" class="run" id="connect-button">Connect</button>
+<button type="button" class="quiet" id="forget-button" hidden>Forget key</button>
+</div>
+<p class="help">A key placed after #key= in the address is read once, then removed from the address bar. It stays in this page only, until you close or reload it.</p>
+</section>
+<div class="flows" id="flows"></div>
+</aside>
+<main class="stage">
+<p class="status" id="status" aria-live="polite"></p>
+<section class="result" id="result" tabindex="-1" aria-live="polite" aria-label="Result of the last call"></section>
+</main>
+</div>
 <script type="module" src="/console/console.js"></script>
 </body>
 </html>

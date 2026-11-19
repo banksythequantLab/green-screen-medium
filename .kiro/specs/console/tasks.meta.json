@@ -3,6 +3,10 @@
     "2.11 Add the auth tests and Property 1": {
       "status": "passed",
       "lastRunTimestamp": 1795047160352
+    },
+    "4.7 Add the Node runner, the snippet tests and Property 3": {
+      "status": "passed",
+      "lastRunTimestamp": 1795049067719
     }
   },
   "executionHistory": {
@@ -266,6 +270,16 @@
         "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
         "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
         "timestamp": 1795046684155
+      },
+      {
+        "executionId": "2cd2c320-e655-4d7d-830f-55f121998b47",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795048759866
+      },
+      {
+        "executionId": "2cd2c320-e655-4d7d-830f-55f121998b47",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795048919631
       }
     ],
     "4.2 Write `codes.json` (replaces the placeholder)": [
@@ -273,6 +287,16 @@
         "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
         "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
         "timestamp": 1795046684355
+      },
+      {
+        "executionId": "2cd2c320-e655-4d7d-830f-55f121998b47",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795048760169
+      },
+      {
+        "executionId": "2cd2c320-e655-4d7d-830f-55f121998b47",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795048920720
       }
     ],
     "4.3 Write `console.css` and `favicon.svg` (replace the placeholders)": [
@@ -280,6 +304,16 @@
         "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
         "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
         "timestamp": 1795046684480
+      },
+      {
+        "executionId": "2cd2c320-e655-4d7d-830f-55f121998b47",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795048760509
+      },
+      {
+        "executionId": "2cd2c320-e655-4d7d-830f-55f121998b47",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795048921310
       }
     ],
     "4.4 Write `index.html` (replaces the placeholder)": [
@@ -287,6 +321,16 @@
         "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
         "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
         "timestamp": 1795046684619
+      },
+      {
+        "executionId": "2cd2c320-e655-4d7d-830f-55f121998b47",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795048924403
+      },
+      {
+        "executionId": "2cd2c320-e655-4d7d-830f-55f121998b47",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795049078668
       }
     ],
     "4.5 Write `console.js` (replaces the placeholder)": [
@@ -294,6 +338,16 @@
         "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
         "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
         "timestamp": 1795046684760
+      },
+      {
+        "executionId": "2cd2c320-e655-4d7d-830f-55f121998b47",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795049082788
+      },
+      {
+        "executionId": "2cd2c320-e655-4d7d-830f-55f121998b47",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795049231750
       }
     ],
     "4.6 Add the codes coverage tests": [
@@ -301,6 +355,16 @@
         "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
         "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
         "timestamp": 1795046684900
+      },
+      {
+        "executionId": "2cd2c320-e655-4d7d-830f-55f121998b47",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795048924909
+      },
+      {
+        "executionId": "2cd2c320-e655-4d7d-830f-55f121998b47",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795049079205
       }
     ],
     "4.7 Add the Node runner, the snippet tests and Property 3": [
@@ -308,6 +372,16 @@
         "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
         "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
         "timestamp": 1795046685036
+      },
+      {
+        "executionId": "2cd2c320-e655-4d7d-830f-55f121998b47",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795048925427
+      },
+      {
+        "executionId": "2cd2c320-e655-4d7d-830f-55f121998b47",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795049079781
       }
     ],
     "4.8 Add the static scan tests for the Console_Assets": [
@@ -315,6 +389,16 @@
         "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
         "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
         "timestamp": 1795046685177
+      },
+      {
+        "executionId": "2cd2c320-e655-4d7d-830f-55f121998b47",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795049234452
+      },
+      {
+        "executionId": "2cd2c320-e655-4d7d-830f-55f121998b47",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795049347207
       }
     ],
     "4.9 Add the CSS contrast and motion tests": [
@@ -322,6 +406,16 @@
         "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
         "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
         "timestamp": 1795046685309
+      },
+      {
+        "executionId": "2cd2c320-e655-4d7d-830f-55f121998b47",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795049083257
+      },
+      {
+        "executionId": "2cd2c320-e655-4d7d-830f-55f121998b47",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795049231019
       }
     ],
     "5.1 Run the whole suite, check the tree and write the final report": [
@@ -329,6 +423,16 @@
         "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
         "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
         "timestamp": 1795046685450
+      },
+      {
+        "executionId": "2cd2c320-e655-4d7d-830f-55f121998b47",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795049349347
+      },
+      {
+        "executionId": "2cd2c320-e655-4d7d-830f-55f121998b47",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795049998732
       }
     ],
     "1. Library documentation checks (about 0.75 h; record only; no live host; Windows only)": [
@@ -343,6 +447,20 @@
         "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
         "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
         "timestamp": 1795047241986
+      }
+    ],
+    "4. The page (about 9 h; no live host, no browser; Windows only)": [
+      {
+        "executionId": "2cd2c320-e655-4d7d-830f-55f121998b47",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795049347395
+      }
+    ],
+    "5. Final checkpoint and report (about 0.75 h; Windows only)": [
+      {
+        "executionId": "2cd2c320-e655-4d7d-830f-55f121998b47",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795049998905
       }
     ]
   }

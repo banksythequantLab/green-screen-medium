@@ -1,4 +1,8 @@
-/* PLACEHOLDER: replaced in task 4.3 */
+/*
+  Console stylesheet. One stylesheet, no external resources.
+  Colours live only in the root block below. Selectors use classes only.
+  Layout target: 1280x720 with no horizontal scroll, body text 16px or more.
+*/
 :root {
   --bg-void: #030805;
   --bg-panel: #0a170d;
@@ -12,4 +16,506 @@
   --ui-line: #2f9e50;
   --ui-focus: #ffe28a;
   --ui-glow: #33ff77;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--fg-main);
+  background-color: var(--bg-void);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--bg-void) 0,
+    var(--bg-void) 2px,
+    var(--bg-scan) 2px,
+    var(--bg-scan) 4px
+  );
+  font-family: ui-monospace, "Cascadia Mono", Consolas, Menlo, "DejaVu Sans Mono", monospace;
+  font-size: 1rem;
+  line-height: 1.45;
+  text-shadow: 0 0 5px var(--ui-glow);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+:focus-visible {
+  outline: 3px solid var(--ui-focus);
+  outline-offset: 2px;
+}
+
+/* Masthead: one compact row so the result stays above the fold. */
+
+.masthead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 1.25rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--ui-line);
+  background-color: var(--bg-panel);
+}
+
+.title {
+  margin: 0;
+  font-size: 1.75rem;
+  line-height: 1.2;
+  color: var(--fg-bright);
+  letter-spacing: 0.04em;
+  animation: gs-flicker 7s linear infinite;
+}
+
+.tagline {
+  margin: 0;
+  color: var(--fg-dim);
+  max-width: 60ch;
+}
+
+.tagline::after {
+  content: "";
+  display: inline-block;
+  width: 0.6em;
+  height: 1.05em;
+  margin-left: 0.4em;
+  vertical-align: text-bottom;
+  background-color: var(--fg-main);
+  animation: gs-blink 1s steps(1, end) infinite;
+}
+
+/* Page grid: a secondary side column and the stage. */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 26rem) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+  padding: 1rem 1.25rem 2rem;
+  max-width: 100rem;
+  margin: 0 auto;
+}
+
+.side,
+.stage {
+  min-width: 0;
+}
+
+.side {
+  display: grid;
+  gap: 1rem;
+}
+
+.panel,
+.key-panel,
+.flow,
+.result {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--ui-line);
+  padding: 0.75rem 1rem;
+}
+
+.panel-title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg-dim);
+}
+
+.help,
+.hint,
+.empty-note,
+.field-desc {
+  margin: 0.5rem 0 0;
+  max-width: 60ch;
+  color: var(--fg-dim);
+  text-shadow: none;
+}
+
+/* Controls */
+
+label,
+.field-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--fg-main);
+}
+
+input {
+  display: block;
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.4rem 0.6rem;
+  font: inherit;
+  color: var(--fg-bright);
+  background-color: var(--bg-field);
+  border: 2px solid var(--ui-line);
+  border-radius: 0;
+  text-shadow: none;
+}
+
+input:hover {
+  border-color: var(--ui-glow);
+}
+
+button {
+  min-height: 2.5rem;
+  padding: 0.4rem 1rem;
+  font: inherit;
+  font-weight: bold;
+  color: var(--fg-bright);
+  background-color: var(--bg-field);
+  border: 2px solid var(--ui-line);
+  border-radius: 0;
+  cursor: pointer;
+  transition: background-color 0.15s linear;
+}
+
+button:hover {
+  background-color: var(--bg-panel);
+  border-color: var(--ui-glow);
+}
+
+button:disabled {
+  color: var(--fg-dim);
+  border-style: dashed;
+  cursor: not-allowed;
+  text-shadow: none;
+}
+
+.run {
+  color: var(--bg-void);
+  background-color: var(--fg-main);
+  border-color: var(--fg-bright);
+  text-shadow: none;
+}
+
+.run:hover {
+  background-color: var(--fg-bright);
+}
+
+.run:disabled {
+  color: var(--fg-dim);
+  background-color: var(--bg-field);
+}
+
+.quiet {
+  font-weight: normal;
+  padding: 0.25rem 0.75rem;
+  min-height: 2.25rem;
+}
+
+.key-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.key-row input {
+  flex: 1 1 12rem;
+  width: auto;
+}
+
+/* Status line */
+
+.status {
+  min-height: 1.5rem;
+  margin: 0 0 0.75rem;
+  color: var(--fg-dim);
+}
+
+.status.is-busy {
+  color: var(--fg-warn);
+}
+
+/* Flow list: secondary content. */
+
+.flows {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.flow-name {
+  margin: 0;
+  font-size: 1.125rem;
+  color: var(--fg-bright);
+  overflow-wrap: anywhere;
+}
+
+.flow-summary {
+  margin: 0.25rem 0 0.5rem;
+  max-width: 60ch;
+  color: var(--fg-dim);
+  text-shadow: none;
+}
+
+.flow-inputs {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.field {
+  min-width: 0;
+}
+
+.tag {
+  margin-left: 0.5rem;
+  color: var(--fg-warn);
+}
+
+.snippets {
+  margin-top: 0.75rem;
+  border-top: 1px dashed var(--ui-line);
+  padding-top: 0.5rem;
+}
+
+.snippets > summary {
+  cursor: pointer;
+  color: var(--fg-dim);
+}
+
+.snippet {
+  margin-top: 0.5rem;
+}
+
+.snippet pre {
+  margin: 0.25rem 0;
+  padding: 0.5rem 0.75rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--fg-main);
+  background-color: var(--bg-field);
+  border: 1px solid var(--ui-line);
+  text-shadow: none;
+}
+
+/* Result and audit trail: the visual centre once a flow has run. */
+
+.result:empty {
+  display: none;
+}
+
+.result {
+  padding: 1rem 1.25rem 1.25rem;
+  border-width: 2px;
+  border-color: var(--ui-glow);
+}
+
+.result-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.75rem;
+  line-height: 1.2;
+  color: var(--fg-bright);
+  overflow-wrap: anywhere;
+}
+
+.result-error {
+  border-style: dashed;
+}
+
+.result-error .result-title,
+.error-code {
+  color: var(--fg-bad);
+}
+
+.result-error .result-title::before {
+  content: "\2717  ";
+}
+
+.error-code {
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+  overflow-wrap: anywhere;
+}
+
+.error-text {
+  margin: 0 0 0.75rem;
+  max-width: 60ch;
+  font-size: 1.25rem;
+  color: var(--fg-bright);
+}
+
+.error-detail {
+  margin: 0 0 0.5rem;
+  max-width: 70ch;
+  color: var(--fg-warn);
+  overflow-wrap: anywhere;
+}
+
+.outputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem 1.25rem;
+  margin: 0 0 1rem;
+}
+
+.outputs > div {
+  min-width: 0;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--bg-field);
+  border-left: 4px solid var(--ui-glow);
+}
+
+.outputs dt {
+  margin: 0;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-dim);
+  overflow-wrap: anywhere;
+}
+
+.outputs dd {
+  margin: 0.125rem 0 0;
+  font-size: 2rem;
+  line-height: 1.2;
+  font-weight: bold;
+  color: var(--fg-bright);
+  overflow-wrap: anywhere;
+}
+
+.elapsed {
+  margin: 0 0 1rem;
+  color: var(--fg-main);
+}
+
+.audit-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  color: var(--fg-main);
+  border-bottom: 1px solid var(--ui-line);
+  padding-bottom: 0.25rem;
+}
+
+.audit {
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+  column-width: 26rem;
+  column-gap: 2rem;
+  color: var(--fg-main);
+}
+
+.audit > li {
+  break-inside: avoid;
+  padding: 0.125rem 0 0.125rem 1.75rem;
+  position: relative;
+  overflow-wrap: anywhere;
+}
+
+.audit > li::before {
+  position: absolute;
+  left: 0;
+  content: "\2713";
+  color: var(--fg-main);
+}
+
+.audit-skipped {
+  color: var(--fg-dim);
+}
+
+.audit-skipped::before {
+  content: "\2013" !important;
+  color: var(--fg-dim) !important;
+}
+
+.audit-failed {
+  color: var(--fg-bad);
+  font-weight: bold;
+}
+
+.audit-failed::before {
+  content: "\2717" !important;
+  color: var(--fg-bad) !important;
+}
+
+/* After a run, the side column shrinks and dims; the stage takes the room. */
+
+.layout.has-result {
+  grid-template-columns: minmax(0, 17rem) minmax(0, 1fr);
+}
+
+.has-result .side {
+  color: var(--fg-dim);
+  text-shadow: none;
+}
+
+.has-result .panel,
+.has-result .key-panel,
+.has-result .flow {
+  border-color: var(--ui-line);
+  padding: 0.5rem 0.75rem;
+}
+
+.has-result .help,
+.has-result .flow-summary {
+  display: none;
+}
+
+.has-result .flow-name {
+  font-size: 1rem;
+  color: var(--fg-main);
+}
+
+.has-result .key-row input {
+  flex-basis: 8rem;
+}
+
+/* Narrow screens: one column, result first reading order unchanged. */
+
+@media (max-width: 56rem) {
+  .layout,
+  .layout.has-result {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .audit {
+    column-width: 18rem;
+  }
+}
+
+/* Motion */
+
+@keyframes gs-flicker {
+  0%, 93%, 100% {
+    opacity: 1;
+  }
+  94% {
+    opacity: 0.92;
+  }
+  96% {
+    opacity: 0.97;
+  }
+}
+
+@keyframes gs-blink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
