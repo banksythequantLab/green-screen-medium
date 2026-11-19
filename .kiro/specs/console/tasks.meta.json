@@ -1,0 +1,349 @@
+{
+  "pbtResults": {
+    "2.11 Add the auth tests and Property 1": {
+      "status": "passed",
+      "lastRunTimestamp": 1795047160352
+    }
+  },
+  "executionHistory": {
+    "1.1 Record page, version and date for every API the work uses": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046681815
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046687548
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046800934
+      }
+    ],
+    "2.1 Add the `GS_ENABLE_CONSOLE` setting and `.env.example` line": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046682050
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046805227
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046860423
+      }
+    ],
+    "2.2 Create the `greenscreen/publisher/console/` package with the loader and placeholder assets": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046682206
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046805516
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046861047
+      }
+    ],
+    "2.3 Add the exact-pair exemption to `greenscreen/publisher/auth.py`": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046682407
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046805991
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046861744
+      }
+    ],
+    "2.4 Add the `package-data` key to `pyproject.toml`": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046682543
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046806733
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046862305
+      }
+    ],
+    "2.5 Register the six routes and headers in `greenscreen/publisher/rest.py`": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046682794
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046864549
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046912488
+      }
+    ],
+    "2.6 Wire the console into `greenscreen/publisher/app.py`": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046682934
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046916527
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795047016513
+      }
+    ],
+    "2.7 Move the startup report into `_report_startup` in `greenscreen/publisher/cli.py`": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046683079
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795047019303
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795047085019
+      }
+    ],
+    "2.8 Add the shared test helper `tests/console_support.py`": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046683236
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795047019764
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795047085608
+      }
+    ],
+    "2.9 Add the switch, startup and off-switch tests": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046683369
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795047088514
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795047239687
+      }
+    ],
+    "2.10 Add the route, header, secrecy and loader tests": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046683500
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795047089107
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795047240248
+      }
+    ],
+    "2.11 Add the auth tests and Property 1": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046683635
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795047089595
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795047240841
+      }
+    ],
+    "2.12 Add Property 2 (the console changes no existing response)": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046683765
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795047090123
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795047241438
+      }
+    ],
+    "2.13 Add the packaging tests": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046683903
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795047090613
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795047241879
+      }
+    ],
+    "3. Checkpoint: the server side is green (about 0.5 h; Windows only)": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046684032
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795047245944
+      },
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795047661766
+      }
+    ],
+    "4.1 Write `snippets.js` (replaces the placeholder)": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046684155
+      }
+    ],
+    "4.2 Write `codes.json` (replaces the placeholder)": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046684355
+      }
+    ],
+    "4.3 Write `console.css` and `favicon.svg` (replace the placeholders)": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046684480
+      }
+    ],
+    "4.4 Write `index.html` (replaces the placeholder)": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046684619
+      }
+    ],
+    "4.5 Write `console.js` (replaces the placeholder)": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046684760
+      }
+    ],
+    "4.6 Add the codes coverage tests": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046684900
+      }
+    ],
+    "4.7 Add the Node runner, the snippet tests and Property 3": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046685036
+      }
+    ],
+    "4.8 Add the static scan tests for the Console_Assets": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046685177
+      }
+    ],
+    "4.9 Add the CSS contrast and motion tests": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046685309
+      }
+    ],
+    "5.1 Run the whole suite, check the tree and write the final report": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046685450
+      }
+    ],
+    "1. Library documentation checks (about 0.75 h; record only; no live host; Windows only)": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795046801082
+      }
+    ],
+    "2. Server side (about 8.15 h; no live host; Windows only)": [
+      {
+        "executionId": "67fa3688-6174-4261-9c54-f224241d48d8",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795047241986
+      }
+    ]
+  }
+}

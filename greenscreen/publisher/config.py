@@ -54,6 +54,7 @@ class Settings:
     enable_docs: bool
     flows_dir: Path | None
     publish_flows: str | None  # raw GS_PUBLISH_FLOWS; None when unset or zero-length
+    enable_console: bool = False
 
     def __repr__(self) -> str:
         return (
@@ -149,6 +150,7 @@ def load_settings(environ: Mapping[str, str]) -> Settings:
     shutdown_grace = _seconds(environ, "GS_SHUTDOWN_GRACE", 10.0, 1.0, 120.0)
     auth_disabled = _bool(environ, "GS_AUTH_DISABLED")
     enable_docs = _bool(environ, "GS_ENABLE_DOCS")
+    enable_console = _bool(environ, "GS_ENABLE_CONSOLE")
     flows_dir_text = _get(environ, "GS_FLOWS_DIR")
     api_key = _get(environ, "GS_API_KEY")
 
@@ -179,6 +181,7 @@ def load_settings(environ: Mapping[str, str]) -> Settings:
         enable_docs=enable_docs,
         flows_dir=Path(flows_dir_text) if flows_dir_text else None,
         publish_flows=_get(environ, "GS_PUBLISH_FLOWS"),
+        enable_console=enable_console,
     )
 
 

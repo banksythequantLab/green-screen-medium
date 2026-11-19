@@ -274,6 +274,18 @@ def _run_stdio(app: Any, settings: Any) -> None:
 # -- main --------------------------------------------------------------------
 
 
+def _report_startup(prepared: Any) -> None:
+    """Write the startup records: the publish count, then the console notice if on."""
+    _LOG.info(
+        "publishing %d of %d flows over %s",
+        len(prepared.registry),
+        prepared.loaded_count,
+        prepared.settings.transport,
+    )
+    if prepared.console:
+        _LOG.info("console enabled")
+
+
 def main() -> int:
     missing = _check_modules()
     if missing is not None:
@@ -295,12 +307,7 @@ def main() -> int:
 
     settings = prepared.settings
     app = build_app(prepared)
-    _LOG.info(
-        "publishing %d of %d flows over %s",
-        len(prepared.registry),
-        prepared.loaded_count,
-        settings.transport,
-    )
+    _report_startup(prepared)
     code = 0
     try:
         if settings.transport == "stdio":

@@ -36,6 +36,7 @@ include = ["greenscreen*"]
 "greenscreen.connector.testing" = ["fixtures/*.yaml"]
 "greenscreen.recognizer.signatures" = ["*.yaml"]
 "greenscreen.flow.flows" = ["*.yaml"]
+"greenscreen.publisher.console" = ["*.html", "*.css", "*.js", "*.json", "*.svg"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

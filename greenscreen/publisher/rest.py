@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import logging
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Any
 
 from fastapi import FastAPI, Request
@@ -17,6 +17,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import HTMLResponse, JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.responses import Response
 from starlette.routing import Route
 
 from greenscreen.publisher.calls import (
@@ -27,6 +28,7 @@ from greenscreen.publisher.calls import (
     error_body,
 )
 from greenscreen.publisher.config import Settings
+from greenscreen.publisher.console import HEADERS, Asset
 from greenscreen.publisher.registry import PublishedFlow, Registry
 from greenscreen.publisher.vault import SecretBox
 
@@ -310,6 +312,15 @@ class _NoStore:
         await self.app(scope, receive, wrapped)
 
 
+def _serve(asset: Asset) -> Callable:
+    """Handler for one console asset: cached bytes, fixed headers, no request access."""
+
+    async def serve() -> Response:
+        return Response(asset.body, media_type=asset.media_type, headers=HEADERS)
+
+    return serve
+
+
 def build_rest(
     service: CallService,
     registry: Registry,
@@ -317,6 +328,7 @@ def build_rest(
     mcp_asgi: Callable,
     *,
     lifespan: Any = None,
+    console: Sequence[Asset] = (),
 ) -> FastAPI:
     """The FastAPI application: Flow route, ``/health`` and the ``/mcp`` route."""
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
@@ -369,6 +381,15 @@ def build_rest(
             return get_swagger_ui_html(
                 openapi_url="/openapi.json", title="Green Screen Medium publisher"
             )
+
+    for asset in console:
+        app.add_api_route(
+            asset.path,
+            _serve(asset),
+            methods=["GET"],
+            include_in_schema=False,
+            response_model=None,
+        )
 
     # Wrapped in an object so Starlette treats it as a raw ASGI app for every method,
     # also when ``mcp_asgi`` is a plain function.

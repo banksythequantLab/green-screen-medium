@@ -86,8 +86,16 @@ _HEADERS: list[tuple[bytes, bytes]] = [
 
 
 class AuthMiddleware:
-    def __init__(self, app, *, api_key: str | None, disabled: bool) -> None:
+    def __init__(
+        self,
+        app,
+        *,
+        api_key: str | None,
+        disabled: bool,
+        exempt: frozenset[tuple[str, str]] = frozenset(),
+    ) -> None:
         self._app = app
+        self._exempt = exempt
         self._key = api_key.encode("utf-8") if api_key is not None else None
         self._disabled = disabled
 
@@ -115,7 +123,8 @@ class AuthMiddleware:
         headers = scope.get("headers") or []
         if self._disabled:
             return _host_is_loopback(headers)
-        if scope.get("method") == "GET" and scope.get("path") == _HEALTH_PATH:
+        pair = (scope.get("method"), scope.get("path"))
+        if pair in self._exempt or pair == ("GET", _HEALTH_PATH):
             return True
         if self._key is None:  # fail closed
             return False

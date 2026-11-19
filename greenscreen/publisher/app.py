@@ -23,6 +23,7 @@ from greenscreen.publisher.config import (
     parse_bindings,
     parse_publish_list,
 )
+from greenscreen.publisher.console import PAIRS, Asset, ConsoleAssetError, load_assets
 from greenscreen.publisher.mcp_server import build_manager, build_mcp_server
 from greenscreen.publisher.registry import (
     Registry,
@@ -53,6 +54,7 @@ class Prepared:
     bound: BoundValues
     signatures: Sequence[Any]
     loaded_count: int  # Loaded_Flows, for "published N of M"
+    console: tuple[Asset, ...] = ()  # empty unless the console is on and transport is http
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,7 +78,13 @@ def prepare(environ: Mapping[str, str]) -> Prepared:
     signatures = load_startup_signatures()
     bound = parse_bindings(environ, {n: f for n, (f, _src) in loaded.items()}, published)
     registry = build_registry(published, bound, settings.call_timeout)
-    return Prepared(settings, registry, bound, signatures, len(loaded))
+    console: tuple[Asset, ...] = ()
+    if settings.enable_console and settings.transport == "http":
+        try:
+            console = load_assets()
+        except ConsoleAssetError as exc:
+            raise StartupError(f"console: missing_asset ({exc.file})") from None
+    return Prepared(settings, registry, bound, signatures, len(loaded), console)
 
 
 def limit_third_party_loggers() -> None:
@@ -128,9 +136,15 @@ def build_app(
         settings,
         StreamableHTTPASGIApp(manager),
         lifespan=app_lifespan,
+        console=prepared.console,
     )
     inner: Any = rest
     if settings.transport != "stdio":
-        inner = AuthMiddleware(rest, api_key=settings.api_key, disabled=settings.auth_disabled)
+        inner = AuthMiddleware(
+            rest,
+            api_key=settings.api_key,
+            disabled=settings.auth_disabled,
+            exempt=PAIRS if prepared.console else frozenset(),
+        )
     asgi = CrashGuard(inner)
     return PublisherApp(asgi=asgi, service=service, server=server, _lifespan=lifespan)

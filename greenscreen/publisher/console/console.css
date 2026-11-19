@@ -1,0 +1,15 @@
+/* PLACEHOLDER: replaced in task 4.3 */
+:root {
+  --bg-void: #030805;
+  --bg-panel: #0a170d;
+  --bg-field: #0f2214;
+  --bg-scan: #06100a;
+  --fg-main: #5dff8a;
+  --fg-dim: #46d46f;
+  --fg-bright: #d4ffe0;
+  --fg-warn: #ffcc66;
+  --fg-bad: #ff8f87;
+  --ui-line: #2f9e50;
+  --ui-focus: #ffe28a;
+  --ui-glow: #33ff77;
+}
