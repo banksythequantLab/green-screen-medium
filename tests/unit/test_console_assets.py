@@ -399,7 +399,7 @@ def test_result_focus_prevents_scroll_and_no_scroll_call_exists():
 
 def test_requests_stay_on_allowed_paths():
     text = _read("console.js")
-    allowed = ("/openapi.json", "/flows/", "/console/codes.json")
+    allowed = ("/openapi.json", "/flows/", "/mcp", "/console/codes.json")
     calls = list(re.finditer(r"(?<![\w.])(?:api)?[Ff]etch\s*\(\s*([^,)]*)", text))
     literal_calls = 0
     for m in calls:
@@ -446,10 +446,69 @@ def test_snippets_has_no_import():
         pytest.fail(f"snippets.js: rule 'no import' broken at line {_line_of(code, m.start())}")
 
 
+_TOKENS = re.compile(
+    r"""//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`(?:\\.|[^`\\])*`""",
+    re.S,
+)
+
+
+def _code_only(text: str) -> str:
+    """Blank comments and string literals (quotes included), keeping line breaks."""
+    return _TOKENS.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
+
+
+# The browser `console` object as a name in code: not part of a longer word or of a
+# hyphenated text such as `greenscreen-console` or `.console-x`.
+_CONSOLE_NAME = re.compile(r"(?<![\w$-])console(?![\w$-])")
+
+
+def console_violations(text: str) -> list[tuple[int, str]]:
+    """Return (line number, matched text) for every use of the `console` name in code."""
+    code = _code_only(text)
+    return [(_line_of(code, m.start()), m.group(0)) for m in _CONSOLE_NAME.finditer(code)]
+
+
+CONSOLE_PASS = (
+    'const CLIENT_NAME = "greenscreen-console";',
+    "const c = 'greenscreen-console';",
+    'el("div", { class: "console-x" }, t)',
+    ".console-x { color: red; }",
+    "// console is a browser object",
+    "/* console */ const a = 1;",
+    "const consoleLike = 1;",
+)
+CONSOLE_FAIL = (
+    "console.log(x)",
+    'console["log"](x)',
+    "window.console",
+    "console .log(x)",
+    "const c = console;",
+    "x(console)",
+)
+
+
+@pytest.mark.parametrize("line", CONSOLE_PASS)
+def test_console_scan_accepts_text_that_is_not_the_object(line):
+    assert console_violations(line) == []
+
+
+@pytest.mark.parametrize("line", CONSOLE_FAIL)
+def test_console_scan_rejects_the_object(line):
+    assert console_violations(line), "the scan let a forbidden form through"
+
+
+def test_console_scan_reports_the_line_number():
+    assert [n for n, _ in console_violations('const a = "console";\nconsole.log(a)\n')] == [2]
+
+
 @pytest.mark.parametrize("word", NODE_NAMES)
 def test_snippets_has_none_of_the_requirement_14_names(word):
     # Comments are blanked: a word in prose is not a reference. The raw-text scan
     # above already rejects `console.` anywhere, comments included.
+    if word == "console":
+        for line, _ in console_violations(_read("snippets.js")):
+            pytest.fail(f"snippets.js: forbidden name '{word}' at line {line}")
+        return
     code = _strip_comments(_read("snippets.js"))
     for m in re.finditer(rf"\b{word}\b", code):
         pytest.fail(f"snippets.js: forbidden name '{word}' at line {_line_of(code, m.start())}")

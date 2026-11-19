@@ -10,6 +10,22 @@ import {
   buildMcpConfig,
   auditLine,
   retryAfterText,
+  MCP_KNOWN_VERSIONS,
+  buildInitialize,
+  buildInitialized,
+  buildToolsList,
+  buildToolsCall,
+  mcpRequestHeaders,
+  parseMcpReply,
+  findReply,
+  hasTool,
+  classifyToolsCall,
+  formatTranscriptEntry,
+  summariseRun,
+  stripStages,
+  jsonRpcErrorText,
+  toggleAllLabel,
+  fitsInFirstScreen,
 } from "./snippets.js";
 
 // ---- State (module scope, nothing on the window object) ----
@@ -19,6 +35,15 @@ let keyHeld = false;
 let codes = null;
 let flows = [];
 let running = false;
+let callVia = "mcp";
+let sessionId = null;
+let protocolVersion = null;
+let wire = null;
+let wireView = null;
+let runName = "";
+
+const MCP_STEP_TIMEOUT_MS = 15000;
+const FIT_LIMIT = 720;
 
 const AUDIT_KEYS = [
   "step_index",
@@ -33,6 +58,7 @@ const PAGE_SIDE_KEYS = ["no_response", "unreadable_reply", "unknown_code"];
 const ALLOWED_ATTRS = new Set([
   "id", "class", "type", "for", "name", "value", "autocomplete", "inputmode",
   "maxlength", "disabled", "role", "aria-live", "aria-label", "hidden", "tabindex",
+  "open", "aria-pressed",
 ]);
 
 // ---- 1. Key intake from the address fragment (runs before anything else) ----
@@ -62,7 +88,7 @@ takeKeyFromFragment();
 // ---- 2. The one function that reads the key ----
 
 async function apiFetch(path, init) {
-  const allowed = path === "/openapi.json" || /^\/flows\/[^/]+$/.test(path);
+  const allowed = path === "/openapi.json" || /^\/flows\/[^/]+$/.test(path) || path === "/mcp";
   if (!allowed) {
     throw new Error("path not allowed");
   }
@@ -214,6 +240,9 @@ const refs = {
   flows: document.getElementById("flows"),
   status: document.getElementById("status"),
   result: document.getElementById("result"),
+  via: document.querySelector(".call-via"),
+  viaMcp: document.getElementById("via-mcp"),
+  viaRest: document.getElementById("via-rest"),
 };
 
 function setStatus(text, busy) {
@@ -222,6 +251,8 @@ function setStatus(text, busy) {
 }
 
 function clearResult() {
+  wire = null;
+  wireView = null;
   clearChildren(refs.result);
   refs.result.classList.remove("result-success", "result-error");
   refs.layout.classList.remove("has-result");
@@ -235,6 +266,24 @@ function showKeyPanel(show) {
   if (show) {
     refs.keyInput.value = "";
   }
+  renderCallVia();
+}
+
+// The Call via group: shown only while a key is held, disabled while a call runs.
+function renderCallVia() {
+  refs.via.hidden = !keyHeld;
+  refs.viaMcp.setAttribute("aria-pressed", callVia === "mcp" ? "true" : "false");
+  refs.viaRest.setAttribute("aria-pressed", callVia === "rest" ? "true" : "false");
+  refs.viaMcp.disabled = running;
+  refs.viaRest.disabled = running;
+}
+
+function chooseVia(value) {
+  if (running) {
+    return;
+  }
+  callVia = value;
+  renderCallVia();
 }
 
 function safeText(value, limit) {
@@ -285,14 +334,18 @@ function renderFlows() {
     flow.runButton = el("button", { type: "button", class: "run" }, "Run");
     flow.runButton.disabled = running;
     flow.runButton.addEventListener("click", () => run(flow));
+    const curlBox = renderSnippets(flow);
+    const clientsBox = renderMcpClients(flow);
     const article = el(
       "article",
       { class: "flow" },
       el("h2", { class: "flow-name" }, flow.name),
+      el("p", { class: "mcp-line" }, "This screen flow is published as an MCP tool: " + flow.name + "."),
       el("p", { class: "flow-summary" }, flow.blurb),
       fieldsBox,
       flow.runButton,
-      renderSnippets(flow),
+      clientsBox,
+      curlBox,
     );
     refs.flows.appendChild(article);
     updateSnippets(flow);
@@ -311,26 +364,40 @@ function collectInputs(flow) {
   }));
 }
 
+// One labelled, copyable text block; its <pre> is appended to flow.blocks.
+function snippetBox(flow, label) {
+  const pre = el("pre", { tabindex: "0" });
+  const button = el("button", { type: "button", class: "quiet" }, "Copy");
+  button.addEventListener("click", () => copyText(pre));
+  flow.blocks.push(pre);
+  return el("div", { class: "snippet" }, el("p", { class: "field-label" }, label), pre, button);
+}
+
+// Block order in flow.blocks: curl (here), then the MCP config and the Claude Code command.
 function renderSnippets(flow) {
   flow.blocks = [];
-  const wrap = el("details", { class: "snippets" }, el("summary", null, "Use this flow from other tools"));
-  const labels = ["curl command", "MCP client config (Kiro shape)", "Claude Code command"];
-  labels.forEach((label) => {
-    const pre = el("pre", { tabindex: "0" });
-    const button = el("button", { type: "button", class: "quiet" }, "Copy");
-    button.addEventListener("click", () => copyText(pre));
-    flow.blocks.push(pre);
-    wrap.appendChild(el("div", { class: "snippet" }, el("p", { class: "field-label" }, label), pre, button));
-  });
-  wrap.appendChild(el("p", { class: "hint" }, "Tool name: " + flow.name));
-  wrap.appendChild(
+  return el(
+    "details",
+    { class: "snippets" },
+    el("summary", null, "Use this flow with curl"),
+    snippetBox(flow, "curl command"),
+  );
+}
+
+function renderMcpClients(flow) {
+  return el(
+    "section",
+    { class: "mcp-clients" },
+    el("h3", { class: "mcp-clients-title" }, "Any MCP client can use this same tool"),
+    snippetBox(flow, "MCP client config (Kiro shape)"),
+    snippetBox(flow, "Claude Code command"),
+    el("p", { class: "hint" }, "Tool name: " + flow.name),
     el(
       "p",
       { class: "hint" },
-      "MCP clients differ in how they name these settings. The second block is the shape Kiro reads; the third is the Claude Code command.",
+      "MCP clients differ in how they name these settings. The first block is the shape Kiro reads; the second is the Claude Code command.",
     ),
   );
-  return wrap;
 }
 
 function updateSnippets(flow) {
@@ -381,8 +448,116 @@ function auditList(audit) {
   return list;
 }
 
-function showSuccess(body, elapsedSeconds) {
+// The three-stage strip: the first child of the result region, built only when an audit list exists.
+function appendStrip(via, name, audit) {
+  if (!Array.isArray(audit)) {
+    return;
+  }
+  const stages = stripStages(via === "mcp" ? "mcp" : "rest", name, summariseRun(audit));
+  const list = el("ol", { class: "strip" });
+  for (const text of stages) {
+    list.appendChild(el("li", { class: "strip-stage" }, text));
+  }
+  refs.result.appendChild(list);
+}
+
+function allWireOpen() {
+  return wireView !== null && wireView.all.length > 0 && wireView.all.every((node) => node.open === true);
+}
+
+function refreshWireToggle() {
+  if (wireView !== null) {
+    wireView.button.textContent = toggleAllLabel(allWireOpen());
+  }
+}
+
+function setAllWire(open) {
+  if (wireView === null) {
+    return;
+  }
+  for (const node of wireView.all) {
+    node.open = open;
+  }
+  refreshWireToggle();
+}
+
+// The wire transcript: every entry is built closed. settleTranscript may open two of them later.
+function appendWire() {
+  if (wire === null) {
+    return;
+  }
+  const button = el("button", { type: "button", class: "quiet wire-toggle" }, toggleAllLabel(false));
+  const list = el("ol", { class: "wire-list" });
+  const view = { list, button, all: [], calls: [] };
+  wireView = view;
+  button.addEventListener("click", () => setAllWire(!allWireOpen()));
+  for (const entry of wire) {
+    const body = el("pre", { class: "wire-json", tabindex: "0" }, entry.text);
+    const node = el(
+      "details",
+      { class: "wire-msg " + (entry.direction === "sent" ? "wire-sent" : "wire-received") },
+      el("summary", null, entry.line),
+      body,
+    );
+    node.addEventListener("toggle", refreshWireToggle);
+    view.all.push(node);
+    if (entry.call) {
+      view.calls.push(node);
+    }
+    list.appendChild(el("li", { class: "wire-entry" }, node));
+  }
+  refs.result.appendChild(
+    el(
+      "section",
+      { class: "wire" },
+      el("div", { class: "wire-head" }, el("h3", { class: "wire-title" }, "MCP wire transcript"), button),
+      el(
+        "p",
+        { class: "wire-note" },
+        "JSON-RPC messages this page sent to /mcp and received from it. Headers and the API key are not shown. Secret inputs show as <SECRET>. Numbers in received messages are shown as JavaScript prints them.",
+      ),
+      list,
+    ),
+  );
+}
+
+// Decides once per run whether the two tool-call entries start open. Any doubt leaves them closed.
+function settleTranscript() {
+  const view = wireView;
+  if (view === null || view.calls.length < 2 || !document.documentElement.contains(view.list)) {
+    return;
+  }
+  const close = () => {
+    for (const node of view.calls) {
+      node.open = false;
+    }
+  };
+  try {
+    for (const node of view.calls) {
+      node.open = true;
+    }
+    if (typeof view.list.getBoundingClientRect !== "function") {
+      throw new Error("no layout");
+    }
+    const listRect = view.list.getBoundingClientRect();
+    const rootRect = document.documentElement.getBoundingClientRect();
+    const bottom = listRect.bottom - rootRect.top;
+    const inner = window.innerHeight;
+    const limit = Number.isFinite(inner) && inner > 0 && inner < FIT_LIMIT ? inner : FIT_LIMIT;
+    if (!(listRect.height > 0 && fitsInFirstScreen(bottom, limit))) {
+      close();
+    }
+  } catch (error) {
+    close();
+  }
+  refreshWireToggle();
+}
+
+function showSuccess(body, elapsedSeconds, via) {
+  const kept = wire;
   clearResult();
+  wire = kept;
+  appendStrip(via, runName, body.audit);
   const outputs = el("dl", { class: "outputs" });
   for (const [name, value] of Object.entries(body.outputs)) {
     const text = value !== null && typeof value === "object" ? JSON.stringify(value) : String(value);
@@ -394,6 +569,7 @@ function showSuccess(body, elapsedSeconds) {
   refs.result.appendChild(
     el("p", { class: "elapsed" }, "Elapsed (as seen by this browser): " + elapsedSeconds.toFixed(1) + " s"),
   );
+  appendWire();
   if (Array.isArray(body.audit)) {
     refs.result.appendChild(el("h3", { class: "audit-title" }, "Audit trail"));
     refs.result.appendChild(auditList(body.audit));
@@ -403,8 +579,15 @@ function showSuccess(body, elapsedSeconds) {
 
 // Show one table entry. `extra` holds optional details: status, retryAfter, error body, retry callback.
 function showError(key, extra) {
+  const kept = wire;
   clearResult();
+  wire = kept;
   const info = extra || {};
+  let auditRows = null;
+  if (hasEntry(key) && info.error && typeof info.error === "object" && Array.isArray(info.error.audit)) {
+    auditRows = info.error.audit;
+  }
+  appendStrip(info.via, runName, auditRows);
   refs.result.classList.add("result-error");
   refs.result.appendChild(el("h2", { class: "result-title" }, "The call did not complete"));
   if (!hasEntry(key)) {
@@ -418,6 +601,12 @@ function showError(key, extra) {
     refs.result.appendChild(el("p", { class: "error-text" }, String(entry.text)));
     if (typeof info.status === "number") {
       refs.result.appendChild(el("p", { class: "error-detail" }, "HTTP status: " + info.status));
+    }
+    if (typeof info.detail === "string") {
+      refs.result.appendChild(el("p", { class: "error-detail" }, info.detail));
+    }
+    if (info.reportedByTool === true) {
+      refs.result.appendChild(el("p", { class: "error-detail" }, "Reported by the MCP tool as an error result."));
     }
     const retryText = retryAfterText(info.retryAfter);
     if (retryText !== null) {
@@ -440,11 +629,12 @@ function showError(key, extra) {
       if (entry.show_message === true && typeof error.message === "string") {
         refs.result.appendChild(el("p", { class: "error-detail" }, "Message: " + safeText(error.message, 300)));
       }
-      if (Array.isArray(error.audit)) {
-        refs.result.appendChild(el("h3", { class: "audit-title" }, "Audit trail"));
-        refs.result.appendChild(auditList(error.audit));
-      }
     }
+  }
+  appendWire();
+  if (auditRows !== null) {
+    refs.result.appendChild(el("h3", { class: "audit-title" }, "Audit trail"));
+    refs.result.appendChild(auditList(auditRows));
   }
   if (typeof info.retry === "function") {
     const retry = el("button", { type: "button", class: "quiet" }, "Retry");
@@ -458,6 +648,7 @@ function showError(key, extra) {
 
 function finishResult() {
   refs.layout.classList.add("has-result");
+  settleTranscript();
   refs.result.focus({ preventScroll: true });
 }
 
@@ -510,6 +701,7 @@ function setRunning(value) {
       flow.runButton.disabled = value;
     }
   }
+  renderCallVia();
 }
 
 async function run(flow) {
@@ -518,7 +710,30 @@ async function run(flow) {
   }
   setRunning(true);
   setStatus("Calling the mainframe…", true);
+  runName = flow.name;
   try {
+    if (callVia === "mcp") {
+      await runMcp(flow);
+    } else {
+      wire = null;
+      await runRest(flow);
+    }
+  } finally {
+    flow.inputs.forEach((input, index) => {
+      if (input.secret) {
+        flow.fields[index].value = "";
+      }
+    });
+    updateSnippets(flow);
+    setRunning(false);
+    if (refs.status.textContent === "Calling the mainframe…") {
+      setStatus("", false);
+    }
+  }
+}
+
+async function runRest(flow) {
+  {
     const payload = bodyText(collectInputs(flow), false);
     const started = performance.now();
     let response;
@@ -568,17 +783,195 @@ async function run(flow) {
       return;
     }
     showError("unreadable_reply", { status: response.status });
-  } finally {
-    flow.inputs.forEach((input, index) => {
-      if (input.secret) {
-        flow.fields[index].value = "";
-      }
+  }
+}
+
+// ---- Run through the MCP endpoint ----
+
+function isPlain(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function record(entry) {
+  if (wire !== null) {
+    wire.push(entry);
+  }
+}
+
+// The method of a message this page built, read back from its own text. Never shown on its own.
+function methodOf(wireText) {
+  try {
+    const parsed = JSON.parse(wireText);
+    return isPlain(parsed) && typeof parsed.method === "string" ? parsed.method : "?";
+  } catch (error) {
+    return "?";
+  }
+}
+
+// One POST to the MCP endpoint. wireText goes on the wire; shownText goes into the transcript.
+// expectId is the id of the reply to look for (null for the notification).
+async function post(wireText, shownText, expectId, timeoutMs, isCall) {
+  const method = methodOf(wireText);
+  const sent = formatTranscriptEntry({ direction: "sent", method, text: shownText });
+  record({ direction: "sent", line: sent.line, text: sent.text, call: isCall });
+  const controller = new AbortController();
+  const timer = timeoutMs === null ? null : setTimeout(() => controller.abort(), timeoutMs);
+  let response;
+  let text;
+  let started = 0;
+  let arrived = 0;
+  try {
+    started = performance.now();
+    response = await apiFetch("/mcp", {
+      method: "POST",
+      headers: mcpRequestHeaders(protocolVersion, sessionId),
+      body: wireText,
+      signal: controller.signal,
     });
-    updateSnippets(flow);
-    setRunning(false);
-    if (refs.status.textContent === "Calling the mainframe…") {
-      setStatus("", false);
+    arrived = performance.now();
+    if (response.status === 401) {
+      return { kind: "auth-rejected" };
     }
+    text = await response.text();
+  } catch (error) {
+    const none = formatTranscriptEntry({ direction: "received", method, status: null, text: "", message: null });
+    record({ direction: "received", line: none.line, text: none.text, call: isCall });
+    return { kind: "none" };
+  } finally {
+    if (timer !== null) {
+      clearTimeout(timer);
+    }
+  }
+  const reply = parseMcpReply(response.headers.get("Content-Type"), text);
+  const message = expectId === null ? null : findReply(reply.messages, expectId);
+  const shown = reply.messages.length > 0 ? reply.messages : [null];
+  shown.forEach((one, index) => {
+    const entry = formatTranscriptEntry({ direction: "received", method, status: response.status, text, message: one });
+    record({ direction: "received", line: entry.line, text: entry.text, call: isCall && index === 0 });
+  });
+  return { kind: "reply", status: response.status, response, reply, message, elapsed: (arrived - started) / 1000 };
+}
+
+// The fixed-text line for a JSON-RPC error object found in a reply, or null.
+function rpcDetail(result) {
+  for (const one of result.reply.messages) {
+    if (isPlain(one) && isPlain(one.error) && typeof one.error.code === "number") {
+      const shown = Number.isSafeInteger(one.error.code) ? String(one.error.code) : "?";
+      return "MCP error " + shown + ": " + jsonRpcErrorText(one.error.code);
+    }
+  }
+  return null;
+}
+
+// Shows the failure for a step that did not pass and returns "again" (repeat once) or "stopped".
+// Returns null when the step passed. `valid` checks the matched message of steps 1 and 3.
+function mcpFailure(step, result, repeated, valid) {
+  if (result.kind === "none") {
+    showError("no_response", { via: "mcp" });
+    return "stopped";
+  }
+  if (result.kind === "auth-rejected") {
+    const key = keyForStatus(401);
+    setStatus(hasEntry(key) ? String(codes[key].text) : "Could not load the error table.", false);
+    refs.keyInput.focus();
+    return "stopped";
+  }
+  const status = result.status;
+  const statusGood = step === 2 ? status >= 200 && status < 300 : status === 200;
+  const bodyGood = result.reply.problem === null && (step === 2 || result.message !== null);
+  if (statusGood && bodyGood && (valid === null || valid(result.message))) {
+    return null;
+  }
+  if (status === 404 && sessionId !== null && !repeated) {
+    return "again";
+  }
+  if (status < 200 || status >= 300) {
+    for (const one of result.reply.messages) {
+      if (isPlain(one) && isPlain(one.error) && typeof one.error.code === "string" && isServerCode(one.error.code)) {
+        showError(one.error.code, { status, via: "mcp" });
+        return "stopped";
+      }
+    }
+  }
+  showError("unreadable_reply", { status, detail: rpcDetail(result), via: "mcp" });
+  return "stopped";
+}
+
+function initializeOk(message) {
+  return (
+    isPlain(message.result) &&
+    typeof message.result.protocolVersion === "string" &&
+    MCP_KNOWN_VERSIONS.includes(message.result.protocolVersion)
+  );
+}
+
+function toolListOk(message) {
+  return isPlain(message.result) && Array.isArray(message.result.tools);
+}
+
+// One pass through the four requests. Returns true only when the whole pass should be repeated.
+async function mcpAttempt(flow, inputs, repeated) {
+  const first = await post(buildInitialize(1), buildInitialize(1), 1, MCP_STEP_TIMEOUT_MS, false);
+  let outcome = mcpFailure(1, first, repeated, initializeOk);
+  if (outcome !== null) {
+    return outcome === "again";
+  }
+  protocolVersion = first.message.result.protocolVersion;
+  const heldId = first.response.headers.get("Mcp-Session-Id");
+  if (typeof heldId === "string" && /^[\x21-\x7E]+$/.test(heldId)) {
+    sessionId = heldId;
+  }
+  const second = await post(buildInitialized(), buildInitialized(), null, MCP_STEP_TIMEOUT_MS, false);
+  outcome = mcpFailure(2, second, repeated, null);
+  if (outcome !== null) {
+    return outcome === "again";
+  }
+  const third = await post(buildToolsList(2), buildToolsList(2), 2, MCP_STEP_TIMEOUT_MS, false);
+  outcome = mcpFailure(3, third, repeated, toolListOk);
+  if (outcome !== null) {
+    return outcome === "again";
+  }
+  if (!hasTool(third.message, flow.name)) {
+    showError(keyForStatus(404), { via: "mcp" });
+    return false;
+  }
+  const call = await post(
+    buildToolsCall(3, flow.name, inputs, false),
+    buildToolsCall(3, flow.name, inputs, true),
+    3,
+    null,
+    true,
+  );
+  outcome = mcpFailure(4, call, repeated, null);
+  if (outcome !== null) {
+    return outcome === "again";
+  }
+  const verdict = classifyToolsCall(call.message);
+  if (verdict.kind === "success") {
+    showSuccess(verdict.body, call.elapsed, "mcp");
+  } else if (verdict.kind === "tool_error") {
+    const key = isServerCode(verdict.code) ? verdict.code : "unknown_code";
+    showError(key, {
+      error: key === "unknown_code" ? null : verdict.error,
+      reportedByTool: true,
+      via: "mcp",
+    });
+  } else {
+    showError("unreadable_reply", { status: call.status, detail: rpcDetail(call), via: "mcp" });
+  }
+  return false;
+}
+
+async function runMcp(flow) {
+  wire = [];
+  sessionId = null;
+  protocolVersion = null;
+  const inputs = collectInputs(flow);
+  let repeated = false;
+  while (await mcpAttempt(flow, inputs, repeated)) {
+    repeated = true;
+    sessionId = null;
+    protocolVersion = null;
   }
 }
 
@@ -599,6 +992,8 @@ function connect() {
 
 function wireEvents() {
   refs.connect.addEventListener("click", connect);
+  refs.viaMcp.addEventListener("click", () => chooseVia("mcp"));
+  refs.viaRest.addEventListener("click", () => chooseVia("rest"));
   refs.keyInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();

@@ -443,6 +443,173 @@ button:disabled {
   color: var(--fg-bad) !important;
 }
 
+/* Call via: choose MCP or REST for the next run. */
+
+.call-via {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.call-via .help {
+  flex: 1 1 100%;
+  margin: 0;
+}
+
+.call-via button[aria-pressed="true"] {
+  font-weight: bold;
+  border-color: var(--ui-focus);
+  color: var(--fg-bright);
+}
+
+.call-via button[aria-pressed="true"]::before {
+  content: "\25CF  ";
+}
+
+/* MCP client blocks under a Flow. */
+
+.mcp-line {
+  margin: 0.25rem 0 0.5rem;
+  max-width: 60ch;
+  color: var(--fg-dim);
+  text-shadow: none;
+}
+
+.mcp-clients {
+  margin-top: 0.75rem;
+  border-top: 1px dashed var(--ui-line);
+  padding-top: 0.5rem;
+}
+
+.mcp-clients-title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  color: var(--fg-main);
+}
+
+.mcp-clients .snippet pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Strip: first child of the result region. */
+
+.strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+  color: var(--fg-main);
+}
+
+.strip-stage {
+  min-width: 0;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--ui-line);
+  background-color: var(--bg-field);
+  overflow-wrap: anywhere;
+}
+
+.strip-stage + .strip-stage::before {
+  content: "\2192";
+  margin-right: 0.5rem;
+  color: var(--fg-dim);
+}
+
+/* Wire transcript of an MCP run. */
+
+.wire {
+  margin: 0 0 1rem;
+}
+
+.wire-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--ui-line);
+  padding-bottom: 0.25rem;
+}
+
+.wire-title {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--fg-main);
+}
+
+.wire-toggle {
+  font-weight: normal;
+  padding: 0.25rem 0.75rem;
+  min-height: 2.25rem;
+}
+
+.wire-note {
+  margin: 0 0 0.5rem;
+  max-width: 70ch;
+  color: var(--fg-dim);
+  text-shadow: none;
+}
+
+.wire-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wire-entry {
+  margin: 0 0 0.25rem;
+  min-width: 0;
+}
+
+.wire-msg {
+  border-left: 3px solid var(--ui-line);
+  padding-left: 0.5rem;
+}
+
+.wire-sent {
+  border-left-color: var(--fg-dim);
+}
+
+.wire-received {
+  border-left-color: var(--ui-glow);
+}
+
+.wire-msg > summary {
+  cursor: pointer;
+  list-style: none;
+  overflow-wrap: anywhere;
+}
+
+.wire-msg > summary::-webkit-details-marker {
+  display: none;
+}
+
+.wire-msg > summary::before {
+  content: "+ ";
+}
+
+.wire-msg[open] > summary::before {
+  content: "- ";
+}
+
+.wire-json {
+  max-height: 10rem;
+  overflow: auto;
+  margin: 0.25rem 0;
+  padding: 0.5rem 0.75rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--fg-main);
+  background-color: var(--bg-field);
+  border: 1px solid var(--ui-line);
+  text-shadow: none;
+}
+
 /* After a run, the side column shrinks and dims; the stage takes the room. */
 
 .layout.has-result {

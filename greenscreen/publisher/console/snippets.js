@@ -95,3 +95,554 @@ export function retryAfterText(value) {
   const count = Number(value);
   return "Retry after: " + count + (count === 1 ? " second" : " seconds");
 }
+
+// ---------------------------------------------------------------------------
+// MCP-visible Run (task 8). Pure functions; none takes the API key, a header
+// object from the network or a response. Wire text has no spaces.
+// ---------------------------------------------------------------------------
+
+export const MCP_OFFERED_VERSION = "2025-11-25";
+export const MCP_KNOWN_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
+
+function isObject(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function hasOwn(target, name) {
+  return Object.prototype.hasOwnProperty.call(target, name);
+}
+
+function idText(id) {
+  if (!Number.isSafeInteger(id)) {
+    throw new Error("a JSON-RPC id must be a safe integer");
+  }
+  return String(id);
+}
+
+const CLIENT_NAME = "greenscreen-console";
+
+export function buildInitialize(id) {
+  return (
+    '{"jsonrpc":"2.0","id":' + idText(id) + ',"method":"initialize","params":{"protocolVersion":' +
+    JSON.stringify(MCP_OFFERED_VERSION) +
+    ',"capabilities":{},"clientInfo":{"name":' + JSON.stringify(CLIENT_NAME) + ',"version":"1"}}}'
+  );
+}
+
+export function buildInitialized() {
+  return '{"jsonrpc":"2.0","method":"notifications/initialized"}';
+}
+
+export function buildToolsList(id) {
+  return '{"jsonrpc":"2.0","id":' + idText(id) + ',"method":"tools/list","params":{}}';
+}
+
+// The unmasked text is what goes on the wire; pass maskSecrets true for what the page shows.
+export function buildToolsCall(id, name, inputs, maskSecrets) {
+  return (
+    '{"jsonrpc":"2.0","id":' + idText(id) + ',"method":"tools/call","params":{"name":' +
+    JSON.stringify(String(name)) + ',"arguments":' + bodyText(inputs, maskSecrets) + "}}"
+  );
+}
+
+// Header members only; the page adds the API credential itself, in one place.
+export function mcpRequestHeaders(protocolVersion, sessionId) {
+  const headers = {
+    "Content-Type": "application/json",
+    "Accept": "application/json, text/event-stream",
+  };
+  if (typeof protocolVersion === "string" && protocolVersion !== "") {
+    headers["MCP-Protocol-Version"] = protocolVersion;
+  }
+  if (typeof sessionId === "string" && /^[\x21-\x7E]+$/.test(sessionId)) {
+    headers["Mcp-Session-Id"] = sessionId;
+  }
+  return headers;
+}
+
+function parseEventStream(text) {
+  const lines = (text.charCodeAt(0) === 0xfeff ? text.slice(1) : text).split(/\r\n|\r|\n/);
+  const messages = [];
+  let data = [];
+  let bad = false;
+  const dispatch = () => {
+    const joined = data.join("\n");
+    data = [];
+    if (joined === "") {
+      return;
+    }
+    try {
+      const parsed = JSON.parse(joined);
+      if (isObject(parsed)) {
+        messages.push(parsed);
+      } else {
+        bad = true;
+      }
+    } catch (error) {
+      bad = true;
+    }
+  };
+  for (const line of lines) {
+    if (line === "") {
+      dispatch();
+      continue;
+    }
+    if (line.charAt(0) === ":") {
+      continue;
+    }
+    const colon = line.indexOf(":");
+    const field = colon < 0 ? line : line.slice(0, colon);
+    let value = colon < 0 ? "" : line.slice(colon + 1);
+    if (value.charAt(0) === " ") {
+      value = value.slice(1);
+    }
+    if (field === "data") {
+      data.push(value);
+    }
+  }
+  dispatch();
+  return bad ? { messages: [], problem: "bad_sse" } : { messages, problem: null };
+}
+
+// mediaType is the reply's Content-Type text or null; it only chooses the parser.
+export function parseMcpReply(mediaType, text) {
+  if (typeof text !== "string") {
+    return { messages: [], problem: "bad_json" };
+  }
+  if (text.trim() === "") {
+    return { messages: [], problem: null };
+  }
+  const type = typeof mediaType === "string" ? mediaType.split(";")[0].trim().toLowerCase() : "";
+  if (type === "text/event-stream") {
+    return parseEventStream(text);
+  }
+  if (type === "" || type === "application/json" || type.endsWith("+json")) {
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch (error) {
+      return { messages: [], problem: "bad_json" };
+    }
+    if (isObject(parsed)) {
+      return { messages: [parsed], problem: null };
+    }
+    if (Array.isArray(parsed) && parsed.every(isObject)) {
+      return { messages: parsed, problem: null };
+    }
+    return { messages: [], problem: "bad_json" };
+  }
+  return { messages: [], problem: "unsupported_type" };
+}
+
+export function findReply(messages, id) {
+  if (!Array.isArray(messages)) {
+    return null;
+  }
+  for (const message of messages) {
+    if (isObject(message) && message.id === id && (hasOwn(message, "result") || hasOwn(message, "error"))) {
+      return message;
+    }
+  }
+  return null;
+}
+
+export function hasTool(listMessage, name) {
+  if (!isObject(listMessage) || !isObject(listMessage.result) || !Array.isArray(listMessage.result.tools)) {
+    return false;
+  }
+  return listMessage.result.tools.some((tool) => isObject(tool) && tool.name === name);
+}
+
+export function classifyToolsCall(message) {
+  if (!isObject(message)) {
+    return { kind: "unreadable" };
+  }
+  const result = message.result;
+  if (isObject(result)) {
+    const content = result.structuredContent;
+    if (result.isError === true) {
+      if (isObject(content) && isObject(content.error) && typeof content.error.code === "string") {
+        return { kind: "tool_error", code: content.error.code, error: content.error };
+      }
+      return { kind: "unreadable" };
+    }
+    if (isObject(content) && typeof content.flow === "string" && isObject(content.outputs)) {
+      return { kind: "success", body: content };
+    }
+    return { kind: "unreadable" };
+  }
+  if (isObject(message.error) && typeof message.error.code === "number") {
+    return { kind: "rpc_error", rpcCode: message.error.code };
+  }
+  return { kind: "unreadable" };
+}
+
+// Re-indent JSON text with two spaces without parsing numbers. Unbalanced text is returned as it came.
+export function prettyJson(text) {
+  const source = String(text);
+  const out = [];
+  const stack = [];
+  const pad = (depth) => "  ".repeat(depth);
+  let i = 0;
+  while (i < source.length) {
+    const ch = source.charAt(i);
+    if (ch === '"') {
+      let j = i + 1;
+      while (j < source.length && source.charAt(j) !== '"') {
+        j += source.charAt(j) === "\\" ? 2 : 1;
+      }
+      if (j >= source.length) {
+        return source;
+      }
+      out.push(source.slice(i, j + 1));
+      i = j + 1;
+    } else if (ch === "{" || ch === "[") {
+      const closer = ch === "{" ? "}" : "]";
+      let j = i + 1;
+      while (j < source.length && /\s/.test(source.charAt(j))) {
+        j += 1;
+      }
+      if (source.charAt(j) === closer) {
+        out.push(ch + closer);
+        i = j + 1;
+      } else {
+        stack.push(closer);
+        out.push(ch + "\n" + pad(stack.length));
+        i += 1;
+      }
+    } else if (ch === "}" || ch === "]") {
+      if (stack.pop() !== ch) {
+        return source;
+      }
+      out.push("\n" + pad(stack.length) + ch);
+      i += 1;
+    } else if (ch === ",") {
+      out.push(",\n" + pad(stack.length));
+      i += 1;
+    } else if (ch === ":") {
+      out.push(": ");
+      i += 1;
+    } else {
+      if (!/\s/.test(ch)) {
+        out.push(ch);
+      }
+      i += 1;
+    }
+  }
+  return stack.length === 0 ? out.join("") : source;
+}
+
+// ---- Transcript_Line and the allow-list projection ----
+
+function clean(value, limit) {
+  return typeof value === "string" ? value.slice(0, limit) : "?";
+}
+
+function safeCount(value) {
+  return Number.isSafeInteger(value) && value >= 0 ? String(value) : "?";
+}
+
+function finish(line) {
+  const cut = line.length > 100 ? line.slice(0, 97) + "..." : line;
+  return cut.replace(/[^\x20-\x7E]/g, "?");
+}
+
+function knownVersion(value) {
+  return typeof value === "string" && MCP_KNOWN_VERSIONS.includes(value) ? value : "?";
+}
+
+function codeText(value) {
+  return typeof value === "string" && /^[a-z_]{1,40}$/.test(value) ? value : "unknown";
+}
+
+function plural(count, one, many) {
+  return count === "1" ? one : many;
+}
+
+const AUDIT_SPEC = {
+  step_index: true,
+  kind: true,
+  phase: true,
+  iteration: true,
+  signature: true,
+  status: true,
+  duration_seconds: true,
+};
+const TOOL_SPEC = { name: true, description: true, inputSchema: true, outputSchema: true, annotations: true };
+const cutMessage = (value) => (typeof value === "string" ? value.slice(0, 300) : value);
+const onlyBoolean = (value) => (typeof value === "boolean" ? value : undefined);
+const RESULT_SPECS = {
+  initialize: { protocolVersion: true, capabilities: true, serverInfo: { name: true, version: true } },
+  list: { tools: [TOOL_SPEC] },
+  call: {
+    isError: onlyBoolean,
+    structuredContent: {
+      flow: true,
+      outputs: true,
+      audit: [AUDIT_SPEC],
+      error: {
+        code: true,
+        message: cutMessage,
+        step_index: true,
+        kind: true,
+        expected: true,
+        audit: [AUDIT_SPEC],
+      },
+    },
+  },
+};
+
+function project(value, spec, path, omitted) {
+  if (spec === true) {
+    return value;
+  }
+  if (typeof spec === "function") {
+    const kept = spec(value);
+    if (kept === undefined) {
+      omitted.push(path);
+    }
+    return kept;
+  }
+  if (Array.isArray(spec)) {
+    if (!Array.isArray(value)) {
+      omitted.push(path);
+      return undefined;
+    }
+    return value.map((item) => project(item, spec[0], path + "[]", omitted));
+  }
+  if (!isObject(value)) {
+    omitted.push(path);
+    return undefined;
+  }
+  const kept = {};
+  for (const member of Object.keys(value)) {
+    const name = path === "" ? member : path + "." + member;
+    if (hasOwn(spec, member)) {
+      const inner = project(value[member], spec[member], name, omitted);
+      if (inner !== undefined) {
+        kept[member] = inner;
+      }
+    } else {
+      omitted.push(name);
+    }
+  }
+  return kept;
+}
+
+function limitNames(names) {
+  const seen = [];
+  for (const name of names) {
+    const shown = name.slice(0, 60);
+    if (!seen.includes(shown)) {
+      seen.push(shown);
+    }
+  }
+  return seen.length > 12 ? seen.slice(0, 12).concat(["\u2026"]) : seen;
+}
+
+// Returns { shown, names } for a received message of the given kind.
+function projectMessage(message, kind) {
+  const omitted = [];
+  const shown = {};
+  for (const member of Object.keys(message)) {
+    if (member === "jsonrpc" || member === "id") {
+      shown[member] = message[member];
+    } else if (member === "method" && kind === "other") {
+      shown[member] = message[member];
+    } else if (member === "result" && hasOwn(RESULT_SPECS, kind)) {
+      const inner = project(message.result, RESULT_SPECS[kind], "", omitted);
+      if (inner !== undefined) {
+        shown.result = inner;
+      } else {
+        omitted.push("result");
+      }
+    } else if (member === "error" && kind === "rpc") {
+      const code = isObject(message.error) ? message.error.code : undefined;
+      shown.error = { code: Number.isSafeInteger(code) ? code : "?", text: jsonRpcErrorText(code) };
+      if (isObject(message.error)) {
+        for (const inner of Object.keys(message.error)) {
+          if (inner !== "code") {
+            omitted.push("error." + inner);
+          }
+        }
+      }
+    } else {
+      omitted.push(member);
+    }
+  }
+  return { shown, names: limitNames(omitted) };
+}
+
+function receivedLine(message, entry) {
+  const status = entry.status;
+  const method = typeof entry.method === "string" ? entry.method : "?";
+  const unrecognised = () => {
+    const own = typeof message.method === "string" ? message.method : method;
+    return { kind: "other", line: "received " + clean(own, 40) + ": unrecognised message" };
+  };
+  if (isObject(message.error)) {
+    const hostCode = message.error.code;
+    if (hasOwn(message, "jsonrpc") || typeof hostCode === "number") {
+      const code = Number.isSafeInteger(hostCode) ? String(hostCode) : "?";
+      const tail = status === 200 ? "" : ", HTTP " + safeCount(status);
+      return { kind: "rpc", line: "received error: JSON-RPC " + code + tail };
+    }
+    if (typeof hostCode === "string") {
+      return { kind: "other", line: "received error: " + codeText(hostCode) + ", HTTP " + safeCount(status) };
+    }
+    return unrecognised();
+  }
+  const result = message.result;
+  if (!isObject(result)) {
+    return unrecognised();
+  }
+  if (method === "initialize") {
+    const info = result.serverInfo;
+    const name = isObject(info) && typeof info.name === "string" ? clean(info.name, 40) : "unknown server";
+    return {
+      kind: "initialize",
+      line: "received initialize: " + name + ", protocol " + knownVersion(result.protocolVersion),
+    };
+  }
+  if (method === "tools/list" && Array.isArray(result.tools)) {
+    const count = safeCount(result.tools.length);
+    let line = "received tools/list: " + count + plural(count, " tool", " tools");
+    if (result.tools.length > 0) {
+      const names = result.tools.slice(0, 3).map((tool) => clean(isObject(tool) ? tool.name : undefined, 40));
+      line += ", " + names.join(", ");
+      if (result.tools.length > 3) {
+        line += ", +" + safeCount(result.tools.length - 3) + " more";
+      }
+    }
+    return { kind: "list", line };
+  }
+  if (method === "tools/call") {
+    const outcome = classifyToolsCall(message);
+    if (outcome.kind === "tool_error") {
+      return { kind: "call", line: "received error: " + codeText(outcome.code) };
+    }
+    if (outcome.kind === "success") {
+      const outputs = safeCount(Object.keys(outcome.body.outputs).length);
+      const audit = safeCount(Array.isArray(outcome.body.audit) ? outcome.body.audit.length : 0);
+      return {
+        kind: "call",
+        line:
+          "received result: " + outputs + plural(outputs, " output", " outputs") + ", " + audit +
+          plural(audit, " audit entry", " audit entries"),
+      };
+    }
+  }
+  return unrecognised();
+}
+
+function sentLine(entry) {
+  let message = isObject(entry.message) ? entry.message : null;
+  if (message === null && typeof entry.text === "string") {
+    try {
+      const parsed = JSON.parse(entry.text);
+      message = isObject(parsed) ? parsed : null;
+    } catch (error) {
+      message = null;
+    }
+  }
+  const method = typeof entry.method === "string" ? entry.method : message !== null && typeof message.method === "string" ? message.method : "?";
+  const params = message !== null && isObject(message.params) ? message.params : {};
+  if (method === "initialize") {
+    return "sent initialize: protocol " + knownVersion(params.protocolVersion);
+  }
+  if (method === "tools/call") {
+    return "sent tools/call: " + clean(params.name, 40);
+  }
+  return "sent " + clean(method, 40);
+}
+
+// entry: { direction, method, status, text, message }. Returns { line, text, omitted }.
+export function formatTranscriptEntry(entry) {
+  const source = isObject(entry) ? entry : {};
+  if (source.direction === "sent") {
+    return {
+      line: finish(sentLine(source)),
+      text: prettyJson(typeof source.text === "string" ? source.text : ""),
+      omitted: [],
+    };
+  }
+  const message = isObject(source.message) ? source.message : null;
+  if (message === null) {
+    const empty = typeof source.text !== "string" || source.text.trim() === "";
+    if (source.status === 202 && empty) {
+      return { line: "received notifications/initialized: HTTP 202, no body", text: "(no body)", omitted: [] };
+    }
+    const method = typeof source.method === "string" ? source.method : "?";
+    return {
+      line: finish("received " + clean(method, 40) + ": nothing readable, HTTP " + safeCount(source.status)),
+      text: "(nothing readable)",
+      omitted: [],
+    };
+  }
+  const described = receivedLine(message, source);
+  const { shown, names } = projectMessage(message, described.kind);
+  let text = JSON.stringify(shown, null, 2);
+  if (names.length > 0) {
+    text += "\n\nLeft out by this page: " + names.join(", ");
+  }
+  return { line: finish(described.line), text, omitted: names };
+}
+
+export function toggleAllLabel(allOpen) {
+  return allOpen === true ? "Collapse all" : "Expand all";
+}
+
+export function fitsInFirstScreen(bottom, limit) {
+  return (
+    typeof bottom === "number" && typeof limit === "number" &&
+    Number.isFinite(bottom) && Number.isFinite(limit) &&
+    bottom > 0 && limit > 0 && bottom <= limit
+  );
+}
+
+export function summariseRun(audit) {
+  if (!Array.isArray(audit)) {
+    return { steps: 0, screens: 0 };
+  }
+  let steps = 0;
+  const screens = new Set();
+  for (const entry of audit) {
+    if (isObject(entry) && entry.status !== "skipped") {
+      steps += 1;
+      if (typeof entry.signature === "string" && entry.signature !== "") {
+        screens.add(entry.signature);
+      }
+    }
+  }
+  return { steps, screens: screens.size };
+}
+
+export function stripStages(via, toolName, counts) {
+  const name = clean(toolName, 80);
+  const source = isObject(counts) ? counts : {};
+  const steps = safeCount(source.steps);
+  const screens = safeCount(source.screens);
+  const third =
+    "3270 screens: " + steps + plural(steps, " step", " steps") + " on " + screens +
+    " distinct" + plural(screens, " screen", " screens");
+  return via === "mcp"
+    ? ["MCP client (this page)", "MCP tool " + name, third]
+    : ["REST client (this page)", "POST /flows/" + name, third];
+}
+
+export function jsonRpcErrorText(code) {
+  switch (code) {
+    case -32700:
+      return "Parse error";
+    case -32600:
+      return "Invalid request";
+    case -32601:
+      return "Method not found";
+    case -32602:
+      return "Invalid params";
+    case -32603:
+      return "Internal error";
+    default:
+      return "Unknown error code";
+  }
+}

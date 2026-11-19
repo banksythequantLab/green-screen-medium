@@ -25,6 +25,11 @@
 </div>
 <p class="help">A key placed after #key= in the address is read once, then removed from the address bar. It stays in this page only, until you close or reload it.</p>
 </section>
+<div class="call-via" role="group" aria-label="Call via" hidden>
+<button type="button" class="quiet" id="via-mcp" aria-pressed="true">MCP</button>
+<button type="button" class="quiet" id="via-rest" aria-pressed="false">REST</button>
+<p class="help">MCP shows the messages this page exchanges with /mcp. REST calls the flow endpoint directly.</p>
+</div>
 <div class="flows" id="flows"></div>
 </aside>
 <main class="stage">

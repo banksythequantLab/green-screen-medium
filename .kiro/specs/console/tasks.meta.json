@@ -572,6 +572,95 @@
         "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
         "timestamp": 1795053522341
       }
+    ],
+    "8.1 Library documentation checks and probe record (about 0.75 h; record only)": [
+      {
+        "executionId": "7d2d77f5-d8f1-435a-8585-166d63b64a71",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795056557185
+      },
+      {
+        "executionId": "7d2d77f5-d8f1-435a-8585-166d63b64a71",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795056724654
+      }
+    ],
+    "8.2 Add the MCP functions to `snippets.js`, their Node tests and Property 4 (about 3.0 h)": [
+      {
+        "executionId": "7d2d77f5-d8f1-435a-8585-166d63b64a71",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795056725023
+      },
+      {
+        "executionId": "7d2d77f5-d8f1-435a-8585-166d63b64a71",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795057362705
+      }
+    ],
+    "8.3 Add the Call_Via markup and the CSS hooks (about 1.0 h)": [
+      {
+        "executionId": "7d2d77f5-d8f1-435a-8585-166d63b64a71",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795056728422
+      },
+      {
+        "executionId": "7d2d77f5-d8f1-435a-8585-166d63b64a71",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795057363101
+      }
+    ],
+    "8.4 Write the MCP client, transcript, strip and Call_Via logic in `console.js` (about 4.0 h)": [
+      {
+        "executionId": "7d2d77f5-d8f1-435a-8585-166d63b64a71",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795057363442
+      },
+      {
+        "executionId": "7d2d77f5-d8f1-435a-8585-166d63b64a71",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795057677742
+      },
+      {
+        "executionId": "7d2d77f5-d8f1-435a-8585-166d63b64a71",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795058641931
+      },
+      {
+        "executionId": "7d2d77f5-d8f1-435a-8585-166d63b64a71",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795058695311
+      }
+    ],
+    "8.5 Update the one existing test and add the static tests (about 0.5 h)": [
+      {
+        "executionId": "7d2d77f5-d8f1-435a-8585-166d63b64a71",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795057678330
+      },
+      {
+        "executionId": "7d2d77f5-d8f1-435a-8585-166d63b64a71",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795058696191
+      }
+    ],
+    "8.6 Final run and report (about 0.75 h)": [
+      {
+        "executionId": "7d2d77f5-d8f1-435a-8585-166d63b64a71",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795058696834
+      },
+      {
+        "executionId": "7d2d77f5-d8f1-435a-8585-166d63b64a71",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795059345553
+      }
+    ],
+    "8. MCP-visible Run (about 10 h; no live host, no browser; Windows, Node on PATH)": [
+      {
+        "executionId": "7d2d77f5-d8f1-435a-8585-166d63b64a71",
+        "chatSessionId": "sess_b2fab349-0837-4492-bef7-d57e0e08b66a",
+        "timestamp": 1795059345670
+      }
     ]
   }
 }
