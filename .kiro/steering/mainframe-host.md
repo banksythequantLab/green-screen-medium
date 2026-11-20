@@ -246,13 +246,13 @@ echo, row 7 output, row 8 READY), so row positions are only fixed after Clear.
 | `LISTCAT` | Row 1: ` IN CATALOG:SYS1.UCAT.TSO`. Rows 2 to 8: one data set name per row at col 1 (seven names, all starting with the user id). Then ` READY`. | `tso-listcat-output` |
 | `LISTDS '<name>'` | Row 1: the name. Row 2: ` --RECFM-LRECL-BLKSIZE-DSORG`. Row 3: the four values, for example `   FB    80    27920   PO`. Row 4: ` --VOLUMES--`. Row 5: the volume, for example `   TSO001`. Row 6: ` READY`. | `tso-listds-output` |
 | `LISTDS '<name>'` for a name that does not exist | Row 1: the name. Row 2: ` DATA SET '<name>' NOT IN CATALOG`. Row 3: ` READY`. | `tso-listds-not-in-catalog` |
-| `LISTDS '<name>' MEMBERS` | As `LISTDS`, then ` --MEMBERS--` on row 6 and one member name per row at col 2. | `tso-listds-members` and `-page2` to `-page7` |
+| `LISTDS '<name>' MEMBERS` | As `LISTDS`, then ` --MEMBERS--` on row 6 and one member name per row starting at col 2 counted from 0 (two blanks, then the name). | `tso-listds-members` and `-page2` to `-page7` |
 | `STATUS` | Row 1: ` JOB <userid>(TSU000nn) EXECUTING`. Row 2: ` READY`. The job number changes with every logon. | `tso-status-output` |
 
 Paging: when output fills the screen, row 23 shows ` ***` with the cursor at row 23 col 5
 and the keyboard waits. Enter shows the next screen, which starts at row 0 with no echo
 line. The last screen ends with ` READY`. `LISTDS 'SYS2.JCLLIB' MEMBERS` took seven
-screens (about 140 members). `LISTCAT LEVEL(SYS2)` took three.
+screens (136 members). `LISTCAT LEVEL(SYS2)` took three.
 
 Other facts:
 - The seven data sets of the demo user id are partitioned and have no members:
@@ -274,3 +274,47 @@ Other facts:
 - Not verified: `LISTCAT` for a user id with more than 21 data sets, any command that
   writes, any command run from inside ISPF, and what the screen shows when a command
   name is misspelled at READY after Clear.
+
+## Verified 2026-11-19 (evening): Clear, bad names, REENTER, and case
+
+Same method as the section above. New captures are in /.kiro/specs/more-flows/captures.
+All positions in these two sections count rows and columns from 0.
+
+- After Clear at READY (`tso-cleared`): all 24 rows are blank, the cursor is at row 0
+  col 0, the keyboard is unlocked, and the buffer holds one field start.
+- Case: the host folds lower case. `LISTDS 'sys2.jcllib'` answered exactly as the upper
+  case form, with the name shown as `SYS2.JCLLIB` on row 1. `listcat` typed in lower
+  case gave the same output as `LISTCAT`.
+- A command that does not exist: `XYZZY` gave row 1 ` COMMAND XYZZY NOT FOUND` and row 2
+  ` READY`. The session stays at READY.
+- A data set name the host rejects does NOT return to READY. The command prompts and
+  waits (`tso-listds-reenter`):
+  - `LISTDS 'A..B'`: row 1 ` INVALID DATA SET NAME, 'A..B'`, row 2 ` REENTER -`, cursor
+    at row 3 col 0.
+  - `LISTDS '1ABC'`: row 1 ` INVALID KEYWORD, '1ABC'`, row 2 ` REENTER -`.
+  - While that prompt is open, whatever is typed next is taken as the re-entered
+    operand, not as a command: `LISTCAT` gave ` INVALID KEYWORD, LISTCAT` and another
+    ` REENTER -`, and `LOGOFF` did not log off.
+  - PA1 ends the prompt (`tso-listds-reenter-after-pa1`): a row with ` |`, then
+    ` READY`, cursor on the row after it. LOGOFF then works.
+- `LISTCAT LEVEL(SYS2)` (`tso-listcat-level`, `-page2`, `-page3`): two rows per entry,
+  ` NONVSAM ------- <name>` then `      IN-CAT --- <catalog>`. Continuation screens
+  start at row 0 with no heading, and an entry can be split across two screens (page 3
+  starts with the `IN-CAT` row of the entry that ended page 2).
+- A dropped connection while a `REENTER -` prompt was open left the user id IN USE.
+  Recovery by hand worked: `LOGON <id> RECONNECT`, the password, Enter, PA1, Clear,
+  `LOGOFF`. After reconnect the screen showed the old ` REENTER -` prompt again. The
+  bundled logon recovery does not cover this state.
+
+### Rules that follow
+- The name rule above is not enough. A data set name must also be well formed for the
+  host before it is typed: one to eight characters per qualifier, each qualifier
+  starting with a letter or `$`, `#`, `@`, qualifiers separated by single dots, no
+  leading or trailing dot, 44 characters at most. A Flow that types a name the host
+  rejects is left at ` REENTER -`, where LOGOFF does not work.
+- Any Flow that types a command with a caller value must be able to leave a
+  ` REENTER -` prompt with PA1 before its logoff steps, so that a name the validation
+  missed cannot lock the account.
+- Lower case may be accepted from a caller and typed as given; the host folds it.
+- Not verified: other prompts a command can raise, PA1 from a ` ***` pause, and what
+  `STATUS` shows for a user id with batch jobs.

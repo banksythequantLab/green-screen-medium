@@ -1,0 +1,26 @@
+data: LISTDS 'A..B'                                                                   
+data:  INVALID DATA SET NAME, 'A..B'                                                  
+data:  REENTER -                                                                      
+data:  |                                                                              
+data:  READY                                                                          
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+data:                                                                                 
+U F U C(127.0.0.1) I 2 24 80 5 0 0x0 0.000
+ok

@@ -1,0 +1,26 @@
+data:  NONVSAM ------- SYS2.ISP.PLIB                                                  
+data:       IN-CAT --- SYS1.MCAT.TK5                                                  
+data:  NONVSAM ------- SYS2.ISP.SLIB                                                  
+data:       IN-CAT --- SYS1.MCAT.TK5                                                  
+data:  NONVSAM ------- SYS2.ISP.TLIB                                                  
+data:       IN-CAT --- SYS1.MCAT.TK5                                                  
+data:  NONVSAM ------- SYS2.JCLLIB                                                    
+data:       IN-CAT --- SYS1.MCAT.TK5                                                  
+data:  NONVSAM ------- SYS2.LINKLIB                                                   
+data:       IN-CAT --- SYS1.MCAT.TK5                                                  
+data:  NONVSAM ------- SYS2.MACLIB                                                    
+data:       IN-CAT --- SYS1.MCAT.TK5                                                  
+data:  NONVSAM ------- SYS2.PROCLIB                                                   
+data:       IN-CAT --- SYS1.MCAT.TK5                                                  
+data:  NONVSAM ------- SYS2.PSU.ASSIST                                                
+data:       IN-CAT --- SYS1.MCAT.TK5                                                  
+data:  NONVSAM ------- SYS2.REVIEW.CLIB                                               
+data:       IN-CAT --- SYS1.MCAT.TK5                                                  
+data:  NONVSAM ------- SYS2.REVIEW.PLIB                                               
+data:       IN-CAT --- SYS1.MCAT.TK5                                                  
+data:  NONVSAM ------- SYS2.REVIEW.SAMPLE.GRAPHICS                                    
+data:       IN-CAT --- SYS1.MCAT.TK5                                                  
+data:  NONVSAM ------- SYS2.SUPRTREK.HELP                                             
+data:  ***                                                                            
+U F U C(127.0.0.1) I 2 24 80 23 5 0x0 0.000
+ok

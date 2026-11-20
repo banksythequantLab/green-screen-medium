@@ -1,0 +1,26 @@
+data: LISTCAT LEVEL(SYS2)                                                             
+data:  NONVSAM ------- SYS2.CMDLIB                                                    
+data:       IN-CAT --- SYS1.MCAT.TK5                                                  
+data:  NONVSAM ------- SYS2.CMDPROC                                                   
+data:       IN-CAT --- SYS1.MCAT.TK5                                                  
+data:  NONVSAM ------- SYS2.DSSCNTL                                                   
+data:       IN-CAT --- SYS1.MCAT.TK5                                                  
+data:  NONVSAM ------- SYS2.DSSLIB                                                    
+data:       IN-CAT --- SYS1.MCAT.TK5                                                  
+data:  NONVSAM ------- SYS2.DYNABLDL.ASM                                              
+data:       IN-CAT --- SYS1.MCAT.TK5                                                  
+data:  NONVSAM ------- SYS2.DYNAMASK.ASM                                              
+data:       IN-CAT --- SYS1.MCAT.TK5                                                  
+data:  NONVSAM ------- SYS2.EXEC                                                      
+data:       IN-CAT --- SYS1.MCAT.TK5                                                  
+data:  NONVSAM ------- SYS2.HELP                                                      
+data:       IN-CAT --- SYS1.MCAT.TK5                                                  
+data:  NONVSAM ------- SYS2.ISP.CLIB                                                  
+data:       IN-CAT --- SYS1.MCAT.TK5                                                  
+data:  NONVSAM ------- SYS2.ISP.LLIB                                                  
+data:       IN-CAT --- SYS1.MCAT.TK5                                                  
+data:  NONVSAM ------- SYS2.ISP.MLIB                                                  
+data:       IN-CAT --- SYS1.MCAT.TK5                                                  
+data:  ***                                                                            
+U F U C(127.0.0.1) I 2 24 80 23 5 0x0 0.000
+ok
