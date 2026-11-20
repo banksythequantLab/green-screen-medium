@@ -7,6 +7,7 @@ is checked to occur in no file under ``captures/``.
 """
 from __future__ import annotations
 
+import math
 import os
 import shutil
 from collections.abc import Sequence
@@ -40,6 +41,8 @@ _SIGNATURE_CAPTURE: dict[str, str] = {
     "tso-userid-in-use": "tso-userid-in-use",
     "tso-reconnect-password-prompt": "tso-reconnect-password-prompt",
     "tso-reconnect-ok": "tso-reconnect-ok",
+    "tso-cleared": "tso-cleared",
+    "tso-reenter": "tso-listds-reenter",
 }
 _CAPTURE_SIGNATURE = {v: k for k, v in _SIGNATURE_CAPTURE.items()}
 
@@ -179,22 +182,43 @@ class ScriptedState:
     screen: Screen
     stale_reads: int = 0
     repaints: tuple[Screen, ...] = ()
+    blanks: tuple[float, ...] = ()
 
     def __post_init__(self) -> None:
         if type(self.stale_reads) is not int or not 0 <= self.stale_reads <= 10:
             raise ValueError("stale_reads must be an integer from 0 to 10")
         object.__setattr__(self, "repaints", tuple(self.repaints))
+        blanks = tuple(self.blanks)
+        for b in blanks:
+            if (
+                isinstance(b, bool)
+                or not isinstance(b, (int, float))
+                or not math.isfinite(b)
+                or b <= 0
+            ):
+                raise ValueError("each blank duration must be a finite number above 0")
+        object.__setattr__(self, "blanks", blanks)
 
 
 class ScriptedSession:
     """Implements the Session protocol over an ordered list of states."""
 
-    def __init__(self, states: Sequence[ScriptedState | Screen], *, echo_typing: bool = False):
+    def __init__(
+        self,
+        states: Sequence[ScriptedState | Screen],
+        *,
+        echo_typing: bool = False,
+        clock=None,
+    ):
         items = [s if isinstance(s, ScriptedState) else ScriptedState(s) for s in states]
         if not items:
             raise ValueError("at least one state is required")
+        if clock is None and any(s.blanks for s in items):
+            raise ValueError("a state with blanks needs a clock")
         self._states = items
         self._echo = echo_typing
+        self._clock = clock
+        self._blank_until: float | None = None  # clock time when the blank frames end
         self._index = 0
         self._queue: list[Screen] = []
         self._current = copy_screen(items[0].screen)
@@ -212,12 +236,17 @@ class ScriptedSession:
             + [copy_screen(r) for r in state.repaints]
         )
         self._current = copy_screen(state.screen)
+        self._blank_until = (
+            self._clock.monotonic() + sum(state.blanks) if state.blanks else None
+        )
 
     # -- Session protocol --
     def read_screen(self) -> Screen:
         self.calls.append(("read",))
         if self._queue:
             return self._queue.pop(0)
+        if self._blank_until is not None and self._clock.monotonic() < self._blank_until:
+            return capture("tso-cleared")
         return copy_screen(self._current)
 
     def string(self, text: str) -> None:
@@ -315,6 +344,12 @@ def _find_repaint_cells() -> dict[str, list[tuple[int, int, tuple[str, ...]]]]:
 
 
 _REPAINT_CELLS = _find_repaint_cells()
+
+
+def has_partial_repaint(name: str) -> bool:
+    """True when ``partial_repaint(name, i)`` can produce a screen (``name`` as there)."""
+    sig_name = _CAPTURE_SIGNATURE.get(name, name)
+    return bool(_REPAINT_CELLS.get(sig_name))
 
 
 def partial_repaint(name: str, i: int) -> Screen:

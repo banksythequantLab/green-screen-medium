@@ -20,6 +20,7 @@ _MAX_DESCRIPTION = 500
 _MAX_PATTERN = 200
 _MAX_MATCHERS = 50
 _MAX_VOLATILE = 50
+_MAX_STABLE_FOR = 5
 
 
 @dataclass(frozen=True, slots=True)
@@ -208,8 +209,15 @@ class ScreenSignature:
     matchers: tuple[Matcher, ...]
     volatile: tuple[VolatileRegion, ...] = ()
     description: str = ""
+    stable_for: float = 0.0
 
     def __post_init__(self) -> None:
+        sf = self.stable_for
+        if type(sf) not in (int, float) or not 0 <= sf <= _MAX_STABLE_FOR:
+            raise SignatureError(
+                f"stable_for must be a number from 0 to {_MAX_STABLE_FOR}"
+            )
+        object.__setattr__(self, "stable_for", float(sf))
         for attr in ("matchers", "volatile"):
             value = getattr(self, attr)
             if isinstance(value, (str, bytes)):

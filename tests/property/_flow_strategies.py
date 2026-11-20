@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from hypothesis import strategies as st
 
 from greenscreen.flow.model import (
+    CollectStep,
     ExpectStep,
     ExtractStep,
     Flow,
@@ -35,6 +36,7 @@ from tests.flow_support import (
     ScriptedState,
     blank_screen,
     capture,
+    has_partial_repaint,
     partial_repaint,
     pause_variant,
 )
@@ -395,7 +397,9 @@ class ChainScript:
             if i > 0:
                 prev = self.steps[i - 1].name
                 repaints = tuple(
-                    blank_screen() if code == 0 else partial_repaint(prev, code - 1)
+                    blank_screen()
+                    if code == 0 or not has_partial_repaint(prev)
+                    else partial_repaint(prev, code - 1)
                     for code in step.repaints
                 )
             out.append(
@@ -530,3 +534,120 @@ def typed_cases(draw, names: tuple[str, ...] = TYPEABLE) -> TypedCase:
         )
     )
     return TypedCase(name, text, draw(st.booleans()))
+
+
+# --------------------------------------------------------------------------
+# rows_outputs() and COMMAND_FLOWS (more-flows task 4.8, for Property 7)
+# --------------------------------------------------------------------------
+#
+# Additive: nothing above this line changed, so ``flows()`` and every draw of the
+# existing property tests are the same as before.
+
+@dataclass(frozen=True)
+class RowsPlan:
+    """A Rows_Output and how a Flow reads it: ``collect`` (``more`` set) or one Extract_Step."""
+
+    spec: OutputSpec
+    more: str | None
+    max_screens: int
+
+
+@dataclass(frozen=True)
+class FlagPlan:
+    """A Flag_Output and the Extract_Step that reads it."""
+
+    spec: OutputSpec
+
+
+_ROWS_NAMES = ("LINES", "MEMBERS", "NAMES")
+_FLAG_NAMES = ("FOUND", "IS_READY")
+_EQUALS_CHARS = st.characters(
+    min_codepoint=0x21, max_codepoint=0x7E, exclude_characters="$" + SECRET_ALPHABET
+)
+
+
+@st.composite
+def rows_outputs(draw) -> tuple[RowsPlan, ...]:
+    """0 to 2 Rows_Outputs with distinct names, each read by ``collect`` or one Extract_Step."""
+    n = draw(st.integers(0, 2))
+    plans: list[RowsPlan] = []
+    for i in range(n):
+        sig = draw(st.sampled_from(SIGNATURE_NAMES))
+        col = draw(st.integers(0, 70))
+        length = draw(st.integers(1, 80 - col))
+        use_collect = draw(st.booleans())
+        next_row = draw(st.one_of(st.none(), st.integers(0, 23))) if use_collect else None
+        more = (
+            draw(st.sampled_from([s for s in SIGNATURE_NAMES if s != sig]))
+            if use_collect
+            else None
+        )
+        spec = OutputSpec(
+            _ROWS_NAMES[i],
+            "str",
+            sig,
+            draw(st.integers(0, 23)),
+            col,
+            length,
+            next_row,
+            draw(st.integers(1, 500)),
+        )
+        plans.append(RowsPlan(spec, more, draw(st.integers(1, 50))))
+    return tuple(plans)
+
+
+@st.composite
+def _flag_outputs(draw) -> tuple[FlagPlan, ...]:
+    """0 to 2 Flag_Outputs with distinct names; ``equals`` has no blank at either end."""
+    plans: list[FlagPlan] = []
+    for i in range(draw(st.integers(0, 2))):
+        col = draw(st.integers(0, 70))
+        length = draw(st.integers(1, 80 - col))
+        head = draw(st.text(alphabet=_EQUALS_CHARS, min_size=1, max_size=6))
+        tail = draw(st.one_of(st.just(""), st.text(alphabet=_EQUALS_CHARS, min_size=1, max_size=6)))
+        equals = head + (" " + tail if tail else "")
+        if len(equals) > length:
+            equals = head[:length]
+        spec = OutputSpec(
+            _FLAG_NAMES[i],
+            "int",
+            draw(st.sampled_from(SIGNATURE_NAMES)),
+            draw(st.integers(0, 23)),
+            col,
+            length,
+            equals=equals,
+        )
+        plans.append(FlagPlan(spec))
+    return tuple(plans)
+
+
+@st.composite
+def _command_flows(draw) -> Flow:
+    base = draw(flows())
+    steps = list(base.steps)
+    outputs = list(base.outputs)
+    for plan in draw(rows_outputs()):
+        outputs.append(plan.spec)
+        if plan.more is None:
+            steps += [ExpectStep((plan.spec.signature,)), ExtractStep(plan.spec.name)]
+        else:
+            steps += [
+                ExpectStep((plan.spec.signature, plan.more)),
+                CollectStep(plan.spec.name, plan.more, plan.max_screens),
+            ]
+    for flag in draw(_flag_outputs()):
+        outputs.append(flag.spec)
+        steps += [ExpectStep((flag.spec.signature,)), ExtractStep(flag.spec.name)]
+    return Flow(
+        name=base.name,
+        steps=tuple(steps),
+        description=base.description,
+        inputs=base.inputs,
+        outputs=tuple(outputs),
+        finally_steps=base.finally_steps,
+        timeouts=base.timeouts,
+    )
+
+
+COMMAND_FLOWS: st.SearchStrategy[Flow] = _command_flows()
+"""A ``flows()`` result with Rows_Outputs, Flag_Outputs and ``collect`` steps appended."""

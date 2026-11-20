@@ -9,6 +9,7 @@ This feature adds five read-only Command_Flows (`tk5-time`, `tk5-list-datasets`,
 3. **Runtime.** (a) a Rows_Output (`max_rows`, `next_row` on `OutputSpec`), read by `extract` or by (b) the new `collect` step; (c) a Flag_Output (`equals`); (d) the `dsname` input rule, which needs no code (the existing `prepare_inputs` and `check_inputs` already do the work); (e) one behaviour-preserving refactor of `exec_key` so `collect` can press Enter.
 4. **Flows.** Five new YAML files, and three Handle steps (the Logon_Cleanup) inserted into `tk5-logon.yaml` and `tk5-system-info.yaml`.
 5. **Tests.** New files, and the smallest edits to the tests that pin counts. Property tests prove rows, collect, flag, the name rule, the YAML round trip, the REENTER outcome and the logon landing.
+6. **Stable-blank rule (amendment after Checkpoint A).** A blank screen counts as `tso-cleared` only after it has stayed unchanged for 0.3 s: an optional `stable_for` in the signature YAML, judged by the Runner (section 10, Requirement 24). It fixes the live failure of the logon steps, which the scripted tests could not show.
 
 Production Python edits: `greenscreen/flow/model.py`, `validate.py`, `yamlio.py`, `screens.py`, `runner.py`, `bundled.py`, and `greenscreen/recognizer/bundled.py`. `greenscreen/publisher/`, `greenscreen/connector/`, `greenscreen/publisher/ask/`, `greenscreen/publisher/console/` and `.env.example` are not changed by the default design. One console page change (CSS) is proposed as Open decision D1 because the console shows a multi-line output on one line.
 
@@ -30,7 +31,7 @@ The scratch work behind this design found points where the requirements text can
 | X1 | Requirements 8.9, 11.3, 12.3, 13.4, 14.4, 15.3 give the Flow and input descriptions. | The existing test `tests/unit/test_publisher_helpers.py::test_probe_alphabet_is_absent_from_every_fixed_text` fails with those texts: it requires that no character of `~^!#%&*+=\|;?@\` occurs in any bundled Flow name, description, input name or input description, output name. The proposed texts contain `;` (five of six) and `#`, `@` (the `dsname` description). It is not in the table "Existing behaviour and tests that could be affected", and Conventions forbid editing an unnamed test. | Wording changed to avoid those characters (final texts in "Components and Interfaces", section 5). Meaning is unchanged. If the reviewer prefers the original wording, the test needs an edit instead (D2). |
 | X2 | "Existing behaviour and tests" lists the tests that change. | Two more tests fail on the count: `tests/unit/test_publisher_slice.py` line 102 (`prepared.loaded_count == 3`) and line 136 (`len(prepared.registry) == prepared.loaded_count == 3`). | Both edited to 8 (table "Existing tests that change"). |
 | X3 | Requirements 8.3, 20.4 and live check 3 say a bad `dsname` gives `request_invalid` (HTTP 400) in the Publisher. | Measured on 2026-11-19 through the real REST app: `{"dsname":"A..B"}` gives HTTP 422 `input_invalid`; `check_inputs` failure is mapped to `input_invalid` (`calls.py` lines 513 to 516, `HTTP_STATUS["input_invalid"] == 422`). `request_invalid` (400) is used only for a malformed body (`rest.py` lines 90 and 116). | The code is `input_invalid`, HTTP 422, in the Flow and in the Publisher. Live check 3 expects 422. No code change. |
-| X4 | Requirement 17.6 and 18.4 say the console shows the outputs with no change. | The console puts an output into a `<dd>` with `String(value)` as a text node, and `.outputs dd` has no `white-space` rule, so the browser collapses each LF to a blank. A 136-member list shows as one wrapped line in 2rem bold type. | Proposed as a CSS-only page change (D1), not included until the reviewer agrees. |
+| X4 | Requirement 17.6 and 18.4 say the console shows the outputs with no change. | The console puts an output into a `<dd>` with `String(value)` as a text node, and `.outputs dd` has no `white-space` rule, so the browser collapses each LF to a blank. A 136-member list shows as one wrapped line in 2rem bold type. | CSS-only page change (D1, closed: applied; tasks.md 9.3). |
 | X5 | Requirement 7.1: `equals` is 1 to 80 printable ASCII characters. | A value with a leading or trailing blank can never equal the stripped region text, so the Flag_Output would always be 0. | Validator also rejects such a value (`equals_blank_edge`). Listed as D3. No bundled Flow is affected. |
 | X6 | Requirement 6.12: "a known screen of another name stops with `unexpected_screen`". | The runner resolves only the signatures that the Flow references (`_resolve_signatures`). A screen whose signature the Flow does not name is "unknown", not "known". All five Command_Flows reference the ISPF menu and the logon screen through the prefix and the finally steps, so the case holds for them. | Tests for Property 4 use a probe Flow whose finally steps reference the other signature. |
 | X7 | Requirement 3.5 renames the read-count rule. | The existing test `test_each_output_needs_exactly_one_extract` pins the old rule name for plain outputs. | Plain outputs keep `needs_exactly_one_extract`. A Rows_Output reports `needs_exactly_one_read`. |
@@ -63,6 +64,14 @@ Pages read on 2026-11-19 (system clock). "Installed" is the version in this work
 | Node | not a library | local v24.19.0 | `node` is on `PATH`; the console page tests run through it. Only the proposed CSS change (D1) touches a page test, and that one is a Python CSS test. |
 | FastAPI, Starlette, MCP SDK, httpx2 | no page read | as installed | No new API is used. The OpenAPI and MCP documents were produced by the existing code and read back (shapes in "Data Models"). |
 
+Task 1.1 re-checks (executor, Windows):
+
+- Checked 2026-11-19 (system clock): https://docs.python.org/3/library/re.html, installed 3.11.9 (page documents 3.15), `re.fullmatch(pattern, string, flags=0)` returns a match only when the whole string matches and `None` otherwise, added in 3.4; the page also lists `prefixmatch`, new in 3.15, which the code does not use. Same as the table.
+- Checked 2026-11-19: https://hypothesis.readthedocs.io/en/latest/reference/strategies.html, installed 6.170.15 (same as the table), `text(alphabet, *, min_size, max_size)` and `characters(...)` take the arguments the table lists, `from_regex(..., fullmatch=False, alphabet=None)` exists. Same as the table.
+- Checked 2026-11-19: no page fetched; installed PyYAML 6.0.3 (same as the table), `inspect.signature(yaml.safe_dump)` is `(data, stream=None, **kwds)`. Same as the table.
+- Checked 2026-11-19: https://x3270.miraheze.org/wiki/PA returned HTTP 404, so the `PA` and `String` action pages could not be fetched; the table's conclusion (from the wiki overview and the old man page) stands and is not re-confirmed. Installed clients as in the table, not re-run (no live host).
+- Checked 2026-11-19: Node v24.19.0 with `C:\Program Files\nodejs` prepended to `PATH`, same as the table.
+
 ## Architecture
 
 ### Decisions
@@ -80,6 +89,8 @@ Pages read on 2026-11-19 (system clock). "Installed" is the version in this work
 | A9 | REENTER | Listed in the `expect` after the command (Name_Flows only), so the next read step stops with a held screen | Requirement Decision 15; Finding 10. |
 | A10 | Test support | `flow_support.has_partial_repaint(name)`; `_flow_strategies.ChainScript.states` falls back to a blank repaint when it is False | The three property tests that failed without it pass with it, unedited. |
 | A11 | Page | No page change by default. CSS-only proposal in D1. | Requirement 17.6 and 18.4. |
+| A12 | Transient blank screens | `stable_for` (0.3 s for `tso-cleared`) in the signature YAML, judged in `_RunState.recognize`; `recognize()` stays pure | One rule for every Flow and every runner path, with no step or validator change (section 10, options A to D). |
+| A13 | A reconnect into more than 5 `***` pauses (amendment 2, Requirement 25) | Raise `max_count` of the logon `tso-pause` Handle from 5 to 10 in the shared Logon_Prefix (option B of section 7, "Deep pauses") | One call drains and releases; `loop_limit` is reachable only above the deepest listing the Flows can leave (10 screens, 9 pauses, plus one). The normal path is unchanged. |
 
 ### Where the new code sits
 
@@ -365,7 +376,7 @@ There is no record per screen and no record for the paging Enters; a failed `col
 | 1 | Rows extraction equals a reference model (value, `loop_limit` boundary, no LF inside a line, nothing at or after the prompt row) | `line_screen` builder over `tests/screen_support.make_screen`; `st.text` over printable ASCII for rows; `integers` for row, column, length, `max_rows` |
 | 2 | A hidden cell in a region stops the run with `hidden_output`; a probe in hidden cells (also below the prompt) never reaches the value, a message, a summary or an audit field | same builder with a hidden field (`0xCC`) closed by a protected field (`0xE0`); the check style of `tests/unit/test_flow_runner_fixes_frames.py` |
 | 3 | `collect` equals a page-sequence model (value, Enter count, `loop_limit` at `max_rows` or `max_screens`) | pages from the builder, `pause`/`ready` last rows, a unique token per page; `ScriptedSession` with the pages as states |
-| 4 | An unknown screen at page k stops with `unknown_screen` after the step timeout and k Enters; a known screen of another name stops with `unexpected_screen` at once | same pages, `blank_screen()` or `capture("tk5-logon")` swapped in |
+| 4 | An unknown screen as screen number k (k from 2) stops with `unknown_screen` after the step timeout and k - 1 Enters; a known screen of another name stops with `unexpected_screen` at once | same pages, `blank_screen()` or `capture("tk5-logon")` swapped in |
 | 5 | Flag value is 1 exactly when the stripped region text equals `equals`, always 0 or 1 | `st.text` for region text and `equals` |
 | 7 | `Flow.from_yaml(flow.to_yaml()) == flow` over Flows with Rows_Outputs, Flag_Outputs and `collect` steps | `rows_outputs` composite appended to `_flow_strategies.flows()` results |
 
@@ -701,7 +712,7 @@ steps:
     key: enter
 - kind: handle                      # [17,18]
   signature: tso-pause
-  max_count: 5
+  max_count: 10                     # amendment 2 (Requirement 25); it was 5
   settle: 0.0
   steps:
   - kind: key
@@ -741,21 +752,48 @@ steps:
 
 **What each landing does** (scripted runs of both Flows with the reconnect screens of `test_flow_logon_recovery.py`, then the landing from the real captures; 2026-11-19):
 
-| Landing after the pause Handle | Keys after the password Enter | End |
+| Landing after the pause Handle | Enter keys from the password Enter on (the code sends 3 in all: the password Enter, one at the reconnect message, one at the first pause; plus one per further pause) | End |
 |---|---|---|
-| ISPF menu | Enter (reconnect message), Enter (pause), Enter (pause), no cleanup key | normal path |
+| ISPF menu | the three Enters, no cleanup key | normal path |
 | `READY` (`tso-ready`) | the three Enters, then Clear, `LOGOFF`, Enter | `unexpected_screen`, index 26, expected `ispf-primary-menu`, final screen `tk5-logon` |
 | cleared screen | the three Enters, then `LOGOFF`, Enter | same |
 | REENTER prompt | the three Enters, then PA1, Clear, `LOGOFF`, Enter | same (the PA1 screen is `tso-ready`, so the READY Handle runs next) |
 | one more `***` pause, then `READY` | four Enters, then Clear, `LOGOFF`, Enter | same |
-| five more pauses | seven Enters | `loop_limit` at index 17 (as today) |
+| nine more pauses, then `READY` (amendment 2) | twelve Enters (3 + 9), then Clear, `LOGOFF`, Enter | same: `unexpected_screen` at index 26, final screen `tk5-logon` |
+| ten more pauses (was "five more pauses", seven Enters, before amendment 2) | twelve Enters (the password Enter, the reconnect message, ten at the pause Handle; the eleventh pause screen gets none) | `loop_limit` at index 17 |
 | an unrecognized screen (stand-in for a sub-panel) | three Enters | `unknown_screen` at index 17, `tk5-logon` has no finally steps, so the session is left as it is |
 
 For `tk5-system-info` the same keys are sent and the reason and index are the same; its finally steps hold the logon screen as `current`, so all three of its Handles run zero iterations and send no key (observed: 3 `ok` records, 4 `skipped`).
 
 What remains unhandled: an orphan inside an ISPF sub-panel, an abandoned logon (`IKJ56700A`), the second IN USE state (`IKJ56400A`), an orphan at a `***` pause that the host shows again without a known screen, and any landing no signature knows. These stop with `unknown_screen`, `timeout` or `loop_limit`, as today. Whether the live host lands at `READY` or at the cleared screen after a reconnect is not verified (live check 12).
 
-**Scripted test plan.** New file `tests/unit/test_flow_logon_cleanup.py` (Requirement 22.8): one parametrized run per row of the table above for each of the two Flows, asserting the keys after the password, the reason, `step_index` 26, `expected`, the final screen, that no key follows on the menu path, and that the password does not occur in any output form (`forms_of_run`). It also pins the plan indices 19 to 26 and the shipped YAML equal to `to_yaml()`. Property 8 runs the landing sequences with 0 to 3 further pauses and 0 to 2 stale reads. Existing tests are not edited.
+**Deep pauses (amendment 2, Requirement 25, decision A13).** What a call does when it reconnects into more than 5 `***` pauses. `tk5-library-members` collects up to 10 screens, so an orphan inside it can leave 9 pauses (the table of landings stops at 5). Code facts (read 2026-11-19): `exec_handle` raises `loop_limit` at the first screen after `max_count` iterations; `loop_limit` is not in `_FINALLY_SKIP_REASONS`, so the `finally` steps run when a Current_Screen is held (the pause is held); the `finally` of `tk5-logon` is empty and that of `tk5-system-info` has Handles on `ispf-primary-menu` and `tso-ready` only, so neither presses Enter at a pause and the account stays logged on; the five Command_Flows' `finally` has a `tso-pause` Handle (`max_count` 20), so they drain and log off at a `loop_limit` of the logon; `calls._session_clean` makes no claim for `loop_limit`. Evidence on the host: one run, a 7-page listing orphaned at its first pause (6 pauses behind it) needed all 5 Enters and landed on `READY`; whether the reconnect adds a pause of its own is not known, so the walk-through uses two models, M1 (the call sees as many pauses as the listing still holds, r) and M2 (it sees r + 1).
+
+| | Option A: keep `max_count` 5 | Option B: `max_count` 10 (chosen) |
+|---|---|---|
+| Orphan at depth r = 9, flow `tk5-logon` or `tk5-system-info`, M1 | call 1: 5 Enters, sixth pause, `loop_limit` at 17, no key from `finally`, account still in use, no `session_clean` claim (r is now 4). Call 2: 4 pauses, `READY`, cleanup, `unexpected_screen` at 26, released. Call 3: 200. Three calls, two of them failures | call 1: 9 pauses, `READY`, cleanup, `unexpected_screen` at 26, released. Call 2: 200. |
+| same, M2 | call 1: 10 pauses seen, `loop_limit`, r = 5. Call 2: 6 pauses, `loop_limit`, r = 1. Call 3: 2 pauses, `READY`, `unexpected_screen` at 26. Call 4: 200. Four calls, three failures | call 1: 10 pauses (the limit), `READY`, `unexpected_screen` at 26, released. Call 2: 200. |
+| same, one of the five Command_Flows | call 1: `loop_limit` at 17, then the `finally` drains the rest (up to 20 Enters, within 6 s) and logs off. Call 2: 200. The result depends on the flow the next caller picks | as above, one call; `finally` is not needed |
+| Each convergence step | needs no manual recovery but leaves the account in use between calls and says so nowhere | one failing call, then normal |
+| Cost | none | none on the normal path; the Handle runs 0 to 2 iterations as today |
+
+Chosen: option B, `max_count` 10. Reasons: the account is released by the call that meets the orphan, whatever Flow that is; every stop of the logon keeps a defined code (`unexpected_screen` at 26 for a released landing, `loop_limit` at 17 only above 10 pauses); option A needs 3 or 4 calls and leaves the account in use without a log claim in between. 10 is the deepest orphan the Flows can create (10 screens, 9 pauses) plus one pause for the reconnect, so `loop_limit` is reachable only if the host shows more pauses than any listing of these Flows holds. A larger value (12) would give two more spare pauses but costs 2 s more in the worst case and fails the 1.0 s-per-pause stress figure below; the validator allows 1 to 20. The limit applies to the shared prefix: `tk5-logon.yaml`, `tk5-system-info.yaml` and the five Command_Flows copy the same Handle, and `test_flow_sync.py` and `test_flow_command_sync.py` keep them equal. Above the limit (11 or more pauses) the call stops with `loop_limit` at 17 and the next call continues from where the pauses stand; the five Command_Flows drain in their `finally`.
+
+Time of the worst released call (Requirement 16, criterion 4 estimates: reconnect part of the recovery 7 s, 0.5 s per pause or key; plus 0.4 s for the Settle_Time of the one cleared screen before `LOGOFF`): `7 + 10 x 0.5 + 4 x 0.5 + 0.4 = 14.4 s`, inside `run` 20.0 of the Command_Flows with 5.6 s spare (and inside 120.0 for `tk5-logon` and `tk5-system-info`), and inside the registry deadline 30.0 (`min(30, 20 + 6 + 30)`; `run + finally + 4.0 = 30.0`, so the Ask constraint C <= 40, deadline <= 30, still holds). With 1.0 s per pause the figure is 19.4 s, still inside 20.0. Measured basis: a call with up to 5 pauses took about 0.6 s in the reviewer's run, and the poll interval of the Publisher is 0.1 s, so the real figure is far below the estimate. Option A, per stop: `7 + 5 x 0.5 = 9.5 s`. The normal path is unchanged: golden call lists identical (0 to 2 pauses), and the Handle never runs more than today's iterations there.
+
+Existing tests that pin the old value or the old range, searched in `tests/` for `max_count`, `tso-pause`, `five_pauses`, `loop_limit` and `range(5)`; each edit changes a value only:
+
+| File | Pins | Before | After |
+|---|---|---|---|
+| `tests/unit/test_flow_bundled.py` `test_logon_pause_handle_step` | `handles[0].max_count == 5` | 5 | 10 |
+| `tests/unit/test_flow_logon_cleanup.py` | landing row `five_pauses`: `_then(stale, *[pause_variant(i) for i in range(5)])`; `([ENTER] * 6, "loop_limit", 17)` | 5 variants, 6 Enters | row `ten_pauses`: `range(10)`, `[ENTER] * 11`, still `loop_limit`, 17 |
+| `tests/property/test_flow_logon_landing.py` (Property 8) | `max_value=3`, docstring "0 to 3" | 3 | 9 |
+
+Not affected (searched): `test_flow_logon_recovery.py` and `test_logon_recovery_publisher.py` (IN USE twice, not pauses), `test_flow_logon_script.py` and `test_flow_system_info_script.py` (golden lists with 1 and 2 pauses), `test_flow_sync.py` (compares the shipped files with each other and with `to_yaml()`, so it follows the edit), `test_flow_runner_handle.py`, `test_flow_handle_bound.py`, `test_flow_secret_leak.py` and `test_publisher_audit_summary.py` (their own test Flows), `test_flow_collect.py` (a test Flow). The five Command_Flows get the value when they are built (tasks 8.2 to 8.6 copy the prefix from `tk5-logon.steps`).
+
+New scripted tests (task 6.10, new file `tests/unit/test_flow_logon_deep_pause.py`, and an addition to task 8.5): a reconnect into 9 further pauses (the pause under the reconnect message and `pause_variant(0..8)`, then `tso-ready`, cleared, logon): the first call ends `unexpected_screen` at 26 with 12 Enters from the password Enter on, then Clear, `LOGOFF`, Enter, and the Session ends on `tk5-logon`; a second call on a new `ScriptedSession` starting at the logon screen takes the normal path (outputs for `tk5-system-info`, the seven real pages for `tk5-library-members`, 136 names). The same with 10 further pauses stops with `loop_limit` at 17 and 12 Enters; `tk5-system-info` sends no key after them, `tk5-library-members` drains and ends on `tk5-logon` through its `finally`. For `tk5-library-members` the run passes with the Flow's own `run` 20.0 on a `FakeClock` at poll interval 0.1 with one stale read per screen.
+
+**Scripted test plan.** New file `tests/unit/test_flow_logon_cleanup.py` (Requirement 22.8): one parametrized run per row of the table above for each of the two Flows, asserting the keys after the password, the reason, `step_index` 26, `expected`, the final screen, that no key follows on the menu path, and that the password does not occur in any output form (`forms_of_run`). It also pins the plan indices 19 to 26 and the shipped YAML equal to `to_yaml()`. Property 8 runs the landing sequences with 0 to 9 further pauses (amendment 2; it was 0 to 3) and 0 to 2 stale reads. The existing logon tests are edited only by the three flagged values of "Deep pauses" below.
 
 **Spec text edits (Requirement 23).** At implementation time, after Requirement 22 is built, make exactly these replacements and no other change in the same files, then run `tests/unit/test_flow_spec_consistency.py`. Each replacement says which landings are verified and which are not yet seen (Requirement 23.2); the reviewer deletes the last clause of that remark after live check 10 has passed. Line numbers are those read on 2026-11-19. The remark is: "The menu landing was verified through the Flow on 2026-11-17 and 2026-11-18 and the REENTER landing by hand on 2026-11-19; the `READY` and cleared-screen landings are not yet seen on the host." It is written out in each new text below.
 
@@ -879,7 +917,7 @@ MCP `tools/list` carries the same `inputSchema`, the same description text and a
 |---|---|---|---|
 | `tk5-time` | 123 | 287 | 443 |
 | `tk5-list-datasets` (7 names) | 171 | 2,812 | 2,960 |
-| `tk5-dataset-info` (found) | 105 | 1,681 | 1,820 |
+| `tk5-dataset-info` (found) | 105 | 1,680 | 1,820 |
 | `tk5-library-members` (136 members) | 1,335 | 2,053 | 2,200 |
 | `tk5-job-status` (1 job) | 77 | 3,285 | 3,440 |
 
@@ -908,6 +946,80 @@ with a new test `test_outputs_keep_line_breaks_and_scroll` in `tests/unit/test_c
 | `tests/property/_flow_strategies.py` (new, for Property 7) | `rows_outputs()` composite and `COMMAND_FLOWS` strategy that append Rows_Outputs, Flag_Outputs and `collect` steps to a `flows()` result; `flows()` itself is not changed, so the existing property tests keep their draws |
 
 Measured: with the first three edits, `test_flow_determinism.py`, `test_flow_stale_reads.py` and `test_flow_unknown_stops.py` pass unedited, as the requirements say.
+
+Amendment (section 10, task 6.6): `tests/flow_support.py` gains timed blank frames. `ScriptedState.blanks` (a tuple of seconds, default empty) and the `ScriptedSession(..., clock=None)` argument are new; with neither, the class behaves as before.
+
+### 10. The stable-blank rule (Requirement 24; amendment after Checkpoint A)
+
+**What failed.** On the live host `tk5-system-info` failed 8 of 8 calls in 0.13 s with `unexpected_screen` at step 12 (`expect tso-password-prompt`, summary a blank screen, cursor (0,0), one field at (23,79)). The host paints a blank for about 6 ms after Enter on the logon screen and for 33 to 43 ms after Enter at a `***` pause during logon (steering, "Verified 2026-11-19 (night)"). The blank is cell for cell `tso-cleared`; the keyboard state stays `U`, so only time separates it from a genuine cleared screen. `_resolve_signatures` gives the runner every signature a Flow references and Requirement 22 put a Handle on `tso-cleared` into the logon steps, so the blank is now a known screen: `poll` accepts none of its names for the `expect` and halts with `unexpected_screen`; `exec_handle` polls with `accept_any`, takes the blank as the Current_Screen, lets the Handles on other signatures skip, and the final `tso-cleared` Handle would type `LOGOFF` into a screen that is already gone.
+
+**Mechanism: an optional `stable_for` on the signature, judged by the Runner.**
+
+| Option | For | Against |
+|---|---|---|
+| A. `stable_for` in the signature YAML, honoured in the Runner's recognition step (chosen) | The fact "this screen is only real after N seconds" is data next to the matchers, reviewable in one file; it applies to every Flow that references the signature, with no `expect` listing it (Requirement 24.9); `recognize` stays pure; one number to retune. | One optional YAML key (a format change, below). |
+| B. A runner rule "a blank screen must settle" | No format change. | The Runner would define "blank" by looking at cells, duplicating what `tso-cleared` already says, and no other transient could be covered. |
+| C. A `settle` option on each `expect` | Explicit. | A Handle polls with `accept_any` and lists no signature, and every Flow author must remember it. |
+| D. `poll` tolerates `tso-cleared` everywhere | Tiny. | The Handle on `tso-cleared` would still type into the transient, and a genuine cleared screen could not be accepted. |
+
+**Recognizer.** `recognize(screen, signatures)` and `matching` are unchanged and pure (no clock, no state). `ScreenSignature` gains a last field `stable_for: float = 0.0`, checked in `__post_init__` (int or float, not bool, 0 to 5, stored as float; `SignatureError` names the key). `yamlio` accepts the optional key and writes it directly after `description` only when above 0, so the other eleven files are emitted byte for byte as today. The loader rejects unknown keys today (`_check_keys` raises `unknown key '<name>'`, pinned by `test_unknown_key_names_key_and_index`), so adding the key is a format change: the schema key list of the document grows by one optional number key (the version stays 1, an old file reads unchanged, an old reader would refuse a new file). `_check_keys` types a key with `isinstance`, which refuses an int for a float, so `stable_for` gets its own check. `tso-cleared.yaml` gains the line `stable_for: 0.3` after `description`.
+
+**Runner** (pseudocode; `greenscreen/flow/runner.py` only):
+
+```python
+class _Stable:                                   # Stable_Record: one per poll() or _settle() call
+    screen: Screen | None = None
+    since: float = 0.0
+    def held(self, screen, now) -> float:        # seconds this exact screen has been read unchanged
+        if self.screen is None or not same_screen(screen, self.screen):
+            self.screen, self.since = screen, now
+        return now - self.since
+
+# _RunState.__init__
+self.stable = {s.name: s.stable_for for s in sigs if s.stable_for > 0}    # {} for a Flow with none
+
+def recognize(self, screen, held=None, confirmed=None) -> _Outcome:
+    name = recognize(screen, self.sigs)          # the pure function, unchanged
+    need = self.stable.get(name)
+    if need is not None and name != confirmed and (held is None or held < need):
+        return _Outcome("unknown")               # a pending screen is an unknown screen
+    return _Outcome("name", name=name)
+
+# poll(): tracker = _Stable() if self.stable else None; after every read (stale ones too):
+#     held = None if tracker is None else tracker.held(screen, self.clock.monotonic())
+#     outcome = self.recognize(screen, held)     # inside the existing "differs from pre-key" branch
+# _settle(): the same, with its own tracker
+# _key_check(): outcome = self.recognize(comparison, None, current.name)
+```
+
+Why this is the smallest correct change: every path that recognizes a screen goes through `_RunState.recognize` (`poll`, `_settle`, `_key_check`), so `expect`, the first read and the loop of a Handle, `collect` pages and the finally Handles all get the rule, and a pending blank is an `unknown` outcome, which `poll` already waits through (`last = "unknown"`, the Flow's own timeout, `unknown_screen` with the redacted summary that `halt` builds from the screen). No step, validator rule, model class or Flow YAML changes. The span runs from the first read of the screen in the call, so the host's own earlier blank time is not counted (conservative), and a stale read of the pre-key screen or any other screen restarts it. The record lives in one call and is dropped with the frame (`_clear_frames` already empties finished `greenscreen.flow` frames); it holds a `Screen` only for the length of the call, as `poll`'s own `screen` local does.
+
+| Path | Before | After |
+|---|---|---|
+| `expect` (poll) | the blank is `tso-cleared`: `unexpected_screen` unless listed | pending blank is unknown: keep reading; accepted after 0.3 s; on timeout `unknown_screen` |
+| Handle first read and loop (`accept_any`) | the blank becomes the Current_Screen; the `tso-cleared` Handle types `LOGOFF` | pending blank is unknown; the next real screen is what the Handles see |
+| Handle `settle` watch | the blank would end the watch | pending blank ignored, as unknown |
+| `collect` page poll | `unexpected_screen` on a blank between pages | as `expect` |
+| pre-key check | any blank recognized as `tso-cleared` | the Current_Screen's own name needs no new span; another `stable_for` name is unknown |
+| a flow with no `stable_for` signature | n/a | no tracker, no extra clock call |
+
+Limit: an `expect` of `tso-cleared` whose `timeout` is below 0.3 s plus one poll interval can never succeed; no bundled Flow sets one (step timeout 10.0), and the test of 6.7 asserts it.
+
+**The settle value: 0.3 s.** The longest blank seen was 43 ms (1 to 2 ms sampling, a few runs), so 0.3 s is seven times that and 50 times the 6 ms of the logon blank; 0.15 s (3.5 times) would save 0.15 s per cleared screen but leaves little room on a loaded emulator, and 1 s would cost 1.1 s per cleared screen. It is one number in `tso-cleared.yaml` (live check 15).
+
+**Delay.** A Genuine_Cleared_Screen is accepted at the first read at least 0.3 s after its first read: worst case 0.3 s plus one poll interval plus read latency, 0.4 s at the Publisher's poll interval of 0.1 s. Measured on a scratch copy with `FakeClock`: 0.3 s at poll intervals 0.01 and 0.1, 0.5 s at 0.5 (each within 0.3 s plus the interval).
+
+| Flow | Genuine cleared screens on the legitimate path | Added to `run` | Legitimate worst (Requirement 16.4) | With the rule | `run` limit |
+|---|---|---|---|---|---|
+| `tk5-time`, `tk5-list-datasets`, `tk5-dataset-info`, `tk5-job-status` | 2 (index 31, Closing_Tail `expect tso-cleared`) | 0.8 s | 12 s | 12.8 s | 20.0 s |
+| `tk5-library-members`, 7 screens (10 screens) | 2 | 0.8 s | 17 s (18 s) | 17.8 s (18.8 s) | 20.0 s |
+| `tk5-logon`, `tk5-system-info`, `tk5-logoff` | 0 on the normal path (0.4 s more only when a reconnect lands on a cleared screen) | 0 | unchanged | unchanged | 120 s and as before |
+
+A finally path holds at most one Genuine_Cleared_Screen (Clear, then the `tso-cleared` Handle), so 0.4 s more inside `finally` 6.0 s: the path of four keys, estimated 2 to 4 s, becomes 2.4 to 4.4 s. Risk R3 gets 0.4 s worse; the margin of the 10-screen listing (18.8 of 20.0) is small, and the fallback `run` 18 of R3 would no longer hold for it (R11).
+
+**Test support: timed frames.** Today's `ScriptedSession` cannot show a screen for a time: a key advances to the next state at once, and `stale_reads` and `repaints` are counted in reads, not seconds; `FakeClock` only moves in `sleep`. So no existing test can show a blank for 6 ms and then the next screen, which is why the scripted tests missed this failure. Flagged test-support edit (task 6.6): `ScriptedState.blanks` (tuple of seconds, each above 0) and `ScriptedSession(..., clock=None)`; blanks without a clock raise `ValueError`. After the key that produces the state, and after its stale reads and repaints, a read returns the `tso-cleared` capture while `clock.monotonic() - key_time` is below the running sum of `blanks`, then the state's screen. Back-to-back frames are one blank for the Runner, so the frame total after one key (at most 129 ms in the property) stays below 0.3 s. A 20-line subclass doing this was enough in the scratch run.
+
+**Tests** (all without the host). Unit: `test_signature_stable_for.py` (emit position and absence, byte equality of the other eleven files, the error cases, `unknown key` still raised, `tso-cleared` loads with 0.3); `test_flow_stable_blank.py` (the live failure, stays and changes through `expect`, a Handle and a `collect` page, the logon landing, the delay at three poll intervals, the count of two cleared screens per Command_Flow once bundled, the call lists of the existing logon tests unchanged); `test_flow_support_timed.py` (the support change). Property tests: 12, 13 and 14 below. The three existing logon test files, the Flow property tests and `test_command_capture_negatives.py` run unedited (scratch result in "Scripted results").
 
 ## Data Models
 
@@ -972,10 +1084,15 @@ All runs use the normal logon (logo, logon, password prompt, two pauses, menu) a
 | `tk5-library-members`, REENTER answer | `unexpected_screen`, step 37, `kind` `collect`, expected `tso-pause`, `tso-ready`; the same four keys after the command Enter |
 | `max_screens` lowered to 3, 7 pages | `loop_limit` at step 37 (`collect`) with page 3 held; the finally steps pressed Enter 4 times (pages 4 to 7), Clear, `LOGOFF`, Enter; final `tk5-logon`; finally 13 `ok` |
 | `max_rows` lowered to 30, 7 pages | `loop_limit` on page 2; finally 5 Enters, Clear, `LOGOFF`, Enter |
-| a blank screen as page 3 | `unknown_screen` at step 37 after the step timeout, 3 Enters sent; all 13 finally records `skipped`; final screen unknown (the account is left logged on) |
+| a blank screen as page 3 | `unknown_screen` at step 37 after the step timeout, 2 Enters sent (one per screen before the bad one: the bad screen's number minus 1; 3 Enters when it is the fourth screen); all 13 finally records `skipped`; final screen unknown (the account is left logged on) |
 | the ISPF menu as page 3 | `unexpected_screen` at 37 at once; `current` is `None`, so all 13 finally records `skipped` (the Finding 10 limit) |
 | `tk5-job-status`, `tso-status-output` | `JOBS` is the one line `JOB <id>(TSU...) EXECUTING` |
 | logon landings (section 7) | as in the table of section 7 |
+| transient blank after Enter on the logon screen (6 ms), `tk5-logon`, poll intervals 0.01, 0.05, 0.1, 0.5 (scratch, 2026-11-19, amendment) | without the rule: `unexpected_screen` at step 12, as live. With `stable_for` 0.3: the menu, the same keys and strings as without the blank |
+| a 43 ms blank between the Enter at a `***` pause and the menu, a Handle on `tso-cleared` (scratch) | without the rule: `LOGOFF` typed into the blank. With the rule: no string typed |
+| `tso-cleared` served unchanged, `expect tso-cleared` (scratch) | accepted after 0.3 s at poll intervals 0.01 and 0.1, after 0.5 s at 0.5 |
+| a 0.25 s blank, then `tso-ready` again (scratch) | never accepted: `timeout`, no `LOGOFF` |
+| Property 12 prototype, `tk5-logon`, 100 examples (scratch) | passed; with the rule in place `tests/unit` and `tests/property` passed unedited, except the placeholder scan, which reads the old `.kiro` copy of the scratch folder |
 
 ### Shapes read back from the Publisher
 
@@ -1007,7 +1124,7 @@ PBT applies here: the new runtime code is pure screen-to-value logic (row readin
 
 ### Property 4: A bad screen in the middle of a `collect` stops the run at once
 
-*For any* page sequence with one page after the first replaced by a screen no signature of the Flow matches, the run stops with `unknown_screen` after the step timeout; with a screen of another signature that the Flow references, it stops with `unexpected_screen` before any further key; in both cases exactly k Enter keys were sent for a replaced page k.
+*For any* page sequence with one page after the first replaced by a screen no signature of the Flow matches, the run stops with `unknown_screen` after the step timeout; with a screen of another signature that the Flow references, it stops with `unexpected_screen` before any further key; in both cases exactly k - 1 Enter keys were sent when the replaced screen is screen number k (k from 2).
 
 **Validates: Requirements 6.7, 6.12**
 
@@ -1031,9 +1148,9 @@ PBT applies here: the new runtime code is pure screen-to-value logic (row readin
 
 ### Property 8: A logon landing after a reconnect is released or continued, and nothing else is sent
 
-*For any* landing sequence of 0 to 3 further `***` pauses followed by one landing from the ISPF menu, `READY`, the cleared screen or the REENTER prompt, with 0 to 2 stale reads per screen, `tk5-logon` ends at the ISPF menu exactly for the menu landing, and ends with `unexpected_screen` at step 26, expected `ispf-primary-menu`, and the logon screen as the last screen for the other three; the keys after the password are `3 + p` Enters (p further pauses) followed by exactly the cleanup keys of that landing.
+*For any* landing sequence of 0 to 9 further `***` pauses (amendment 2; the Handle allows 10 with the pause under the reconnect message) followed by one landing from the ISPF menu, `READY`, the cleared screen or the REENTER prompt, with 0 to 2 stale reads per screen, `tk5-logon` ends at the ISPF menu exactly for the menu landing, and ends with `unexpected_screen` at step 26, expected `ispf-primary-menu`, and the logon screen as the last screen for the other three; the Enters from the password Enter on (the password Enter included) are `3 + p` (p further pauses), followed by exactly the cleanup keys of that landing.
 
-**Validates: Requirements 22.3, 22.4, 22.5, 22.9**
+**Validates: Requirements 22.3, 22.4, 22.5, 22.9, 25.2, 25.8**
 
 ### Property 9: A name the host rejects always ends logged off
 
@@ -1053,7 +1170,25 @@ PBT applies here: the new runtime code is pure screen-to-value logic (row readin
 
 **Validates: Requirements 6.8**
 
-Prototype status (scratch run, 200 examples each, all passed): Properties 1, 2, 3, 4, 5, 6, 7, 8, 9 and 10. Property 11 is new in this design and was checked by example (one record at index 37 over the seven real pages, REST body), not yet as a property.
+### Property 12: Transient blank frames change neither the keys, the strings nor the outcome
+
+*For any* bundled Flow (the names come from the manifest, each with its normal-path script), any poll interval of 0.01, 0.05, 0.1 or 0.5 s, 0 to 2 stale reads per screen and, after every key, 0 to 3 blank frames of 6 to 43 ms each, the outcome of the run (the outputs, or the reason, `step_index` and `kind` of the error, and each audit record's step index, status and signature) and the Session calls other than reads (every `string`, `enter`, `clear`, `pf` and `pa` with its arguments, in order) equal those of the run without blank frames, the reads are never fewer, and no `LOGOFF` is typed unless the run without blank frames types it.
+
+**Validates: Requirements 24.5, 24.9, 24.11, 24.12**
+
+### Property 13: A blank screen is accepted exactly when it has stayed the Settle_Time
+
+*For any* script of frames alternating between the blank (`tso-cleared`) screen and a screen no signature of the Flow matches, with durations of 1 to 700 ms, an `expect tso-cleared` after a key accepts the screen at the first read at which the unbroken run of blank reads has lasted at least 0.3 s on the Clock (the run counted from its first read), never earlier, and stops with `unknown_screen` or `timeout` when no read reaches that span before the step timeout.
+
+**Validates: Requirements 24.5, 24.6, 24.15**
+
+### Property 14: The signature YAML round trip holds with `stable_for`
+
+*For any* valid signature with `stable_for` an int or float from 0 to 5, `from_yaml(to_yaml(signature))` equals the signature, `to_yaml` contains no `stable_for` line exactly when the value is 0, and *for any* value that is a bool, a string, negative or above 5 the reader raises `SignatureError` naming `stable_for`.
+
+**Validates: Requirements 24.1, 24.2, 24.3**
+
+Prototype status (scratch run, 200 examples each, all passed): Properties 1, 2, 3, 4, 5, 6, 7, 8, 9 and 10. Property 11 is new in this design and was checked by example (one record at index 37 over the seven real pages, REST body), not yet as a property. Properties 12 to 14 are new in the amendment: Property 12 was prototyped on 2026-11-19 for `tk5-logon` only (100 examples, four poll intervals, 0 to 3 frames of 6 to 43 ms, passed), Properties 13 and 14 not yet.
 
 ## Error Handling
 
@@ -1067,12 +1202,15 @@ Every stop below was observed in a scratch run (section "Scripted results"). `se
 | A Rows_Output has more rows than `max_rows`, or a listing needs more than `max_screens` | `collect` (or `extract`), screen held | `loop_limit`, 502 | drain pauses (at most 20 Enters), Clear, `LOGOFF`, Enter | logged off if the drain fits in `finally` 6 s (risk R3); no claim |
 | An unknown screen mid-listing or after the command | `poll` after Enter, `current` is `None` | `unknown_screen`, 502 after the 10 s step timeout | skipped (13 records) | left logged on, at the screen the host showed; `session_clean=false` |
 | A known screen the Flow did not list mid-listing or after the command | `poll`, `current` is `None` | `unexpected_screen`, 502 | skipped | left logged on; no claim (Open decision 6 of the requirements, Finding 10) |
+| A blank screen that keeps changing (never 0.3 s unchanged) where the Flow waits | `poll` after a key, `current` is `None` | `unknown_screen`, 502 after the step timeout (a pending blank is an unknown screen) | skipped | left logged on; `session_clean=false` |
 | A step or the whole run is too slow | `poll` or `_budget` | `timeout` or `run_timeout`, 504 | skipped | left logged on; `session_clean=false` |
 | A hidden cell in an output region | `extract` or `collect`, screen held | `hidden_output`, 502 | run | logged off if the screen is a pause drain; no claim |
 | `GS_CALL_TIMEOUT` (30 s) reached | the Publisher cancels the call | `call_timeout`, 504 | not run | left logged on; `session_clean=false` |
 | A later call finds the user id IN USE | the logon steps | on a menu, `READY`, cleared or REENTER landing: `unexpected_screen` at 26 once, then the next call is normal; elsewhere as before | the logon has no finally steps | released for the three new landings; not for a sub-panel or mid-logon |
+| A later call reconnects into 1 to 10 `***` pauses (amendment 2) | the logon `tso-pause` Handle (`max_count` 10), then the landing | `unexpected_screen` at 26 once (released), then the next call is normal | none for the logon Flows; for the Command_Flows they run and send no key (the logon screen is held) | released; no claim |
+| A later call reconnects into more than 10 pauses | the logon `tso-pause` Handle, index 17 | `loop_limit`, 502 | `tk5-logon` none; `tk5-system-info` none (no pause Handle); the five Command_Flows drain (up to 20 Enters) and log off | the first two stay logged on, no claim; the next call continues; the five are released if the drain fits in `finally` 6 s |
 
-The recovery flow for an orphan left by the rows marked "left logged on" is the one of section 7. An orphan left at a `***` pause comes back at a pause: the logon `tso-pause` Handle presses Enter (up to 5) and the landing is then handled. That a reconnect to a paused session behaves so is not verified.
+The recovery flow for an orphan left by the rows marked "left logged on" is the one of section 7. An orphan left at a `***` pause comes back at a pause: the logon `tso-pause` Handle presses Enter (up to 10, amendment 2) and the landing is then handled. A reconnect into a listing orphaned at its first pause was seen on 2026-11-19 (late): it needed 5 Enters and landed on `READY`; a deeper listing is not verified. More than 10 pauses stop with `loop_limit` at index 17 (no claim; the five Command_Flows drain and log off in their `finally`, `tk5-logon` and `tk5-system-info` leave the account in use and the next call continues).
 
 Redaction. No path above adds a row, a name or a host line to a message, a log record or an audit member. The REENTER stop carries the host's rejected-name message in `summary`, which is the redacted screen summary that every `unexpected_screen` already carries (Requirement 21.5). `S3270Error.data_lines` is not touched.
 
@@ -1086,7 +1224,7 @@ PBT applies to the row reading, the paging model, the flag, the name rule, the Y
 |---|---|
 | 1.2 to 1.4, 1.7 | `test_command_capture_files.py` (36 SHA-256 values, both forms, 24 by 80, `Ascii()` rows equal `text_grid`, password absent in plain, lower, upper and hex forms, no non-blank hidden cell; skip the password part when `TK5_PASSWORD` is unset) |
 | 1.6 | `test_command_capture_facts.py` (cursor, non-blank rows, first column and length, field starts, Prompt_Row per the table "Capture facts"; no user id literal) |
-| 2.1 to 2.3, 2.5 | the existing matrix file (336 evaluations), plus a case in `test_command_capture_facts.py` for the typed-over cleared screen |
+| 2.1 to 2.3, 2.5 | the existing matrix file (336 evaluations), plus `test_command_capture_negatives.py` (accepted: task 3.4 wrote it as a new file instead of appending to `test_command_capture_facts.py`): the typed-over cleared screen is unknown alone and `tso-cleared` after `build_comparison`, `tso-cleared` matches no other capture, no other signature matches the `tso-cleared` capture, and the `tso-reenter` negative cases |
 | 3.1 to 3.5, 7.1 | `test_flow_rows_output.py` (every rule name of section 3.3, `to_yaml` key order and byte equality of the five shipped files, `tk5-logoff` byte for byte) |
 | 4.1 to 4.7, 4.10 | `test_flow_rows_output.py`; `tests/unit/test_flow_static.py` (existing) for 4.7 |
 | 4.8, 4.9 | `tests/property/test_flow_rows_extraction.py` (Properties 1, 2, 7) |
@@ -1098,6 +1236,9 @@ PBT applies to the row reading, the paging model, the flag, the name rule, the Y
 | 9 | `test_flow_readonly.py` (typed-literal set per Flow, no PF key, the only PA is `pa 1` in a Handle on `tso-reenter`, Session call sequence per Flow, command literal equals row 0 of the capture) |
 | 10.1 to 10.8 | `test_flow_command_sync.py`; `test_flow_command_flows.py` (finally steps at each stop: menu, `READY`, cleared, a pause mid-listing, the output screen, the cleared screen before `LOGOFF`; success sends no finally key; the Finding 10 expected-failure test) |
 | 11 to 15 | `test_flow_command_flows.py` (one scripted run per Flow with the real captures; descriptions name every output; the synthetic two-screen plain `LISTCAT`; one blank-free token per name row of `tso-listcat-output`) |
+| 24.1 to 24.4 | `test_signature_stable_for.py` (emit position and absence, the other eleven files byte for byte, error cases, unknown keys still rejected, `tso-cleared` has 0.3); `tests/property/test_signature_stable_for.py` (Property 14) |
+| 24.5 to 24.10, 24.12 to 24.15 | `test_flow_stable_blank.py` (live failure for `tk5-logon` and `tk5-system-info`, stays and changes through `expect`, a Handle and a `collect` page, the logon landing, the delay at three poll intervals, no `expect tso-cleared` timeout below 1 s, golden lists unchanged); `tests/property/test_flow_blank_frames.py` (Property 12); `tests/property/test_flow_stable_blank_model.py` (Property 13); `test_flow_support_timed.py` (the support change) |
+| 24.16 | `test_flow_command_timing.py` (two `expect tso-cleared` per Command_Flow, legitimate worst plus 0.8 s within `run`) |
 | 16 | `test_flow_command_timing.py` (`run + finally + 4 <= 30`, `step <= run`, registry deadline 30.0, `plan_ask` worst case 40.0 and `C + 2M` 90 through `build_registry` and `plan_ask`) |
 | 17 | `test_flow_command_flows.py` (manifest order, files equal `to_yaml()`, description and input description lengths, every output named); publisher tests below |
 | 21 | `test_flow_reenter.py` (both Name_Flows, call list, every finally record `ok`, Publisher `CallService` with `FakeHost` gives `unexpected_screen`, 502, no `session_clean`; three PA1 at most; the Finding 10 test); `tests/property/test_flow_reenter_outcome.py` (Property 9) |
@@ -1157,8 +1298,10 @@ All runs: `tests/unit` and `tests/property`, integration excluded, on the scratc
 | `greenscreen/flow/flows/tk5-time.yaml`, `tk5-list-datasets.yaml`, `tk5-dataset-info.yaml`, `tk5-library-members.yaml`, `tk5-job-status.yaml` | new (section 6); write them with a one-off builder from `Flow` objects and `Flow.to_yaml()` so that the text is the emitted text |
 | `tests/screen_support.py`, `tests/flow_support.py`, `tests/property/_flow_strategies.py` | section 9 |
 | the 11 existing unit test files of "Existing tests that change" | the edits listed there |
-| new unit tests | `test_command_capture_facts.py`, `test_command_capture_files.py`, `test_flow_rows_output.py`, `test_flow_collect.py`, `test_flow_flag_output.py`, `test_flow_command_flows.py`, `test_flow_command_sync.py`, `test_flow_readonly.py`, `test_flow_command_timing.py`, `test_flow_reenter.py`, `test_flow_logon_cleanup.py`, `test_flow_dataset_name.py` |
-| new property tests | `test_flow_rows_extraction.py` (Properties 1, 2, 7), `test_flow_collect_model.py` (3, 4, 11), `test_flow_flag_output.py` (5), `test_flow_dataset_name.py` (6, 10), `test_flow_logon_landing.py` (8), `test_flow_reenter_outcome.py` (9) |
+| new unit tests | `test_command_capture_facts.py`, `test_command_capture_files.py`, `test_command_capture_negatives.py`, `test_signature_stable_for.py`, `test_flow_stable_blank.py`, `test_flow_support_timed.py`, `test_flow_rows_output.py`, `test_flow_collect.py`, `test_flow_flag_output.py`, `test_flow_command_flows.py`, `test_flow_command_sync.py`, `test_flow_readonly.py`, `test_flow_command_timing.py`, `test_flow_reenter.py`, `test_flow_logon_cleanup.py`, `test_flow_dataset_name.py` |
+| new property tests | `test_flow_rows_extraction.py` (Properties 1, 2, 7), `test_flow_collect_model.py` (3, 4, 11), `test_flow_flag_output.py` (5), `test_flow_dataset_name.py` (6, 10), `test_flow_logon_landing.py` (8), `test_flow_reenter_outcome.py` (9), `test_flow_blank_frames.py` (12), `test_flow_stable_blank_model.py` (13), `test_signature_stable_for.py` (14) |
+| `greenscreen/recognizer/signature.py`, `yamlio.py`, `signatures/tso-cleared.yaml`, `greenscreen/flow/runner.py` | section 10: `stable_for`, the optional YAML key, the Stable_Record and the rule in `recognize`, `poll`, `_settle`, `_key_check` |
+| `tests/flow_support.py` (second edit) | section 10: timed blank frames |
 | new integration tests | `tests/integration/test_flow_live_commands.py`, `test_flow_live_reenter.py`, `test_flow_live_cleanup.py` |
 | spec documents of section 7 | edited at implementation time, after the logon change is built |
 | `.kiro/steering/mainframe-host.md` | **not edited by the executor.** Reviewer note: line 249 says member names start at "col 2 counted from 0 (two blanks, then the name)". The captures show the `SF` at column 0, two blank cells, then the name from column 3, in all 136 rows. Suggested text: "one member name per row, the name starting at col 3 counted from 0 (field start at col 0, two blank cells, then the name)". The steering already says 136 members. After the live checks the reviewer may add the verified landings and timings |
@@ -1184,7 +1327,7 @@ One session per user id: stop the Publisher before an integration test and never
 ```powershell
 $env:GS_S3270_BINARY = "D:\tools\wc3270\ws3270.exe"
 $env:GS_HOST = "192.168.68.72"; $env:GS_PORT = "3270"
-$env:GS_API_KEY = "<API_KEY>"
+# Set GS_API_KEY in this shell first (16 characters or more, the <API_KEY> placeholder); no value is written here.
 $env:GS_CALL_TIMEOUT = "30"; $env:GS_MAX_CONCURRENCY = "1"
 $env:GS_PUBLISH_FLOWS = "tk5-time,tk5-list-datasets,tk5-dataset-info,tk5-library-members,tk5-job-status,tk5-system-info"
 foreach ($f in "TK5_TIME","TK5_LIST_DATASETS","TK5_DATASET_INFO","TK5_LIBRARY_MEMBERS","TK5_JOB_STATUS","TK5_SYSTEM_INFO") {
@@ -1222,6 +1365,7 @@ function Call($flow, $json = "{}") {
 | 12 | Integration files | `python -m pytest tests/integration/test_flow_live_commands.py tests/integration/test_flow_live_reenter.py tests/integration/test_flow_live_cleanup.py -m integration -q` (Publisher stopped) | pass; each logs the account off on every path |
 | 13 | Fit in `GS_CALL_TIMEOUT` 30 | row 8 and row 10 | no `call_timeout` (504) in any call; worst observed durations against 30 s |
 | 14 | Ask | restart with `GS_ENABLE_ASK=true`, `GS_LLM_BASE_URL=<LLM_BASE_URL>`, `GS_LLM_MODEL=<LLM_MODEL>`, `GS_LLM_API_KEY=<LLM_API_KEY>`; then for each of the five questions below `curl.exe -sS -X POST http://127.0.0.1:8080/ask -H "Content-Type: application/json" -H "X-API-Key: $env:GS_API_KEY" --data-binary "@ask-body.json"` with the body `{"question": "<question>"}` written to `ask-body.json` | stderr shows `ask enabled` and `ask worst case` with `worst_case_seconds` 92.5 and `largest_tool_seconds` 40.0; each answer uses the matching tool and is correct; `transport=ask` in the Call_Log_Record; the account is logged off afterwards |
+| 15 | Blank screens (Requirement 24) | run `Call tk5-system-info` and each Command_Flow ten times; sample the screen every 1 to 2 ms after Enter at the logon screen, after Enter at a `***` pause and after Clear at `READY`, 20 runs each | no `unexpected_screen` at step 12 or after an Enter at a pause; the longest blank that another screen replaced is under 50 ms; a genuine cleared screen is accepted in about 0.3 to 0.4 s; if a transient blank over 250 ms shows up, raise `stable_for` in `tso-cleared.yaml` and recompute the budget (R11) |
 
 Ask questions: "What is the host time?" (`tk5-time`), "Which data sets does my account have?" (`tk5-list-datasets`), "Does data set SYS2.JCLLIB exist, and what are its attributes?" (`tk5-dataset-info`), "Which members does SYS2.JCLLIB have?" (`tk5-library-members`), "Which jobs are running for my account?" (`tk5-job-status`). A sixth, "Does data set FOO.BAR exist?", expects `FOUND` 0 read as "no".
 
@@ -1295,6 +1439,9 @@ The bindings per Flow are `GS_BIND_<FLOW>__USERID` and `GS_BIND_<FLOW>__PASSWORD
 | R8 | A row full of quotes, backslashes or non-ASCII cells exceeds the 4000-character Ask limit after JSON escaping. | Result is a Rejected_Call `result_too_large`; no safety effect. |
 | R9 | The `exec_key` refactor touches the most used executor. | Behaviour-preserving; the whole existing suite passed unchanged in the scratch copy. |
 | R10 | `tso-cleared` depends on the 3279-2 model (field at (23,79)). | The Connector always passes `-model 3279-2`; the signature and the capture agree. |
+| R11 | The Settle_Time adds 0.8 s to the legitimate path and 0.4 s to a finally path. The 10-screen listing (18.8 of 20.0 s) is tight, and the R3 fallback `run` 18 would not hold for it. | Live check 15 measures the real blank lengths and the accepted time. If the margin is gone, the reviewer raises `run` (and lowers nothing else) or lowers `stable_for`; both are one number. |
+| R12 | A reconnect may show more than 10 `***` pauses (a deeper listing than the Flows create, or an extra pause per reconnect that the one observation did not show). | `max_count` 10 covers the 9 pauses of a 10-screen listing plus one. Above it the call stops with `loop_limit` at 17 and the next call continues; live check 10 (state `pause`) records the real Enter count. If it is above 9, raise the value (1 to 20 allowed) and recompute the 14.4 s figure (one number in the shared prefix, and the Flows are regenerated with `to_yaml`). |
+| R13 | A blank on the real host may last longer than the 43 ms measured on a few runs (a loaded emulator). A blank that stays 0.3 s counts as cleared, so a transient longer than that would be taken for a real one. | `stable_for` is one number in `tso-cleared.yaml`; live check 15 samples 20 runs per key. Not verified beyond the runs of 2026-11-19. |
 
 ### Open items (decisions for the reviewer)
 

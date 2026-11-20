@@ -51,6 +51,9 @@ class OutputSpec:
     row: int
     col: int
     length: int
+    next_row: int | None = None  # first row of a continuation screen (Rows_Output)
+    max_rows: int | None = None  # makes it a Rows_Output
+    equals: str | None = None  # makes it a Flag_Output
 
 
 @dataclass(frozen=True, slots=True)
@@ -98,6 +101,14 @@ class ExtractStep:
 
 
 @dataclass(frozen=True, slots=True)
+class CollectStep:
+    kind: ClassVar[str] = "collect"
+    output: str
+    more: str
+    max_screens: int
+
+
+@dataclass(frozen=True, slots=True)
 class HandleStep:
     kind: ClassVar[str] = "handle"
     signature: str
@@ -110,7 +121,7 @@ class HandleStep:
         object.__setattr__(self, "settle", _to_float(self.settle))
 
 
-Step = Union[ExpectStep, TypeStep, KeyStep, ExtractStep, HandleStep]
+Step = Union[ExpectStep, TypeStep, KeyStep, ExtractStep, CollectStep, HandleStep]
 
 
 @dataclass(frozen=True, slots=True)

@@ -21,7 +21,16 @@ from greenscreen.publisher.registry import (
 )
 from greenscreen.publisher.vault import BoundValues, SecretBox
 
-BUNDLED = ("tk5-logon", "tk5-logoff", "tk5-system-info")
+BUNDLED = (
+    "tk5-logon",
+    "tk5-logoff",
+    "tk5-system-info",
+    "tk5-time",
+    "tk5-list-datasets",
+    "tk5-dataset-info",
+    "tk5-library-members",
+    "tk5-job-status",
+)
 FORBIDDEN_KEYS = {"default", "examples", "example", "const", "enum"}
 
 

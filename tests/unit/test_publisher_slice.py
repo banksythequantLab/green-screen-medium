@@ -99,7 +99,7 @@ def test_prepare_publishes_only_the_allow_listed_flow(monkeypatch):
     prepared = prepare(ENV)
     assert order == ["load_flows", "parse_publish_list", "select_published", "build_registry"]
     assert list(prepared.registry) == ["tk5-system-info"]
-    assert prepared.loaded_count == 3
+    assert prepared.loaded_count == 8
     assert len(prepared.signatures) > 0
 
     app = build_app(prepared, session_factory=FakeHost(system_info_states()), clock=FakeClock())
@@ -133,7 +133,7 @@ def test_prepare_settings_failure_runs_before_any_flow_is_loaded(monkeypatch):
 def test_unset_allow_list_publishes_every_loaded_flow():
     env = {k: v for k, v in ENV.items() if k != "GS_PUBLISH_FLOWS"}
     prepared = prepare(env)
-    assert len(prepared.registry) == prepared.loaded_count == 3
+    assert len(prepared.registry) == prepared.loaded_count == 8
 
 
 def test_unpublished_flow_is_unknown_over_both_front_ends():

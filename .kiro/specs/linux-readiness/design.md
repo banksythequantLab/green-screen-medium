@@ -205,7 +205,7 @@ dev = [
 ]
 ```
 
-`tests/unit/test_flow_packaging.py::test_wheel_contains_exactly_the_three_flow_yaml_files` is not edited. Its flags stay and a real build failure still fails it.
+`tests/unit/test_flow_packaging.py::test_wheel_contains_exactly_the_eight_flow_yaml_files` is not edited. Its flags stay and a real build failure still fails it.
 
 Guard tests (found by searching `tests/` and the repo for `hypothesis>=6.170.15`; no other file pins the list, and `.kiro` documents mention it only as history):
 

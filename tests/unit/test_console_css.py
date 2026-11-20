@@ -272,3 +272,21 @@ def test_blinking_cursor_period_is_at_least_one_second(css):
             periods.append(_seconds(value))
     assert periods, "no animation uses the blink keyframes"
     assert min(periods) >= 1.0, f"blink period {min(periods)}s is under one second"
+
+
+def _rule_declarations(css: str, selector: str) -> dict[str, str]:
+    """Declarations of the rule whose selector list is exactly `selector`."""
+    found: dict[str, str] = {}
+    for match in re.finditer(r"([^{}]+)\{([^{}]*)\}", css):
+        if match.group(1).strip() == selector:
+            for prop, value in _declarations("{" + match.group(2) + "}"):
+                found[prop] = value.strip()
+    return found
+
+
+def test_outputs_keep_line_breaks_and_scroll(css):
+    rule = _rule_declarations(css, ".outputs dd")
+    assert rule, "no .outputs dd rule"
+    assert rule.get("white-space") == "pre-line"
+    assert rule.get("max-height"), "max-height is not set"
+    assert rule.get("overflow-y") == "auto"

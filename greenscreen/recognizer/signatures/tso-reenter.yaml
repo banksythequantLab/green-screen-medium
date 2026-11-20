@@ -1,0 +1,7 @@
+version: 1
+name: tso-reenter
+description: TSO line-mode prompt asking for the operand again after the host rejected it.
+matchers:
+- kind: last_row
+  text: ' REENTER -'
+volatile: []

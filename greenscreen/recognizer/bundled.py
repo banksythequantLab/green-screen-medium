@@ -1,4 +1,4 @@
-"""Load the ten bundled signatures shipped as package data."""
+"""Load the twelve bundled signatures shipped as package data."""
 
 from __future__ import annotations
 
@@ -21,6 +21,8 @@ _MANIFEST = (
     "tso-userid-in-use",
     "tso-reconnect-password-prompt",
     "tso-reconnect-ok",
+    "tso-cleared",
+    "tso-reenter",
 )
 
 

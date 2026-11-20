@@ -72,9 +72,33 @@ steps:
     key: enter
 - kind: handle
   signature: tso-pause
-  max_count: 5
+  max_count: 10
   settle: 0.0
   steps:
+  - kind: key
+    key: enter
+- kind: handle
+  signature: tso-reenter
+  max_count: 3
+  settle: 0.0
+  steps:
+  - kind: key
+    key: pa
+    n: 1
+- kind: handle
+  signature: tso-ready
+  max_count: 1
+  settle: 0.0
+  steps:
+  - kind: key
+    key: clear
+- kind: handle
+  signature: tso-cleared
+  max_count: 1
+  settle: 0.0
+  steps:
+  - kind: type
+    text: LOGOFF
   - kind: key
     key: enter
 - kind: expect

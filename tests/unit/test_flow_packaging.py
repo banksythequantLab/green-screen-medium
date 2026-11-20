@@ -21,9 +21,14 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 
 EXPECTED_YAML = {
+    "greenscreen/flow/flows/tk5-dataset-info.yaml",
+    "greenscreen/flow/flows/tk5-job-status.yaml",
+    "greenscreen/flow/flows/tk5-library-members.yaml",
+    "greenscreen/flow/flows/tk5-list-datasets.yaml",
     "greenscreen/flow/flows/tk5-logoff.yaml",
     "greenscreen/flow/flows/tk5-logon.yaml",
     "greenscreen/flow/flows/tk5-system-info.yaml",
+    "greenscreen/flow/flows/tk5-time.yaml",
 }
 
 EXPECTED_DEPENDENCIES = ["pyyaml>=6.0.3"]
@@ -92,7 +97,7 @@ def test_wheel_workspace_is_removed_when_the_body_raises() -> None:
     assert seen and not seen[0].parent.exists()
 
 
-def test_wheel_contains_exactly_the_three_flow_yaml_files() -> None:
+def test_wheel_contains_exactly_the_eight_flow_yaml_files() -> None:
     import os
 
     with _wheel_workspace() as (work, out):

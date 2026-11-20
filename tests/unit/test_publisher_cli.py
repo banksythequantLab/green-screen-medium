@@ -665,7 +665,7 @@ def test_stdio_sigterm_stops_cleanly(tmp_path):
     watchdog.start()
     try:
         deadline = time.monotonic() + 40
-        while "publishing 1 of 3" not in errfile.read_text(errors="replace"):
+        while "publishing 1 of 8" not in errfile.read_text(errors="replace"):
             assert proc.poll() is None and time.monotonic() < deadline
             time.sleep(0.1)
         time.sleep(1.0)  # let the SIGTERM handler be installed

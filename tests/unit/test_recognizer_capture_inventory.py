@@ -1,4 +1,4 @@
-"""Pin the capture set to exactly the ten screens of Requirement 10.2.
+"""Pin the capture set to exactly the 28 screens of Requirement 10.2.
 
 A new capture (in particular one of a screen holding a residual password,
 Requirement 13.6) fails this test until the requirements are updated.
@@ -22,6 +22,24 @@ EXPECTED_NAMES = {
     "tso-userid-in-use",
     "tso-reconnect-password-prompt",
     "tso-reconnect-ok",
+    "tso-cleared",
+    "tso-listcat-level",
+    "tso-listcat-level-page2",
+    "tso-listcat-level-page3",
+    "tso-listcat-output",
+    "tso-listds-members",
+    "tso-listds-members-page2",
+    "tso-listds-members-page3",
+    "tso-listds-members-page4",
+    "tso-listds-members-page5",
+    "tso-listds-members-page6",
+    "tso-listds-members-page7",
+    "tso-listds-not-in-catalog",
+    "tso-listds-output",
+    "tso-listds-reenter",
+    "tso-listds-reenter-after-pa1",
+    "tso-status-output",
+    "tso-time-output",
 }
 
 _SUFFIX = ".readbuffer.txt"
@@ -36,7 +54,7 @@ def test_capture_inventory_is_exactly_the_ten_screens():
     missing = sorted(f"{n}{_SUFFIX}" for n in EXPECTED_NAMES - found)
     assert not unexpected, f"unexpected capture file(s): {unexpected}"
     assert not missing, f"missing capture file(s): {missing}"
-    assert len(paths) == 10
+    assert len(paths) == 28
 
 
 def test_every_capture_exists_in_both_file_forms():
@@ -50,7 +68,7 @@ def test_every_capture_exists_in_both_file_forms():
 
 
 def test_capture_names_constant_matches_inventory():
-    assert len(CAPTURE_NAMES) == 10
+    assert len(CAPTURE_NAMES) == 28
     assert set(CAPTURE_NAMES) == EXPECTED_NAMES
 
 

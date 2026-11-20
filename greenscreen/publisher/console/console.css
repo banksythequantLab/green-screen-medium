@@ -386,6 +386,9 @@ button:disabled {
   font-weight: bold;
   color: var(--fg-bright);
   overflow-wrap: anywhere;
+  white-space: pre-line;
+  max-height: 24rem;
+  overflow-y: auto;
 }
 
 .elapsed {

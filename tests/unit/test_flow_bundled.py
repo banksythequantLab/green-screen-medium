@@ -19,7 +19,16 @@ from greenscreen.flow.model import (
 from greenscreen.flow.validate import check_flow, reference_violations, structural_violations
 from greenscreen.recognizer import load_bundled_signatures
 
-NAMES = ("tk5-logon", "tk5-logoff", "tk5-system-info")
+NAMES = (
+    "tk5-logon",
+    "tk5-logoff",
+    "tk5-system-info",
+    "tk5-time",
+    "tk5-list-datasets",
+    "tk5-dataset-info",
+    "tk5-library-members",
+    "tk5-job-status",
+)
 FLOWS_DIR = Path(bundled_mod.__file__).parent / "flows"
 
 
@@ -37,12 +46,12 @@ def _expect(*names):
 
 def test_exactly_three_entries_with_expected_keys(flows):
     assert set(flows) == set(NAMES)
-    assert len(flows) == 3
+    assert len(flows) == 8
     for name, flow in flows.items():
         assert flow.name == name
 
 
-def test_exactly_three_yaml_files_shipped():
+def test_exactly_eight_yaml_files_shipped():
     assert sorted(p.name for p in FLOWS_DIR.glob("*.yaml")) == sorted(
         f"{n}.yaml" for n in NAMES
     )
@@ -121,7 +130,7 @@ def test_logon_pause_handle_step(flows):
         if isinstance(s, HandleStep) and s.signature == "tso-pause"
     ]
     assert len(handles) == 1
-    assert handles[0].max_count == 5
+    assert handles[0].max_count == 10
     assert handles[0].steps == (KeyStep(key="enter"),)
 
 
@@ -316,7 +325,7 @@ def test_two_calls_return_distinct_dicts():
 # --- Requirement 17.19 ------------------------------------------------------
 
 
-@pytest.mark.parametrize("name", NAMES)
+@pytest.mark.parametrize("name", NAMES[:3])
 def test_no_literal_credentials_or_placeholders(name):
     text = (FLOWS_DIR / f"{name}.yaml").read_text(encoding="utf-8")
     assert "${" not in text

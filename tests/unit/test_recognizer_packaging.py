@@ -11,12 +11,14 @@ BUNDLED = [
     "ispf-primary-menu.yaml",
     "tk5-logo.yaml",
     "tk5-logon.yaml",
+    "tso-cleared.yaml",
     "tso-input-not-recognized.yaml",
     "tso-password-prompt.yaml",
     "tso-pause.yaml",
     "tso-ready.yaml",
     "tso-reconnect-ok.yaml",
     "tso-reconnect-password-prompt.yaml",
+    "tso-reenter.yaml",
     "tso-userid-in-use.yaml",
 ]
 
@@ -48,8 +50,8 @@ def test_package_data_entries() -> None:
     assert pkg_data["greenscreen.connector.testing"] == ["fixtures/*.yaml"]
 
 
-def test_ten_bundled_yaml_files_exist() -> None:
+def test_twelve_bundled_yaml_files_exist() -> None:
     sig_dir = ROOT / "greenscreen" / "recognizer" / "signatures"
     for name in BUNDLED:
         assert (sig_dir / name).is_file(), name
-    assert len(BUNDLED) == 10
+    assert len(BUNDLED) == 12

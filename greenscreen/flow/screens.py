@@ -91,6 +91,32 @@ def read_region(
     return "".join(chars)
 
 
+def prompt_row(view: ScreenView) -> int:
+    """Highest row with visible text (hidden cells are already blank), or -1."""
+    for r in range(len(view.base_rows) - 1, -1, -1):
+        if view.base_rows[r].strip(" "):
+            return r
+    return -1
+
+
+def read_rows(
+    screen: Screen, view: ScreenView, start: int, col: int, length: int
+) -> list[str] | None:
+    """Stripped, non-empty region texts of rows ``start`` up to the prompt row.
+
+    ``None`` when any cell of a read region is hidden.
+    """
+    out: list[str] = []
+    for r in range(start, prompt_row(view)):
+        raw = read_region(screen, view, r, col, length)
+        if raw is None:
+            return None
+        text = raw.strip(" ")
+        if text:
+            out.append(text)
+    return out
+
+
 def same_screen(a: Screen, b: Screen) -> bool:
     """True when cells, SA tokens and cursor are equal (``Screen.__eq__``)."""
     return a == b

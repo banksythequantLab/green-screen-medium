@@ -1,0 +1,135 @@
+version: 1
+name: tso-cleared
+description: TSO line-mode input screen after Clear, every row blank.
+stable_for: 0.3
+matchers:
+- kind: field_layout
+  count: 1
+  positions:
+  - row: 23
+    col: 79
+- kind: cursor_field
+  row: 23
+  col: 79
+  hidden: false
+- kind: region_regex
+  row: 0
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 1
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 2
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 3
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 4
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 5
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 6
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 7
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 8
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 9
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 10
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 11
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 12
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 13
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 14
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 15
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 16
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 17
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 18
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 19
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 20
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 21
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 22
+  col: 0
+  length: 80
+  pattern: ^ *$
+- kind: region_regex
+  row: 23
+  col: 0
+  length: 80
+  pattern: ^ *$
+volatile: []

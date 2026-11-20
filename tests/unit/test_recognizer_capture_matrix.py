@@ -15,6 +15,29 @@ CAPTURES_DIR = Path(__file__).parents[2] / "captures"
 
 EXPECTED = {name: name for name in CAPTURE_NAMES}
 EXPECTED["tso-pause-2"] = "tso-pause"
+EXPECTED["tso-listds-reenter"] = "tso-reenter"
+for _name in (
+    "tso-listcat-level",
+    "tso-listcat-level-page2",
+    "tso-listds-members",
+    "tso-listds-members-page2",
+    "tso-listds-members-page3",
+    "tso-listds-members-page4",
+    "tso-listds-members-page5",
+    "tso-listds-members-page6",
+):
+    EXPECTED[_name] = "tso-pause"
+for _name in (
+    "tso-time-output",
+    "tso-listcat-output",
+    "tso-listcat-level-page3",
+    "tso-listds-output",
+    "tso-listds-not-in-catalog",
+    "tso-listds-reenter-after-pa1",
+    "tso-listds-members-page7",
+    "tso-status-output",
+):
+    EXPECTED[_name] = "tso-ready"
 
 def test_capture_glob_has_exactly_ten_files() -> None:
     paths = sorted(CAPTURES_DIR.glob("*.readbuffer.txt"))
@@ -23,13 +46,13 @@ def test_capture_glob_has_exactly_ten_files() -> None:
     missing = sorted(f"{n}.readbuffer.txt" for n in set(CAPTURE_NAMES) - found)
     assert not unexpected, f"unexpected capture file(s): {unexpected}"
     assert not missing, f"missing capture file(s): {missing}"
-    assert len(paths) == 10
-    assert len(CAPTURE_NAMES) == 10
+    assert len(paths) == 28
+    assert len(CAPTURE_NAMES) == 28
 
 
 def test_ten_bundled_signatures() -> None:
     sigs = load_bundled_signatures()
-    assert len(sigs) == 10
+    assert len(sigs) == 12
     assert {s.name for s in sigs} == set(EXPECTED.values())
 
 
@@ -47,7 +70,7 @@ def test_capture_matches_exactly_its_own_signature(capture: str) -> None:
         if result:
             matched.append(sig.name)
 
-    assert performed == 10
+    assert performed == 12
     assert matched == [EXPECTED[capture]], (
         f"capture {capture}: satisfied signatures {matched}, expected [{EXPECTED[capture]}]"
     )
@@ -62,7 +85,7 @@ def test_matrix_size_is_100_evaluations() -> None:
         for sig in sigs:
             signature_matches(sig, view)
             count += 1
-    assert count == 10 * 10 == 100
+    assert count == 28 * 12 == 336
 
 
 @pytest.mark.parametrize(

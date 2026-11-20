@@ -82,6 +82,10 @@ def to_yaml(sig: ScreenSignature) -> str:
             {"row": v.row, "col": v.col, "length": v.length} for v in sig.volatile
         ],
     }
+    if sig.stable_for > 0:
+        items = list(doc.items())
+        items.insert(3, ("stable_for", float(sig.stable_for)))
+        doc = dict(items)
     return yaml.safe_dump(
         doc,
         sort_keys=False,
@@ -174,8 +178,11 @@ def _build_signature(obj: Any) -> ScreenSignature:
         ("matchers", list),
         ("volatile", list),
     )
-    _check_keys("", obj, schema, required=_DOC_REQUIRED)
+    _check_keys("", obj, schema, required=_DOC_REQUIRED, skip=("stable_for",))
     _check_version(obj)
+    stable_for = obj.get("stable_for", 0.0)
+    if type(stable_for) not in (int, float):
+        raise SignatureError("key 'stable_for' must be a number")
 
     matchers = tuple(_matcher_from_mapping(i, m) for i, m in enumerate(obj["matchers"]))
     volatile = []
@@ -190,6 +197,7 @@ def _build_signature(obj: Any) -> ScreenSignature:
         matchers=matchers,
         volatile=tuple(volatile),
         description=obj.get("description", ""),
+        stable_for=stable_for,
     )
 
 

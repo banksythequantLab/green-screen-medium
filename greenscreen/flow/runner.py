@@ -29,6 +29,7 @@ from greenscreen.flow.errors import FlowDefinitionError, FlowError
 from greenscreen.flow.inputs import PreparedInputs, prepare_inputs
 from greenscreen.flow.model import (
     AuditRecord,
+    CollectStep,
     ExpectStep,
     ExtractStep,
     Flow,
@@ -44,6 +45,7 @@ from greenscreen.flow.screens import (
     build_comparison,
     geometry,
     read_region,
+    read_rows,
     same_screen,
 )
 from greenscreen.recognizer import (
@@ -139,6 +141,22 @@ class _Outcome:
     detail: str = ""
 
 
+class _Stable:
+    """Stable_Record: one per ``poll`` or ``_settle`` call (Requirement 24)."""
+
+    __slots__ = ("screen", "since")
+
+    def __init__(self) -> None:
+        self.screen: Screen | None = None
+        self.since = 0.0
+
+    def held(self, screen: Screen, now: float) -> float:
+        """Seconds this exact screen has been read unchanged in this call."""
+        if self.screen is None or not same_screen(screen, self.screen):
+            self.screen, self.since = screen, now
+        return now - self.since
+
+
 # --------------------------------------------------------------------------
 # Run state
 # --------------------------------------------------------------------------
@@ -158,6 +176,7 @@ class _RunState:
         self.flow = flow
         self.session = session
         self.sigs = sigs
+        self.stable = {s.name: s.stable_for for s in sigs if s.stable_for > 0}
         self.clock = clock
         self.poll_interval = poll_interval
         self.prepared = prepared
@@ -350,11 +369,27 @@ class _RunState:
 
     # -- recognition -----------------------------------------------------
 
-    def recognize(self, screen: Screen) -> _Outcome:
-        """One ``recognize`` call turned into plain data (no exception escapes)."""
+    def recognize(
+        self,
+        screen: Screen,
+        held: float | None = None,
+        confirmed: str | None = None,
+    ) -> _Outcome:
+        """One ``recognize`` call turned into plain data (no exception escapes).
+
+        A screen whose signature has ``stable_for`` is unknown until it has been
+        read unchanged for that long (``held``), unless it is ``confirmed``.
+        """
         outcome: _Outcome
         try:
             name = recognize(screen, self.sigs)
+            need = self.stable.get(name)
+            if (
+                need is not None
+                and name != confirmed
+                and (held is None or held < need)
+            ):
+                return _Outcome("unknown")
             outcome = _Outcome("name", name=name)
         except UnknownScreenError as exc:
             outcome = _Outcome("unknown", summary=exc.summary)
@@ -420,14 +455,16 @@ class _RunState:
         shown = tuple(sorted(accepted_set if expected is None else expected))
         start = self.clock.monotonic()
         reads = 0
+        tracker = _Stable() if self.stable else None
         while True:
             screen = self.read(idx, kind)
             reads += 1
+            held = None if tracker is None else tracker.held(screen, self.clock.monotonic())
             last = "same"
             unknown_summary: RedactedSummary | None = None
             pre = self.pre_key_screen
             if pre is None or not same_screen(screen, pre):
-                outcome = self.recognize(screen)
+                outcome = self.recognize(screen, held)
                 if outcome.kind == "unknown":
                     last = "unknown"
                     unknown_summary = outcome.summary
@@ -517,37 +554,47 @@ class _RunState:
         step = item.step
         assert isinstance(step, KeyStep)
         idx = item.index
+        left = self._press(idx, "key", step.key, step.n)
+        return _StepDone("ok", left, 1)
+
+    def _press(self, idx: int, kind: str, key: str, n: int | None) -> str:
+        """Pre-key check, send the key, leave the screen. Returns the name left."""
         current = self.current
         if current is None:  # Requirement 8.15: no key without a Current_Screen
-            raise self.halt("unexpected_screen", idx, "key", ())
+            raise self.halt("unexpected_screen", idx, kind, ())
         expected = (current.name,)
-        pre = self.read(idx, "key")
-        failure = self._key_check(pre, current, idx, expected)
+        pre = self.read(idx, kind)
+        failure = self._key_check(pre, current, idx, expected, kind)
         if failure is not None:
             raise failure
-        self.key(idx, "key", step.key, step.n)
+        self.key(idx, kind, key, n)
         self.pre_key_screen = pre
         self.pre_key_name = current.name
         self.current = None
         self.typed_fields = set()
-        return _StepDone("ok", current.name, 1)
+        return current.name
 
     def _key_check(
-        self, pre: Screen, current: _Accepted, idx: int, expected: tuple[str, ...]
+        self,
+        pre: Screen,
+        current: _Accepted,
+        idx: int,
+        expected: tuple[str, ...],
+        kind: str,
     ) -> _Halt | None:
         """Pre-key check. Returns a _Halt or None; holds no exception in flight."""
         if geometry(pre) != current.geometry:
-            return self.halt("unexpected_screen", idx, "key", expected, pre)
+            return self.halt("unexpected_screen", idx, kind, expected, pre)
         comparison = build_comparison(pre, current.screen, self.typed_fields)
-        outcome = self.recognize(comparison)
+        outcome = self.recognize(comparison, None, current.name)
         del comparison
         if outcome.kind == "definition":
-            return self.halt("definition", idx, "key", (), detail=outcome.detail)
+            return self.halt("definition", idx, kind, (), detail=outcome.detail)
         if outcome.kind != "name":
             reason = "unknown_screen" if outcome.kind == "unknown" else "ambiguous_screen"
-            return self.halt(reason, idx, "key", expected, pre)
+            return self.halt(reason, idx, kind, expected, pre)
         if outcome.name != current.name:
-            return self.halt("unexpected_screen", idx, "key", expected, pre)
+            return self.halt("unexpected_screen", idx, kind, expected, pre)
         return None
 
     def exec_extract(self, item: PlanItem, iteration: int | None) -> _StepDone:
@@ -566,10 +613,23 @@ class _RunState:
         if screen.rows < 24 or screen.columns < 80:
             raise self.halt("screen_size", idx, "extract", (), screen, detail=detail)
         view = self.view_of(current)
+        if output.max_rows is not None:  # Rows_Output
+            rows = read_rows(screen, view, output.row, output.col, output.length)
+            if rows is None:
+                raise self.halt(
+                    "hidden_output", idx, "extract", (), screen, detail=detail
+                )
+            if len(rows) > output.max_rows:
+                raise self.halt("loop_limit", idx, "extract", (), screen, detail=detail)
+            self.outputs[output.name] = "\n".join(rows)
+            return _StepDone("ok", current.name, 0)
         raw = read_region(screen, view, output.row, output.col, output.length)
         if raw is None:
             raise self.halt("hidden_output", idx, "extract", (), screen, detail=detail)
         text = raw.strip(" ")
+        if output.equals is not None:  # Flag_Output
+            self.outputs[output.name] = 1 if text == output.equals else 0
+            return _StepDone("ok", current.name, 0)
         value: str | int = text
         if output.type == "int":
             if _INT_TEXT.fullmatch(text) is None:
@@ -577,6 +637,63 @@ class _RunState:
             value = int(text)
         self.outputs[output.name] = value
         return _StepDone("ok", current.name, 0)
+
+    def exec_collect(self, item: PlanItem, iteration: int | None) -> _StepDone:
+        step = item.step
+        assert isinstance(step, CollectStep)
+        idx = item.index
+        output = next(o for o in self.flow.outputs if o.name == step.output)
+        assert output.max_rows is not None
+        accepted = (output.signature, step.more)
+        detail = f"output {output.name}"
+        cur = self.current
+        if cur is None or cur.name not in accepted:
+            raise self.halt(
+                "unexpected_screen", idx, "collect", accepted,
+                None if cur is None else cur.screen,
+            )
+        rows: list[str] = []
+        screens = 0
+        while True:
+            screens += 1
+            screen = cur.screen
+            if screen.rows < 24 or screen.columns < 80:
+                raise self.halt(
+                    "screen_size", idx, "collect", (), screen, detail=detail
+                )
+            first = (
+                output.row
+                if screens == 1 or output.next_row is None
+                else output.next_row
+            )
+            got = read_rows(
+                screen, self.view_of(cur), first, output.col, output.length
+            )
+            if got is None:
+                raise self.halt(
+                    "hidden_output", idx, "collect", (), screen, detail=detail
+                )
+            rows.extend(got)
+            del got
+            if len(rows) > output.max_rows:
+                raise self.halt(
+                    "loop_limit", idx, "collect", (), screen, detail=detail
+                )
+            if cur.name == output.signature:
+                break
+            if screens >= step.max_screens:
+                raise self.halt(
+                    "loop_limit", idx, "collect", (), screen, detail=detail
+                )
+            self._press(idx, "collect", "enter", None)
+            self.poll(
+                idx, "collect", accepted=accepted,
+                timeout=self.flow.timeouts.step, expected=accepted,
+            )
+            cur = self.current
+            assert cur is not None
+        self.outputs[output.name] = "\n".join(rows)
+        return _StepDone("ok", cur.name, screens)
 
     def exec_handle(self, item: PlanItem, iteration: int | None) -> _StepDone:
         step = item.step
@@ -619,13 +736,15 @@ class _RunState:
     def _settle(self, idx: int, settle: float, sig: str) -> str:
         """Watch the handled screen for up to ``settle`` seconds; return its name."""
         start = self.clock.monotonic()
+        tracker = _Stable() if self.stable else None
         while True:
             remaining = settle - (self.clock.monotonic() - start)
             if remaining <= 0:
                 return sig
             self.clock.sleep(min(self.poll_interval, remaining))
             screen = self.read(idx, "handle")
-            outcome = self.recognize(screen)
+            held = None if tracker is None else tracker.held(screen, self.clock.monotonic())
+            outcome = self.recognize(screen, held)
             if outcome.kind == "name":
                 self.accept(screen, outcome.name)
                 if outcome.name != sig:
@@ -640,6 +759,7 @@ _EXECUTORS = {
     "type": _RunState.exec_type,
     "key": _RunState.exec_key,
     "extract": _RunState.exec_extract,
+    "collect": _RunState.exec_collect,
     "handle": _RunState.exec_handle,
 }
 
@@ -670,6 +790,8 @@ def _referenced_names(flow: Flow) -> set[str]:
             names.update(step.tolerate)
         elif isinstance(step, HandleStep):
             names.add(step.signature)
+        elif isinstance(step, CollectStep):
+            names.add(step.more)
         stack.extend(item.children)
     names.update(out.signature for out in flow.outputs)
     return names

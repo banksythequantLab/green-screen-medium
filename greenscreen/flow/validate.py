@@ -19,6 +19,7 @@ from greenscreen.flow._echo import echo_kind
 from greenscreen.flow.errors import FlowDefinitionError
 from greenscreen.flow.model import (
     ExpectStep,
+    CollectStep,
     ExtractStep,
     Flow,
     HandleStep,
@@ -179,6 +180,37 @@ def _check_outputs(flow: Flow, out: _Collector) -> None:
             out.add(None, 3, 1, f"{label}.length", "out_of_range")
         if col_ok and len_ok and spec.col + spec.length > 80:
             out.add(None, 3, 1, f"{label}.length", "region_exceeds_row")
+        _check_output_extras(spec, label, len_ok, out)
+
+
+def _check_output_extras(
+    spec: OutputSpec, label: str, len_ok: bool, out: _Collector
+) -> None:
+    """Rules for ``max_rows``, ``next_row`` and ``equals`` (more-flows 3.3, 7.1)."""
+    if spec.max_rows is not None:
+        if spec.type != "str":
+            out.add(None, 3, 3, f"{label}.max_rows", "rows_requires_str")
+        if not (_is_int(spec.max_rows) and 1 <= spec.max_rows <= 500):
+            out.add(None, 3, 3, f"{label}.max_rows", "out_of_range")
+    if spec.next_row is not None:
+        if spec.max_rows is None:
+            out.add(None, 3, 3, f"{label}.next_row", "next_row_requires_rows")
+        if not (_is_int(spec.next_row) and 0 <= spec.next_row <= 23):
+            out.add(None, 3, 3, f"{label}.next_row", "out_of_range")
+    if spec.equals is not None:
+        field = f"{label}.equals"
+        if spec.type != "int":
+            out.add(None, 3, 7, field, "equals_requires_int")
+        text = spec.equals
+        if not isinstance(text, str) or not 1 <= len(text) <= 80 or not _printable(text):
+            out.add(None, 3, 7, field, "invalid_text")
+        else:
+            if len_ok and len(text) > spec.length:
+                out.add(None, 3, 7, field, "longer_than_region")
+            if text[0] == " " or text[-1] == " ":
+                out.add(None, 3, 7, field, "equals_blank_edge")
+        if spec.max_rows is not None:
+            out.add(None, 3, 3, field, "equals_excludes_rows")
 
 
 def _bodies_are_tuples(steps: object) -> bool:
@@ -224,6 +256,8 @@ class _StepWalk:
                 armed, arming = False, None
             elif isinstance(step, ExtractStep):
                 self._extract(step, idx, arming, in_steps)
+            elif isinstance(step, CollectStep):
+                self._collect(step, idx, arming, in_steps)
             elif isinstance(step, HandleStep):
                 self._handle(item, step)
                 armed, arming = False, None
@@ -298,6 +332,32 @@ class _StepWalk:
         elif spec.signature not in arming.signatures:
             add(idx, 5, 9, "output", "signature_not_in_arming_expect")
 
+    def _collect(
+        self, step: CollectStep, idx: int, arming: ExpectStep | None, in_steps: bool
+    ) -> None:
+        add = self.out.add
+        if not in_steps:
+            add(idx, 5, 2, "collect", "not_in_steps")
+        name = step.output
+        spec = self.outputs.get(name) if isinstance(name, str) else None
+        if spec is None:
+            add(idx, 5, 2, "output", "undeclared_output")
+            return
+        if in_steps:
+            self.extract_counts[name] = self.extract_counts.get(name, 0) + 1
+        if spec.max_rows is None:
+            add(idx, 5, 2, "output", "not_a_rows_output")
+        if not _is_sig_name(step.more):
+            add(idx, 5, 2, "more", "invalid_name")
+        elif step.more == spec.signature:
+            add(idx, 5, 2, "more", "same_as_output_signature")
+        if not (_is_int(step.max_screens) and 1 <= step.max_screens <= 50):
+            add(idx, 5, 2, "max_screens", "out_of_range")
+        if arming is None or not isinstance(arming.signatures, tuple):
+            add(idx, 5, 2, "output", "unarmed")
+        elif spec.signature not in arming.signatures or step.more not in arming.signatures:
+            add(idx, 5, 2, "output", "signature_not_in_arming_expect")
+
     def _handle(self, item: PlanItem, step: HandleStep) -> None:
         add, idx = self.out.add, item.index
         if not _is_sig_name(step.signature):
@@ -322,9 +382,12 @@ class _StepWalk:
         for i, spec in enumerate(self.outputs.values()):
             n = self.extract_counts.get(spec.name, 0)
             if n != 1:
-                self.out.add(
-                    None, 4, 7, _label("output", i, spec.name), "needs_exactly_one_extract"
+                rule = (
+                    "needs_exactly_one_read"
+                    if spec.max_rows is not None
+                    else "needs_exactly_one_extract"
                 )
+                self.out.add(None, 4, 7, _label("output", i, spec.name), rule)
 
 
 def _sort_key(v: Violation) -> tuple:
@@ -368,6 +431,9 @@ def reference_violations(flow: Flow, names: frozenset[str]) -> list[Violation]:
                     for name in used:
                         if name not in names:
                             out.add(item.index, 5, 1, f"{field} {name}", "unknown_signature")
+            elif isinstance(step, CollectStep):
+                if isinstance(step.more, str) and step.more not in names:
+                    out.add(item.index, 5, 1, f"more {step.more}", "unknown_signature")
             elif isinstance(step, HandleStep):
                 if step.signature not in names:
                     out.add(item.index, 5, 1, f"signature {step.signature}", "unknown_signature")

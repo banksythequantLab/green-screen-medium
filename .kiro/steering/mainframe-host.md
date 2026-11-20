@@ -246,7 +246,7 @@ echo, row 7 output, row 8 READY), so row positions are only fixed after Clear.
 | `LISTCAT` | Row 1: ` IN CATALOG:SYS1.UCAT.TSO`. Rows 2 to 8: one data set name per row at col 1 (seven names, all starting with the user id). Then ` READY`. | `tso-listcat-output` |
 | `LISTDS '<name>'` | Row 1: the name. Row 2: ` --RECFM-LRECL-BLKSIZE-DSORG`. Row 3: the four values, for example `   FB    80    27920   PO`. Row 4: ` --VOLUMES--`. Row 5: the volume, for example `   TSO001`. Row 6: ` READY`. | `tso-listds-output` |
 | `LISTDS '<name>'` for a name that does not exist | Row 1: the name. Row 2: ` DATA SET '<name>' NOT IN CATALOG`. Row 3: ` READY`. | `tso-listds-not-in-catalog` |
-| `LISTDS '<name>' MEMBERS` | As `LISTDS`, then ` --MEMBERS--` on row 6 and one member name per row starting at col 2 counted from 0 (two blanks, then the name). | `tso-listds-members` and `-page2` to `-page7` |
+| `LISTDS '<name>' MEMBERS` | As `LISTDS`, then ` --MEMBERS--` on row 6 and one member name per row starting at col 3 counted from 0 (the field start at col 0, two blanks, then the name; corrected 2026-11-20 from the captures). | `tso-listds-members` and `-page2` to `-page7` |
 | `STATUS` | Row 1: ` JOB <userid>(TSU000nn) EXECUTING`. Row 2: ` READY`. The job number changes with every logon. | `tso-status-output` |
 
 Paging: when output fills the screen, row 23 shows ` ***` with the cursor at row 23 col 5
@@ -318,3 +318,35 @@ All positions in these two sections count rows and columns from 0.
 - Lower case may be accepted from a caller and typed as given; the host folds it.
 - Not verified: other prompts a command can raise, PA1 from a ` ***` pause, and what
   `STATUS` shows for a user id with batch jobs.
+
+## Verified 2026-11-19 (night): a blank screen is also a transient
+
+Measured on the live host with s3270 4.3, sampling the screen every 1 to 2 ms after a key.
+
+- After Enter on the `Logon ===>` screen the host first shows a fully blank screen (cursor 0,0, one field starting at 23,79) for about 6 ms, then the password prompt. The keyboard state went U, L, L, U across those samples.
+- After Enter at a `***` pause during logon the same blank screen shows for 33 to 43 ms before the next pause or the ISPF menu. The keyboard state stayed `U` (unlocked) for the whole time, so the keyboard state does NOT tell a transient blank from a real one.
+- This blank is cell-for-cell the same as the screen after Clear at `READY` (`tso-cleared`). The only difference is time: the real cleared screen stays; the transient is gone within about 50 ms.
+- No blank was seen after Enter at a `***` pause inside a `LISTDS ... MEMBERS` listing, after a command Enter at the cleared screen, after `X` on the ISPF menu, or after `LOGOFF` (one run each, so not proof that it never happens).
+- Consequence, seen live: with `tso-cleared` in a Flow's known signatures, `tk5-system-info` failed 6 of 6 calls in 0.13 s with `unexpected_screen` at step 12, because the first read after the logon Enter was the transient blank. A blank screen must only count as `tso-cleared` once it has stayed unchanged for a settle time well above 50 ms. Before that it has to be treated like an unknown screen (keep waiting).
+- After `LOGON <id> RECONNECT` on an account left at `READY`, the landing was: reconnect message, Enter, then ` READY` (`tso-ready`). Clear, `LOGOFF`, Enter then returned to the logon screen.
+- Signature names seen live, one run: `READY` = `tso-ready`, after Clear = `tso-cleared`, `REENTER -` = `tso-reenter`, after PA1 = `tso-ready`, `***` = `tso-pause`, after `LOGOFF` = `tk5-logon`.
+
+## Verified 2026-11-19 (late): reconnect landings with the settle rule (`stable_for: 0.3`)
+
+One run per state, `tk5-system-info` through a scratch Publisher, account left IN USE on purpose.
+
+- Left at `READY`, at the cleared screen, at `REENTER -`, or at the first `***` of `LISTDS 'SYS2.JCLLIB' MEMBERS`: the reconnect always ended at ` READY` (`tso-ready`), never at a blank screen or a `REENTER` prompt. The host repaints `READY` after the reconnect message.
+- In all four the first call released the account (Clear, wait about 0.3 s for the blank to hold, `LOGOFF`, Enter), ended on the logon screen and returned `unexpected_screen` at step 26 in about 0.6 s. The second call returned 200 in about 1.8 s.
+- The listing case used all 5 Enters the `tso-pause` Handle allows. A session abandoned on an early page of a longer listing can need more than 5; that call would then stop with `loop_limit` and the next call continues from there.
+- 10 of 10 normal calls returned 200 in 1.8 to 2.1 s, the same as before the rule.
+
+## Verified 2026-11-20: the five command Flows on the live host
+
+Scratch Publisher on the box with six Flows published, Linux, s3270 4.3.
+
+- `tk5-time`, `tk5-list-datasets`, `tk5-job-status`, `tk5-dataset-info` and `tk5-library-members` each returned 200 in 2.3 to 2.7 s. `tk5-library-members` for `SYS2.JCLLIB` returned 136 names (1,145 characters) and took 2.3 to 2.7 s in 10 of 10 calls, so the seven screens cost almost nothing.
+- `LISTDS 'SYS2.JCLLIB'` reports volume `TK5RES`. Lower case `sys2.jcllib` gives the same answer. `NO.SUCH.DSN` gives `FOUND` 0 and empty `MEMBERS`.
+- `A..B`, `1ABC`, a name with an apostrophe and blank, and an undeclared input are refused with 422 in under 1 ms, before any logon.
+- The integration tests `test_flow_live_commands.py`, `test_flow_live_reenter.py`, `test_flow_live_cleanup.py` and `test_flow_live_recovery.py` pass (14 tests, 85 s). The reenter test types `A..B` and `1ABC` through a loosened probe Flow: the Flow leaves the `REENTER -` prompt with PA1, logs off, and the next call works.
+- A session abandoned at the first `***` of the seven-screen listing: the next `tk5-time` call released it and returned `unexpected_screen` at step 26 in 0.6 s, and the call after that returned 200.
+- Ask with the box model (`qwen3.6:35b-a3b`, reasoning effort none) and six tools: eight questions, 2 to 6.4 s each, each answered from the matching tool, an off-topic question refused. Asked how many members `SYS2.JCLLIB` has, the model said "over 100" and did not count the 136 lines.

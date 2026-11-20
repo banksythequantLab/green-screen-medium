@@ -35,6 +35,8 @@ OWN_CAPTURES = {
     "tso-userid-in-use": "tso-userid-in-use",
     "tso-reconnect-password-prompt": "tso-reconnect-password-prompt",
     "tso-reconnect-ok": "tso-reconnect-ok",
+    "tso-cleared": "tso-cleared",
+    "tso-reenter": "tso-listds-reenter",
 }
 
 _DATE_TIME = re.compile(
@@ -52,9 +54,9 @@ def sigs():
 
 def test_exactly_ten_signatures_bundled():
     loaded = load_bundled_signatures()
-    assert len(loaded) == 10
+    assert len(loaded) == 12
     assert {s.name for s in loaded} == set(OWN_CAPTURES)
-    assert len(list(SIGNATURES_DIR.glob("*.yaml"))) == 10
+    assert len(list(SIGNATURES_DIR.glob("*.yaml"))) == 12
 
 
 @pytest.mark.parametrize("name,capture", sorted(OWN_CAPTURES.items()))
@@ -203,4 +205,4 @@ def test_loader_keeps_no_state_after_failure(monkeypatch):
         _patch_file(mp, "tso-ready.yaml", _raise(FileNotFoundError()))
         with pytest.raises(SignatureError):
             load_bundled_signatures()
-    assert len(load_bundled_signatures()) == 10
+    assert len(load_bundled_signatures()) == 12

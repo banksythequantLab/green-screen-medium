@@ -1,4 +1,4 @@
-"""Load the three bundled flows shipped as package data."""
+"""Load the eight bundled flows shipped as package data."""
 
 from __future__ import annotations
 
@@ -12,7 +12,16 @@ from greenscreen.flow.model import Flow
 if TYPE_CHECKING:  # pragma: no cover
     from greenscreen.recognizer import ScreenSignature
 
-_MANIFEST = ("tk5-logon", "tk5-logoff", "tk5-system-info")
+_MANIFEST = (
+    "tk5-logon",
+    "tk5-logoff",
+    "tk5-system-info",
+    "tk5-time",
+    "tk5-list-datasets",
+    "tk5-dataset-info",
+    "tk5-library-members",
+    "tk5-job-status",
+)
 
 
 def load_bundled_flows(

@@ -378,7 +378,7 @@ def test_demo_setting_publishes_only_the_system_info_flow():
     assert host.factory_calls == 0
 
 
-def test_unset_publish_list_publishes_all_three_flows():
+def test_unset_publish_list_publishes_all_eight_flows():
     env = {k: v for k, v in ENV.items() if k not in ("GS_PUBLISH_FLOWS", BIND_VAR)}
     app, _ = make(env)
 
@@ -391,9 +391,9 @@ def test_unset_publish_list_publishes_all_three_flows():
             return health, doc, tools
 
     health, doc, tools = run(go())
-    assert health["flows"] == 3
-    assert len([p for p in doc["paths"] if p.startswith("/flows/")]) == 3
-    assert len(tools) == 3
+    assert health["flows"] == 8
+    assert len([p for p in doc["paths"] if p.startswith("/flows/")]) == 8
+    assert len(tools) == 8
 
 
 def test_binding_a_flow_the_list_leaves_out_stops_the_startup():

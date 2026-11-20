@@ -8,7 +8,7 @@ Reviewer findings:
 
 1. `FakeS3270` holds 5 file descriptors per instance, has no `close()`, and garbage collection does not release them. Under the default limit the suite ends in "Too many open files" (616 failed). With the limit raised: 2096 passed, 2 failed.
 2. `tests/unit/test_publisher_cli.py::test_stdio_sigterm_stops_cleanly` times out on Linux. The HTTP graceful-stop test passes there.
-3. `tests/unit/test_flow_packaging.py::test_wheel_contains_exactly_the_three_flow_yaml_files` fails where setuptools is not installed ("Cannot import build backend 'setuptools.build_meta'").
+3. `tests/unit/test_flow_packaging.py::test_wheel_contains_exactly_the_eight_flow_yaml_files` fails where setuptools is not installed ("Cannot import build backend 'setuptools.build_meta'").
 4. `Connector.close()` leaves the last session's three pipe descriptors open until the object is collected. Measured: flat at 7 over 40 sessions, so no growth.
 
 Recorded observation (not a pass/fail criterion): on Linux the full non-integration suite ran in 109 s.
@@ -59,7 +59,7 @@ No fix is chosen here.
 - **Stdio_Server**: The `greenscreen-publish` process with `GS_TRANSPORT=stdio`, started by `cli._run_stdio`.
 - **Stdio_SIGTERM_Test**: `tests/unit/test_publisher_cli.py::test_stdio_sigterm_stops_cleanly`.
 - **HTTP_Stop_Test**: `tests/unit/test_publisher_cli.py::test_graceful_stop_after_a_call_exits_0_and_closes_the_session`.
-- **Wheel_Test**: `tests/unit/test_flow_packaging.py::test_wheel_contains_exactly_the_three_flow_yaml_files`.
+- **Wheel_Test**: `tests/unit/test_flow_packaging.py::test_wheel_contains_exactly_the_eight_flow_yaml_files`.
 - **Dev_Extra_Guard_Tests**: The three tests that pin the `dev` extra: `test_pyproject_dependencies_are_unchanged` in `tests/unit/test_flow_packaging.py`, `test_pyproject_dependency_lists_unchanged` in `tests/unit/test_flow_model.py` and `test_dev_extra_unchanged` in `tests/unit/test_recognizer_packaging.py`.
 - **Local_Pythons**: The Python interpreters already installed on the executor's Windows machine, listed by `py -0`. The executor installs none.
 - **Backend_Missing_Error**: The pip failure text "Cannot import build backend 'setuptools.build_meta'" or an `ImportError` for `setuptools` in the pip output.

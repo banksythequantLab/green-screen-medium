@@ -20,6 +20,7 @@ import yaml
 from greenscreen.flow._echo import echo_kind
 from greenscreen.flow.errors import FlowDefinitionError
 from greenscreen.flow.model import (
+    CollectStep,
     ExpectStep,
     ExtractStep,
     Flow,
@@ -65,12 +66,15 @@ _OUTPUT = {
     "col": "int",
     "length": "int",
 }
+# Optional output keys, emitted after the six above and only when not None.
+_OUTPUT_OPTIONAL = {"next_row": "int", "max_rows": "int", "equals": "str"}
 _TIMEOUTS = {"step": "num", "run": "num", "finally": "num"}
 _STEP = {
     "expect": {"signatures": "strlist", "tolerate": "strlist", "timeout": "num"},
     "type": {"text": "str", "input": "str"},
     "key": {"key": "str", "n": "int"},
     "extract": {"output": "str"},
+    "collect": {"output": "str", "more": "str", "max_screens": "int"},
     "handle": {"signature": "str", "max_count": "int", "settle": "num", "steps": "list"},
 }
 _STEP_REQUIRED = {
@@ -78,6 +82,7 @@ _STEP_REQUIRED = {
     "type": (),  # exactly-one rule is checked by the validator
     "key": ("key",),
     "extract": ("output",),
+    "collect": ("output", "more", "max_screens"),
     "handle": ("signature", "max_count", "steps"),
 }
 _WORDS = {
@@ -113,6 +118,10 @@ def _step_to_mapping(step: Any) -> dict[str, Any]:
             d["n"] = step.n
     elif isinstance(step, ExtractStep):
         d["output"] = step.output
+    elif isinstance(step, CollectStep):
+        d["output"] = step.output
+        d["more"] = step.more
+        d["max_screens"] = step.max_screens
     else:
         d["signature"] = step.signature
         d["max_count"] = step.max_count
@@ -136,6 +145,22 @@ def _input_to_mapping(spec: InputSpec) -> dict[str, Any]:
     return d
 
 
+def _output_to_mapping(spec: OutputSpec) -> dict[str, Any]:
+    d: dict[str, Any] = {
+        "name": spec.name,
+        "type": spec.type,
+        "signature": spec.signature,
+        "row": spec.row,
+        "col": spec.col,
+        "length": spec.length,
+    }
+    for key in _OUTPUT_OPTIONAL:
+        value = getattr(spec, key)
+        if value is not None:
+            d[key] = value
+    return d
+
+
 def to_yaml(flow: Flow) -> str:
     """Emit ``flow`` as a version-1 YAML document with a fixed key order."""
     doc: dict[str, Any] = {
@@ -143,17 +168,7 @@ def to_yaml(flow: Flow) -> str:
         "name": flow.name,
         "description": flow.description,
         "inputs": [_input_to_mapping(i) for i in flow.inputs],
-        "outputs": [
-            {
-                "name": o.name,
-                "type": o.type,
-                "signature": o.signature,
-                "row": o.row,
-                "col": o.col,
-                "length": o.length,
-            }
-            for o in flow.outputs
-        ],
+        "outputs": [_output_to_mapping(o) for o in flow.outputs],
         "timeouts": {
             "step": flow.timeouts.step,
             "run": flow.timeouts.run,
@@ -257,6 +272,10 @@ def _step_from_mapping(where: str, m: dict, *, in_body: bool) -> Any:
         return KeyStep(key=m["key"], n=m.get("n"))
     if kind == "extract":
         return ExtractStep(output=m["output"])
+    if kind == "collect":
+        return CollectStep(
+            output=m["output"], more=m["more"], max_screens=m["max_screens"]
+        )
     body = [
         _step_from_mapping(w, item, in_body=True)
         for w, item in _list_items(f"{where} steps", m["steps"])
@@ -293,8 +312,13 @@ def _build_flow(obj: Any) -> Flow:
         )
     outputs = []
     for w, m in _list_items("outputs", obj.get("outputs", [])):
-        _check_keys(w, m, _OUTPUT, tuple(_OUTPUT))
-        outputs.append(OutputSpec(**{k: m[k] for k in _OUTPUT}))
+        _check_keys(w, m, {**_OUTPUT, **_OUTPUT_OPTIONAL}, tuple(_OUTPUT))
+        outputs.append(
+            OutputSpec(
+                **{k: m[k] for k in _OUTPUT},
+                **{k: m[k] for k in _OUTPUT_OPTIONAL if k in m},
+            )
+        )
 
     timeouts = Timeouts()
     if "timeouts" in obj:

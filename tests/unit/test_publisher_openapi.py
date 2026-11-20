@@ -52,7 +52,7 @@ def _get(app, path):
 
 def test_bundled_document_is_valid_openapi_and_embeds_generator_schemas():
     registry = _registry()
-    assert len(registry) == 3
+    assert len(registry) == 8
     doc = build_openapi(registry, "1.2.3")
     OpenAPI.model_validate(doc)
     assert doc["openapi"] == "3.1.0"

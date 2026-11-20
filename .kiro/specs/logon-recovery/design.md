@@ -250,7 +250,7 @@ Observed with a `ScriptedSession(echo_typing=True)`, userid `FAKEUSR`, password 
 
 The recovery audit holds `ok` for 7 (signature `tso-userid-in-use`), `ok` with iteration 1 for 8 to 11, `ok` for 12 (`tso-reconnect-password-prompt`), `ok` for 15 and 16 (iteration 1) and `ok` for 17 and 18 (`tso-pause`, iteration 1). On the normal path 8 to 11 and 16 are `skipped` with `duration_seconds` 0.0.
 
-The recovery relies on one assumption: the orphan sits at the ISPF primary option menu (Known limits in the requirements). The flow has no other branch.
+The recovery assumes the orphan sits at the ISPF primary option menu (Known limits in the requirements). Three branches before the final expect release an orphan that sits elsewhere: at a REENTER prompt the flow presses PA1, at READY it presses Clear, at the cleared screen it types LOGOFF and presses Enter; after any of them the call stops with unexpected_screen at the final expect and the next call takes the normal path.
 
 ### 4. Test support
 
