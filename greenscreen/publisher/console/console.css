@@ -391,6 +391,11 @@ button:disabled {
   overflow-y: auto;
 }
 
+.outputs dd.multiline {
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+
 .elapsed {
   margin: 0 0 1rem;
   color: var(--fg-main);

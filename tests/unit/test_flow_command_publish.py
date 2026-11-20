@@ -35,7 +35,7 @@ OUTPUTS = {
     "tk5-time": {"TIME_TEXT": {"type": "string"}},
     "tk5-list-datasets": {"DATASETS": {"type": "string"}},
     "tk5-dataset-info": {"FOUND": {"type": "integer"}, "DETAILS": {"type": "string"}},
-    "tk5-library-members": {"MEMBERS": {"type": "string"}},
+    "tk5-library-members": {"MEMBERS": {"type": "string"}, "MEMBER_COUNT": {"type": "integer"}},
     "tk5-job-status": {"JOBS": {"type": "string"}},
 }
 AUDIT_MEMBERS = {
@@ -143,9 +143,11 @@ def test_output_schemas(shapes, name):
     assert set(mcp["properties"]) == {"flow", "outputs", "audit"}
     # a multi-line output is one string, a flag is an integer
     types = {k: v["type"] for k, v in mcp["properties"]["outputs"]["properties"].items()}
-    assert all(t == "string" for k, t in types.items() if k != "FOUND")
+    assert all(t == "string" for k, t in types.items() if k not in ("FOUND", "MEMBER_COUNT"))
     if name == "tk5-dataset-info":
         assert types["FOUND"] == "integer"
+    if name == "tk5-library-members":
+        assert types["MEMBER_COUNT"] == "integer"
 
 
 @pytest.mark.parametrize("name", EIGHT)

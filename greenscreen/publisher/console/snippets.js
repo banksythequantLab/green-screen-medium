@@ -659,10 +659,31 @@ export function buildAskBody(question) {
   return '{"question":' + JSON.stringify(String(question)) + "}";
 }
 
-// flows: listing items {name, blurb or description, inputs}. Returns up to three {text, hint}.
-export function askExamples(flows, limit) {
+export const ASK_EXAMPLE_MAX = 12;
+const EXAMPLE_TEXT = /^[\x20-\x7E]+$/;
+
+// First sentence of the text, or a whole-word cut with "...", or "". Never more than 100 characters.
+export function hintText(source) {
+  const words = typeof source === "string" ? source : "";
+  const text = words.replace(/[^\x20-\x7E]/g, " ").replace(/ +/g, " ").trim();
+  const end = /[.!?](?= |$)/.exec(text);
+  const start = end === null ? text : text.slice(0, end.index + 1);
+  if (start.length <= 100) {
+    return start;
+  }
+  const cut = start.lastIndexOf(" ", 97);
+  if (cut <= 0) {
+    return "";
+  }
+  const kept = start.slice(0, cut).replace(/[ .!?,;:]+$/, "");
+  return kept === "" ? "" : kept + "...";
+}
+
+// flows: listing items {name, description or blurb, inputs, example}.
+// Returns at most min(limit, ASK_EXAMPLE_MAX) items {text, hint}, one per Flow that carries an example.
+export function askExamples(flows, limit, maxQuestion) {
   const found = [];
-  const most = Number.isSafeInteger(limit) ? Math.min(Math.max(limit, 0), 3) : 0;
+  const most = Number.isSafeInteger(limit) ? Math.min(Math.max(limit, 0), ASK_EXAMPLE_MAX) : 0;
   if (!Array.isArray(flows)) {
     return found;
   }
@@ -674,14 +695,23 @@ export function askExamples(flows, limit) {
       continue;
     }
     const inputs = Array.isArray(flow.inputs) ? flow.inputs : [];
-    if (inputs.some((input) => !isObject(input) || input.required === true || input.secret === true)) {
+    if (inputs.some((input) => !isObject(input) || input.secret === true)) {
+      continue;
+    }
+    if (typeof flow.example !== "string" || !EXAMPLE_TEXT.test(flow.example)) {
+      continue;
+    }
+    if (Number.isSafeInteger(maxQuestion) && flow.example.length > maxQuestion) {
       continue;
     }
     const words = typeof flow.description === "string" ? flow.description : typeof flow.blurb === "string" ? flow.blurb : "";
-    const hint = words.replace(/[^\x20-\x7E]/g, " ").replace(/ +/g, " ").trim().slice(0, 100).trim();
-    found.push({ text: "Run " + flow.name + " and tell me what it returns.", hint });
+    found.push({ text: flow.example, hint: hintText(words) });
   }
   return found;
+}
+
+export function outputClass(text) {
+  return typeof text === "string" && text.includes("\n") ? "multiline" : null;
 }
 
 function traceSteps(trace) {

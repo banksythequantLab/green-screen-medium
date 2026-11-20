@@ -44,7 +44,7 @@ def _expect(*names):
 # --- Requirement 17.1, 17.2 -------------------------------------------------
 
 
-def test_exactly_three_entries_with_expected_keys(flows):
+def test_exactly_eight_entries_with_expected_keys(flows):
     assert set(flows) == set(NAMES)
     assert len(flows) == 8
     for name, flow in flows.items():

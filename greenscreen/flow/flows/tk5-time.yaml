@@ -1,6 +1,7 @@
 version: 1
 name: tk5-time
 description: 'Read the current date and time of the mainframe by running the TSO TIME command. TIME_TEXT holds the host''s own line: time of day, CPU time, service units, session time and date. The host clock can differ from real time. Read-only. Logs on and off with the bound account.'
+example: What time is it on the mainframe?
 inputs:
 - name: userid
   type: str

@@ -1,4 +1,4 @@
-"""The three bundled flows must not drift apart (Requirements 17.11, 17.12, 17.17)."""
+"""The Flows tk5-logon, tk5-logoff and tk5-system-info must not drift apart (Requirements 17.11, 17.12, 17.17)."""
 
 from __future__ import annotations
 

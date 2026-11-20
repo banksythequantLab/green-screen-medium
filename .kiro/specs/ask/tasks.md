@@ -444,7 +444,7 @@ Get-Content .\.env.ask | ForEach-Object { if ($_ -match '^\s*([A-Z0-9_]+)=(.*)$'
 greenscreen-publish
 ```
 
-Expected on stderr: `publishing 1 of 3 flows over http`, `ask enabled` and `ask worst case` with `worst_case_seconds` 92.5 and `largest_tool_seconds` 40.0. With `GS_CALL_TIMEOUT` unset the start stops with `GS_ENABLE_ASK: no_offerable_tools (call_too_long: lower GS_CALL_TIMEOUT)`.
+Expected on stderr: `publishing 1 of 8 flows over http`, `ask enabled` and `ask worst case` with `worst_case_seconds` 92.5 and `largest_tool_seconds` 40.0. With `GS_CALL_TIMEOUT` unset the start stops with `GS_ENABLE_ASK: no_offerable_tools (call_too_long: lower GS_CALL_TIMEOUT)`.
 
 Step 2, terminal B (PowerShell):
 

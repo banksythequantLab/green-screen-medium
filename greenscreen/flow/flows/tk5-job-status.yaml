@@ -1,6 +1,7 @@
 version: 1
 name: tk5-job-status
 description: List the jobs of the mainframe account by running the TSO STATUS command. JOBS holds one line per job with job name, job id and state. The account's own TSO session appears as EXECUTING. Read-only. Logs on and off with the bound account.
+example: Which jobs are running for this account?
 inputs:
 - name: userid
   type: str

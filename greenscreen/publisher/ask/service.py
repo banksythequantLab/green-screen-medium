@@ -412,6 +412,11 @@ class AskService:
         return self._ask.max_question_chars
 
     @property
+    def offered(self) -> frozenset[str]:
+        """Names of the Flows that Ask offers: the eligible set of the Ask_Plan."""
+        return self._plan.eligible
+
+    @property
     def max_answer_chars(self) -> int:
         return self._ask.max_answer_chars
 

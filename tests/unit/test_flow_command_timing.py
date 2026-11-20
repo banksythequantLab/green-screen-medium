@@ -55,11 +55,11 @@ LIMIT = 4000
 # Requirement 4.6 and design section 8 (LF counted as the two characters of its JSON escape).
 MEASURED = {
     "tk5-time": 123, "tk5-list-datasets": 171, "tk5-dataset-info": 105,
-    "tk5-library-members": 1335, "tk5-job-status": 77,
+    "tk5-library-members": 1354, "tk5-job-status": 77,
 }
 WORST = {
     "tk5-time": 287, "tk5-list-datasets": 2812, "tk5-dataset-info": 1680,
-    "tk5-library-members": 2053, "tk5-job-status": 3285,
+    "tk5-library-members": 2079, "tk5-job-status": 3285,
 }
 
 FLOWS = load_bundled_flows()

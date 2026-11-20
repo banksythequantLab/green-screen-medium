@@ -295,7 +295,7 @@ def _report_startup(prepared) -> None:
         _LOG.info("console enabled")
 ```
 
-The first record is the existing one with the same arguments, so `tests/unit/test_publisher_cli.py` (which waits for `publishing 1 of 3`) is unaffected. The second record has a fixed text and no field. With the console off, no record mentions it (Requirement 1.7). `main` calls this function where it now logs the first record.
+The first record is the existing one with the same arguments, so `tests/unit/test_publisher_cli.py` (which waits for `publishing 1 of 8`) is unaffected. The second record has a fixed text and no field. With the console off, no record mentions it (Requirement 1.7). `main` calls this function where it now logs the first record.
 
 ### 7. Packaging (`pyproject.toml`, `.env.example`)
 

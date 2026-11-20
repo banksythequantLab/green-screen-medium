@@ -1,7 +1,7 @@
 """Property 14: the publish list and the binding variables either start cleanly or stop.
 
 One example is one startup: generated extra Flows are written to a temporary ``GS_FLOWS_DIR``
-(after the three bundled Flows, in file order), the generated ``GS_PUBLISH_FLOWS`` and
+(after the eight bundled Flows, in file order), the generated ``GS_PUBLISH_FLOWS`` and
 ``GS_BIND_*`` variables go into an injected environment, and ``prepare`` runs in process.
 ``MODEL`` below is a small independent model of Requirements 1.9 to 1.15 and 22 that decides
 the expected outcome from the Flow declarations and the environment alone.

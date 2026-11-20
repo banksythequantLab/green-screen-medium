@@ -79,24 +79,25 @@ def test_ask_examples_limits_and_hostile_values():
         {"name": "needs-input", "description": "x", "inputs": [{"name": "a", "required": True}]},
         {"name": "has secret", "description": "x", "inputs": []},
         {"name": "sec", "description": "x", "inputs": [{"name": "p", "secret": True}]},
-        {"name": "ok-one", "description": "  Shows\tthe\n  system \u00e9\x00 info  ", "inputs": []},
-        {"name": "ok-two", "blurb": "b" * 300, "inputs": [{"name": "o", "required": False}]},
-        {"name": "ok_3", "inputs": []},
-        {"name": "ok-4", "inputs": []},
+        {"name": "ok-one", "description": "  Shows\tthe\n  system \u00e9\x00 info  ", "inputs": [], "example": "What is ok-one?"},
+        {"name": "ok-two", "blurb": "b" * 300, "inputs": [{"name": "o", "required": False}], "example": "What is ok-two?"},
+        {"name": "ok_3", "inputs": [], "example": "What is ok_3?"},
+        {"name": "ok-4", "inputs": [], "example": "What is ok-4?"},
+        {"name": "needs-dsname", "description": "x", "inputs": [{"name": "d", "required": True}], "example": "Which members does SYS2.JCLLIB have?"},
         {"name": "x" * 65, "inputs": []},
         None,
         7,
     ]
     items = call_one("askExamples", flows, 3)
     assert [i["text"] for i in items] == [
-        "Run ok-one and tell me what it returns.",
-        "Run ok-two and tell me what it returns.",
-        "Run ok_3 and tell me what it returns.",
+        "What is ok-one?",
+        "What is ok-two?",
+        "What is ok_3?",
     ]
     assert items[0]["hint"] == "Shows the system info"
-    assert items[1]["hint"] == "b" * 100
+    assert items[1]["hint"] == ""
     assert items[2]["hint"] == ""
-    assert len(call_one("askExamples", flows, 99)) == 3
+    assert len(call_one("askExamples", flows, 99)) == 5
     assert len(call_one("askExamples", flows, 1)) == 1
     assert call_one("askExamples", flows, 0) == []
     assert call_one("askExamples", "junk", 3) == []

@@ -212,7 +212,8 @@ def build_openapi(registry: Registry, version: str, ask: "AskService | None" = N
     """The OpenAPI 3.1 document of the Published_Flows (Requirement 12).
 
     Pure function of the registry. Embedded schemas are the registry's own objects, so
-    they equal the Schema_Generator output. Holds no value, default or example.
+    they equal the Schema_Generator output. Holds no value or default; the only example
+    is the vendor key ``x-ask-example``, a question text, set only for Flows that Ask offers.
     With ``ask`` set, ``/ask`` and its three schemas are added; with ``None`` the
     document is exactly the one without Ask.
     """
@@ -231,6 +232,7 @@ def build_openapi(registry: Registry, version: str, ask: "AskService | None" = N
         }
 
     security = [{"ApiKeyAuth": []}, {"BearerAuth": []}]
+    offered = ask.offered if ask is not None else frozenset()
     paths: dict[str, dict] = {}
     for name, published in registry.items():
         responses: dict[str, dict] = {
@@ -240,18 +242,19 @@ def build_openapi(registry: Registry, version: str, ask: "AskService | None" = N
             }
         }
         responses.update(error_responses)
-        paths[f"/flows/{name}"] = {
-            "post": {
-                "operationId": name,
-                "summary": published.summary,
-                "requestBody": {
-                    "required": True,
-                    "content": {"application/json": {"schema": published.input_schema}},
-                },
-                "responses": responses,
-                "security": security,
-            }
+        operation: dict[str, Any] = {
+            "operationId": name,
+            "summary": published.summary,
+            "requestBody": {
+                "required": True,
+                "content": {"application/json": {"schema": published.input_schema}},
+            },
+            "responses": responses,
+            "security": security,
         }
+        if published.flow.example and name in offered:
+            operation["x-ask-example"] = published.flow.example
+        paths[f"/flows/{name}"] = {"post": operation}
     paths["/health"] = {
         "get": {
             "operationId": "health",

@@ -105,7 +105,7 @@ No other existing test file is edited. "Before" and "after" are the values the e
 | 8.7 | `tests/unit/test_publisher_slice.py` | line 102 `loaded_count == 3`; line 136 `== prepared.loaded_count == 3` | 3, 3 | 8, 8 |
 | 9.3 | `tests/unit/test_console_css.py` | one test function added (D1); nothing else in the file changes | n/a | `test_outputs_keep_line_breaks_and_scroll` |
 
-`tests/unit/test_recognizer_packaging.py` was first planned as not edited (its `BUNDLED` list held ten names and the test only checked that those files exist); after the final review its `BUNDLED` list holds all twelve names and the test is `test_twelve_bundled_yaml_files_exist`. The test name `test_exactly_three_entries_with_expected_keys` keeps its name (only the numbers change); `test_exactly_three_yaml_files_shipped` was renamed `test_exactly_eight_yaml_files_shipped`, and `test_ten_bundled_signatures` keeps its name.
+`tests/unit/test_recognizer_packaging.py` was first planned as not edited (its `BUNDLED` list held ten names and the test only checked that those files exist); after the final review its `BUNDLED` list holds all twelve names and the test is `test_twelve_bundled_yaml_files_exist`. The test `test_exactly_three_entries_with_expected_keys` was renamed by the polish spec to `test_exactly_eight_entries_with_expected_keys`; `test_exactly_three_yaml_files_shipped` was renamed `test_exactly_eight_yaml_files_shipped`, and `test_ten_bundled_signatures` keeps its name.
 
 ## Tasks
 

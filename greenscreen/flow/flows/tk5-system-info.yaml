@@ -1,6 +1,7 @@
 version: 1
 name: tk5-system-info
 description: Log on, read the user id, terminal, release and system id from the ISPF menu, log off.
+example: What system and release is the mainframe running?
 inputs:
 - name: userid
   type: str

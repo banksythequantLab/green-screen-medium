@@ -43,6 +43,7 @@ _TOP = {
     "version": "int",
     "name": "str",
     "description": "str",
+    "example": "str",
     "inputs": "list",
     "outputs": "list",
     "timeouts": "dict",
@@ -67,7 +68,7 @@ _OUTPUT = {
     "length": "int",
 }
 # Optional output keys, emitted after the six above and only when not None.
-_OUTPUT_OPTIONAL = {"next_row": "int", "max_rows": "int", "equals": "str"}
+_OUTPUT_OPTIONAL = {"next_row": "int", "max_rows": "int", "equals": "str", "counts": "str"}
 _TIMEOUTS = {"step": "num", "run": "num", "finally": "num"}
 _STEP = {
     "expect": {"signatures": "strlist", "tolerate": "strlist", "timeout": "num"},
@@ -155,7 +156,7 @@ def _output_to_mapping(spec: OutputSpec) -> dict[str, Any]:
         "length": spec.length,
     }
     for key in _OUTPUT_OPTIONAL:
-        value = getattr(spec, key)
+        value = getattr(spec, key, None)
         if value is not None:
             d[key] = value
     return d
@@ -167,16 +168,23 @@ def to_yaml(flow: Flow) -> str:
         "version": _VERSION,
         "name": flow.name,
         "description": flow.description,
-        "inputs": [_input_to_mapping(i) for i in flow.inputs],
-        "outputs": [_output_to_mapping(o) for o in flow.outputs],
-        "timeouts": {
-            "step": flow.timeouts.step,
-            "run": flow.timeouts.run,
-            "finally": flow.timeouts.finally_,
-        },
-        "steps": [_step_to_mapping(s) for s in flow.steps],
-        "finally": [_step_to_mapping(s) for s in flow.finally_steps],
     }
+    example = getattr(flow, "example", "")
+    if example != "":
+        doc["example"] = example
+    doc.update(
+        {
+            "inputs": [_input_to_mapping(i) for i in flow.inputs],
+            "outputs": [_output_to_mapping(o) for o in flow.outputs],
+            "timeouts": {
+                "step": flow.timeouts.step,
+                "run": flow.timeouts.run,
+                "finally": flow.timeouts.finally_,
+            },
+            "steps": [_step_to_mapping(s) for s in flow.steps],
+            "finally": [_step_to_mapping(s) for s in flow.finally_steps],
+        }
+    )
     return yaml.safe_dump(
         doc,
         sort_keys=False,
@@ -345,6 +353,7 @@ def _build_flow(obj: Any) -> Flow:
         outputs=tuple(outputs),
         finally_steps=tuple(fin),
         timeouts=timeouts,
+        example=obj.get("example", ""),
     )
 
 

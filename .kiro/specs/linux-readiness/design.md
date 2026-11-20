@@ -64,7 +64,7 @@ The Stdio_SIGTERM_Test is skipped on Windows and a Windows child cannot receive 
 Result (run 1, dump after 8 s):
 
 ```
-publishing 1 of 3 flows over stdio
+publishing 1 of 8 flows over stdio
 [harness +5.78s] raising SIGTERM
 [harness +5.80s] run() returned 0; live threads: [('MainThread', False), ('AnyIO worker thread', False)]
 Timeout (0:00:08)!   <- process still alive 8 s later
@@ -373,7 +373,7 @@ export GS_S3270_BINARY=unused GS_HOST=unused.invalid GS_TRANSPORT=stdio GS_PUBLI
 # D1: does it hang, is the report written, what do the threads do?
 sleep 600 | python -X faulthandler -m tests.publisher_cli_entry /tmp/gs-diag/report.json 2>/tmp/gs-diag/err.txt &
 PID=$!; SLEEP_PID=$(pgrep -n -x sleep)
-until grep -q "publishing 1 of 3" /tmp/gs-diag/err.txt; do sleep 0.1; done; sleep 1
+until grep -q "publishing 1 of 8" /tmp/gs-diag/err.txt; do sleep 0.1; done; sleep 1
 kill -TERM $PID; sleep 5
 kill -0 $PID 2>/dev/null && echo "D1: STILL ALIVE after 5 s" || { wait $PID; echo "D1: exited rc=$?"; }
 ls -l /tmp/gs-diag/report.json && cat /tmp/gs-diag/report.json     # present => run() returned

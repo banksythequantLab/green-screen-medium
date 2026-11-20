@@ -1,6 +1,7 @@
 version: 1
 name: tk5-list-datasets
 description: List the data sets in the account's own catalog by running the TSO LISTCAT command. DATASETS holds one data set name per line. An empty string means none were listed. Only entries under the account's own prefix are shown. Read-only. Logs on and off with the bound account.
+example: Which data sets does this account have?
 inputs:
 - name: userid
   type: str

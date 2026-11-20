@@ -54,6 +54,7 @@ class OutputSpec:
     next_row: int | None = None  # first row of a continuation screen (Rows_Output)
     max_rows: int | None = None  # makes it a Rows_Output
     equals: str | None = None  # makes it a Flag_Output
+    counts: str | None = None  # name of the Rows_Output whose row count this int output holds
 
 
 @dataclass(frozen=True, slots=True)
@@ -133,6 +134,7 @@ class Flow:
     outputs: tuple[OutputSpec, ...] = ()
     finally_steps: tuple[Step, ...] = ()
     timeouts: Timeouts = Timeouts()
+    example: str = ""
 
     def __post_init__(self) -> None:
         for attr in ("steps", "inputs", "outputs", "finally_steps"):

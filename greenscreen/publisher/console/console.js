@@ -26,7 +26,9 @@ import {
   jsonRpcErrorText,
   toggleAllLabel,
   fitsInFirstScreen,
+  ASK_EXAMPLE_MAX,
   askExamples,
+  outputClass,
   askStepToEntries,
   askChain,
   askRunLine,
@@ -77,7 +79,7 @@ function takeKeyFromFragment() {
   const prefix = "#key=";
   const hash = window.location.hash;
   if (typeof hash !== "string" || !hash.startsWith(prefix)) {
-    return;
+    return false;
   }
   const raw = hash.slice(prefix.length);
   let text = raw;
@@ -91,6 +93,7 @@ function takeKeyFromFragment() {
     keyHeld = true;
   }
   window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  return text !== "";
 }
 
 takeKeyFromFragment();
@@ -209,7 +212,8 @@ function parseListing(doc) {
       inputs.push(input);
     }
     const text = typeof operation.summary === "string" ? operation.summary : "";
-    found.push({ name: match[1], blurb: text, inputs });
+    const example = typeof operation["x-ask-example"] === "string" ? operation["x-ask-example"] : "";
+    found.push({ name: match[1], blurb: text, inputs, example });
   }
   return found;
 }
@@ -580,7 +584,7 @@ function showSuccess(body, elapsedSeconds, via) {
   const outputs = el("dl", { class: "outputs" });
   for (const [name, value] of Object.entries(body.outputs)) {
     const text = value !== null && typeof value === "object" ? JSON.stringify(value) : String(value);
-    outputs.appendChild(el("div", null, el("dt", null, name), el("dd", null, text)));
+    outputs.appendChild(el("div", null, el("dt", null, name), el("dd", { class: outputClass(text) }, text)));
   }
   refs.result.classList.add("result-success");
   refs.result.appendChild(el("h2", { class: "result-title" }, "Flow " + safeText(body.flow, 80) + " answered"));
@@ -1035,7 +1039,7 @@ function renderAsk() {
     return;
   }
   refs.askInput.maxLength = askMax.maxQuestion;
-  for (const item of askExamples(flows, 3)) {
+  for (const item of askExamples(flows, ASK_EXAMPLE_MAX, askMax.maxQuestion)) {
     const button = el("button", { type: "button", class: "quiet" }, item.text);
     button.disabled = running;
     button.addEventListener("click", () => {
@@ -1243,6 +1247,18 @@ function connect() {
   loadListing();
 }
 
+// A key pasted into the address bar after load: adopt it. While a call runs the
+// listing is not reloaded, so the running call is not disturbed.
+function onHashChange() {
+  if (!takeKeyFromFragment()) {
+    return;
+  }
+  showKeyPanel(false);
+  if (!running) {
+    loadListing();
+  }
+}
+
 function wireEvents() {
   refs.connect.addEventListener("click", connect);
   refs.viaMcp.addEventListener("click", () => chooseVia("mcp"));
@@ -1271,6 +1287,8 @@ function wireEvents() {
 async function start() {
   wireEvents();
   codes = await loadCodes();
+  window.addEventListener("hashchange", onHashChange);
+  onHashChange();
   if (keyHeld) {
     showKeyPanel(false);
     await loadListing();

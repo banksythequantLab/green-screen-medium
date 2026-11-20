@@ -455,16 +455,18 @@ def test_library_members_check_flow_and_yaml_round_trip():
     check_flow(flow, load_bundled_signatures())
     assert Flow.from_yaml(flow.to_yaml()) == flow
     assert flow_path("tk5-library-members").read_text(encoding="utf-8") == flow.to_yaml()
-    assert len(flow.description) == 333
+    assert len(flow.description) == 381
     assert not any(c in flow.description for c in ";#@")
     assert (flow.timeouts.step, flow.timeouts.run, flow.timeouts.finally_) == (
         10.0, 20.0, 6.0,
     )
-    (out,) = flow.outputs
+    (out, count) = flow.outputs
     assert (out.name, out.type, out.signature, out.row, out.col, out.length,
             out.next_row, out.max_rows) == (
         "MEMBERS", "str", "tso-ready", 7, 3, 8, 0, 200,
     )
+    assert (count.name, count.type, count.counts) == ("MEMBER_COUNT", "int", "MEMBERS")
+    assert (count.signature, count.row, count.col, count.length) == (out.signature, out.row, out.col, out.length)
     collect = next(s for s in flow.steps if isinstance(s, CollectStep))
     assert (collect.more, collect.max_screens) == ("tso-pause", 10)
     pause = next(s for s in flow.steps if getattr(s, "signature", None) == "tso-pause")

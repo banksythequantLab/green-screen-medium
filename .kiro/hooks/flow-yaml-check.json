@@ -1,0 +1,17 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Check bundled flow YAML on save",
+      "description": "Runs check_flow for every bundled flow against the bundled signatures, compares each shipped file with Flow.to_yaml(), and runs the flow sync tests. Silent when everything passes; the report goes to standard error when it fails.",
+      "trigger": "PostFileSave",
+      "matcher": "^(?:.*[/\\\\])?greenscreen[/\\\\]flow[/\\\\]flows[/\\\\][^/\\\\]+\\.yaml$",
+      "action": {
+        "type": "command",
+        "command": "python tests/hook_pytest.py tests/unit/test_flow_bundled.py tests/unit/test_flow_sync.py tests/unit/test_flow_command_sync.py -p no:cacheprovider"
+      },
+      "timeout": 120,
+      "enabled": true
+    }
+  ]
+}

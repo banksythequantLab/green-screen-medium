@@ -98,11 +98,20 @@ def rig():
     r.close()
 
 
+# Every screen a call can put into a response body (the unexpected_screen error carries row
+# text). A probe integer whose decimal text occurs in one of them (for example `TERMINAL : 3277`
+# on the ISPF menu capture) would be reported by find_leaks although nothing leaked, so the
+# strategy leaves such integers out. A real leak is still found: any other value is unchanged.
+_SCREEN_TEXT = "\n".join(
+    "\n".join(state.screen.text_grid) for state in mini_states()
+)
+
+
 def _arguments():
     return st.tuples(
         probes("str", max_size=8),
         st.one_of(st.none(), probes("str", max_size=8)),
-        st.one_of(st.none(), probes("int", max_size=4)),
+        st.one_of(st.none(), probes("int", max_size=4).filter(lambda n: str(n) not in _SCREEN_TEXT)),
     ).map(
         lambda t: {
             k: v for k, v in (("userid", t[0]), ("password", t[1]), ("count", t[2])) if v is not None

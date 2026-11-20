@@ -1,6 +1,7 @@
 version: 1
 name: tk5-library-members
-description: List the member names of a partitioned data set (library) by name (TSO LISTDS with MEMBERS). MEMBERS holds one member name per line, in the host's order, up to 200. A longer list stops the call with an error. An empty MEMBERS means the library has no members or does not exist. Call tk5-dataset-info to tell the two apart. Read-only.
+description: List the member names of a partitioned data set (library) by name (TSO LISTDS with MEMBERS). MEMBERS holds one member name per line, in the host's order, up to 200. MEMBER_COUNT is the number of names in MEMBERS. A longer list stops the call with an error. An empty MEMBERS means the library has no members or does not exist. Call tk5-dataset-info to tell the two apart. Read-only.
+example: Which members does SYS2.JCLLIB have?
 inputs:
 - name: userid
   type: str
@@ -31,6 +32,13 @@ outputs:
   length: 8
   next_row: 0
   max_rows: 200
+- name: MEMBER_COUNT
+  type: int
+  signature: tso-ready
+  row: 7
+  col: 3
+  length: 8
+  counts: MEMBERS
 timeouts:
   step: 10.0
   run: 20.0

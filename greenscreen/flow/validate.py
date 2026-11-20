@@ -93,6 +93,14 @@ def _check_flow_fields(flow: Flow, out: _Collector, step_total: int, fin_total: 
         out.add(None, 1, 6, "name", "invalid_name")
     if not isinstance(flow.description, str) or len(flow.description) > 500:
         out.add(None, 1, 6, "description", "too_long")
+    # getattr: a Flow built with object.__new__ (tests) may lack the slot.
+    example = getattr(flow, "example", "")
+    if not isinstance(example, str) or any(not 0x20 <= ord(c) <= 0x7E for c in example):
+        out.add(None, 1, 6, "example", "invalid_text")
+    elif len(example) > 200:
+        out.add(None, 1, 6, "example", "too_long")
+    elif "${" in example:
+        out.add(None, 1, 6, "example", "interpolation_marker")
     if len(flow.inputs) > 20:
         out.add(None, 1, 6, "inputs", "too_many")
     if len(flow.outputs) > 20:
@@ -181,6 +189,37 @@ def _check_outputs(flow: Flow, out: _Collector) -> None:
         if col_ok and len_ok and spec.col + spec.length > 80:
             out.add(None, 3, 1, f"{label}.length", "region_exceeds_row")
         _check_output_extras(spec, label, len_ok, out)
+    _check_counts(flow, out)
+
+
+def _check_counts(flow: Flow, out: _Collector) -> None:
+    """Rules for ``counts`` (polish 13, 14)."""
+    by_name = {
+        o.name: o
+        for o in flow.outputs
+        if isinstance(o, OutputSpec) and isinstance(o.name, str)
+    }
+    for i, spec in enumerate(flow.outputs):
+        if not isinstance(spec, OutputSpec) or getattr(spec, "counts", None) is None:
+            continue
+        field = f"{_label('output', i, spec.name)}.counts"
+        if spec.type != "int":
+            out.add(None, 3, 8, field, "counts_requires_int")
+        if (
+            spec.max_rows is not None
+            or spec.next_row is not None
+            or spec.equals is not None
+        ):
+            out.add(None, 3, 8, field, "counts_excludes_extras")
+        target = by_name.get(spec.counts) if isinstance(spec.counts, str) else None
+        if target is None or target is spec:
+            out.add(None, 3, 8, field, "counts_unknown_output")
+        elif target.max_rows is None:
+            out.add(None, 3, 8, field, "counts_target_not_rows")
+        elif (target.signature, target.row, target.col, target.length) != (
+            spec.signature, spec.row, spec.col, spec.length
+        ):
+            out.add(None, 3, 8, field, "counts_region_mismatch")
 
 
 def _check_output_extras(
@@ -325,6 +364,9 @@ class _StepWalk:
         if spec is None:
             add(idx, 4, 4, "output", "undeclared_output")
             return
+        if getattr(spec, "counts", None) is not None:
+            add(idx, 4, 4, "output", "counts_not_readable")
+            return
         if in_steps:
             self.extract_counts[name] = self.extract_counts.get(name, 0) + 1
         if arming is None or not isinstance(arming.signatures, tuple):
@@ -342,6 +384,9 @@ class _StepWalk:
         spec = self.outputs.get(name) if isinstance(name, str) else None
         if spec is None:
             add(idx, 5, 2, "output", "undeclared_output")
+            return
+        if getattr(spec, "counts", None) is not None:
+            add(idx, 5, 2, "output", "counts_not_readable")
             return
         if in_steps:
             self.extract_counts[name] = self.extract_counts.get(name, 0) + 1
@@ -380,6 +425,8 @@ class _StepWalk:
 
     def finish(self) -> None:
         for i, spec in enumerate(self.outputs.values()):
+            if getattr(spec, "counts", None) is not None:
+                continue
             n = self.extract_counts.get(spec.name, 0)
             if n != 1:
                 rule = (

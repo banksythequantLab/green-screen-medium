@@ -1309,7 +1309,7 @@ set -a; . ./.env.ask; set +a
 greenscreen-publish
 ```
 
-Expected on stderr: `publishing 1 of 3 flows over http`, `ask enabled` and `ask worst case` with `worst_case_seconds` 92.5 and `largest_tool_seconds` 40.0 (T 90, M 25, `GS_CALL_TIMEOUT` 30). With `GS_CALL_TIMEOUT` unset the start stops with `GS_ENABLE_ASK: no_offerable_tools (call_too_long: lower GS_CALL_TIMEOUT)`; with a missing model variable it stops with `<variable>: missing`.
+Expected on stderr: `publishing 1 of 8 flows over http`, `ask enabled` and `ask worst case` with `worst_case_seconds` 92.5 and `largest_tool_seconds` 40.0 (T 90, M 25, `GS_CALL_TIMEOUT` 30). With `GS_CALL_TIMEOUT` unset the start stops with `GS_ENABLE_ASK: no_offerable_tools (call_too_long: lower GS_CALL_TIMEOUT)`; with a missing model variable it stops with `<variable>: missing`.
 
 **Step 2, terminal B: ask.** The shell in terminal B has the same names loaded (the publisher process has removed its own copy of the keys, this shell has not). PowerShell:
 

@@ -36,6 +36,7 @@ from greenscreen.flow.model import (
     FlowResult,
     HandleStep,
     KeyStep,
+    OutputSpec,
     PlanItem,
     TypeStep,
     plan,
@@ -621,7 +622,7 @@ class _RunState:
                 )
             if len(rows) > output.max_rows:
                 raise self.halt("loop_limit", idx, "extract", (), screen, detail=detail)
-            self.outputs[output.name] = "\n".join(rows)
+            self._store_rows(output, rows)
             return _StepDone("ok", current.name, 0)
         raw = read_region(screen, view, output.row, output.col, output.length)
         if raw is None:
@@ -692,8 +693,14 @@ class _RunState:
             )
             cur = self.current
             assert cur is not None
-        self.outputs[output.name] = "\n".join(rows)
+        self._store_rows(output, rows)
         return _StepDone("ok", cur.name, screens)
+
+    def _store_rows(self, output: OutputSpec, rows: list[str]) -> None:
+        self.outputs[output.name] = "\n".join(rows)
+        for other in self.flow.outputs:
+            if getattr(other, "counts", None) == output.name:
+                self.outputs[other.name] = len(rows)  # int, never a bool
 
     def exec_handle(self, item: PlanItem, iteration: int | None) -> _StepDone:
         step = item.step

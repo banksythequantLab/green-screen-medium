@@ -186,6 +186,14 @@ def test_a_bad_screen_in_the_middle_of_a_collect_stops_the_run_at_once(case, tex
     probe = (ExpectStep(("ispf-primary-menu",)),)
     clock = FakeClock()
     session = _session(screens, stale)
+    enter_times: list[float] = []
+    real_enter = session.enter
+
+    def timed_enter() -> None:
+        enter_times.append(clock.now)
+        real_enter()
+
+    session.enter = timed_enter  # type: ignore[method-assign]
     result, error = _run(_flow(seq, 500, max_screens, finally_steps=probe), session, clock)
 
     assert result is None and error is not None
@@ -193,7 +201,9 @@ def test_a_bad_screen_in_the_middle_of_a_collect_stops_the_run_at_once(case, tex
     assert _enters(session) == k
     if kind == "ispf":
         assert error.reason == "unexpected_screen"
-        assert clock.now < _T.step  # no wait for the step timeout
+        # The stopping step must not wait for the step timeout: measure only the time
+        # since the last Enter was sent, not the clock summed over earlier pages.
+        assert clock.now - enter_times[-1] < _T.step
     else:
         assert error.reason == "unknown_screen"
         assert clock.now >= _T.step

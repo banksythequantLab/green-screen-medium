@@ -1,6 +1,7 @@
 version: 1
 name: tk5-dataset-info
 description: Look up one data set by name (TSO LISTDS). FOUND is 1 when the data set is catalogued and 0 when the host says it is not in the catalog. A 0 is a normal answer, not an error. DETAILS then holds, on separate lines, record format, record length, block size and organisation, the text --VOLUMES--, and the volume serial numbers. Read-only.
+example: What are the record format and volume of SYS2.JCLLIB?
 inputs:
 - name: userid
   type: str

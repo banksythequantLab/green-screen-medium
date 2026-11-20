@@ -1,0 +1,29 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Check captures when one is created",
+      "description": "Runs the capture password and hidden-field scans, the capture file hash test and the capture inventory test. Skips the password part when the host password is not set. Silent when everything passes.",
+      "trigger": "PostFileCreate",
+      "matcher": "^(?:.*[/\\\\])?captures[/\\\\][^/\\\\]+$",
+      "action": {
+        "type": "command",
+        "command": "python tests/hook_pytest.py tests/unit/test_flow_captures.py::test_no_capture_holds_a_typed_password tests/unit/test_flow_captures.py::test_every_capture_has_only_blank_hidden_cells tests/unit/test_flow_captures.py::test_no_password_hex_form_occurs_in_any_capture_file tests/unit/test_flow_captures.py::test_no_capture_exists_for_the_screen_after_the_password_entry tests/unit/test_flow_captures.py::test_sentinel_occurs_in_no_file_under_captures tests/unit/test_command_capture_files.py tests/unit/test_recognizer_capture_inventory.py -p no:cacheprovider"
+      },
+      "timeout": 120,
+      "enabled": true
+    },
+    {
+      "name": "Check captures when one is saved",
+      "description": "Same checks as the create hook, for a saved capture file.",
+      "trigger": "PostFileSave",
+      "matcher": "^(?:.*[/\\\\])?captures[/\\\\][^/\\\\]+$",
+      "action": {
+        "type": "command",
+        "command": "python tests/hook_pytest.py tests/unit/test_flow_captures.py::test_no_capture_holds_a_typed_password tests/unit/test_flow_captures.py::test_every_capture_has_only_blank_hidden_cells tests/unit/test_flow_captures.py::test_no_password_hex_form_occurs_in_any_capture_file tests/unit/test_flow_captures.py::test_no_capture_exists_for_the_screen_after_the_password_entry tests/unit/test_flow_captures.py::test_sentinel_occurs_in_no_file_under_captures tests/unit/test_command_capture_files.py tests/unit/test_recognizer_capture_inventory.py -p no:cacheprovider"
+      },
+      "timeout": 120,
+      "enabled": true
+    }
+  ]
+}

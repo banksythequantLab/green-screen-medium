@@ -184,4 +184,12 @@ def test_ask_only_adds_the_path_and_the_three_schemas():
     on["paths"].pop("/ask")
     for name in ("AskResponse", "AskTrace", "AskErrorBody"):
         on["components"]["schemas"].pop(name)
+    # polish 6.2: with Ask on, the operations of offered Flows also carry ``x-ask-example``
+    # (and nothing else differs in them)
+    for path, item in on["paths"].items():
+        operation = item.get("post")
+        if path.startswith("/flows/") and operation is not None:
+            added = set(operation) - set(off["paths"][path]["post"])
+            assert added <= {"x-ask-example"}, (path, added)
+            operation.pop("x-ask-example", None)
     assert on == off
